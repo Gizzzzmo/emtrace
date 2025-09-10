@@ -26,11 +26,19 @@
         packages = with pkgs; [
           alejandra
           mdformat
+          python313
           python313Packages.mdformat-gfm
+          python313Packages.pyelftools
           cargo-expand
-          llvmPackages_20.clang-tools-extra
+          llvmPackages_20.clang-tools
           llvmPackages_20.clang
-          llvmPackages_20.clangd
+          llvmPackages_20.clang-unwrapped
+          llvmPackages_20.lldb
+          cmake
+          ninja
+          neocmakelsp
+          basedpyright
+          ruff
         ];
       in
         with pkgs; {
