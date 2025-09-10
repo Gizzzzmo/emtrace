@@ -1,6 +1,2 @@
-/target
 .direnv
-.overlayignore
-testignore
-.opencode
-.ruff_cache
+.cache
