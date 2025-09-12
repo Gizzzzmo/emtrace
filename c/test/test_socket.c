@@ -12,15 +12,15 @@
 #define PORT 8080
 #define SA struct sockaddr
 
-static const char __attribute__((section(".emtrace"))) emtraceMagicConstant[32] = {
-    0xd1, 0x97, 0xf5, 0x22, 0xd9, 0x26, 0x9f, 0xd1, 0xad, 0x70, 0x33, 0x92, 0xf6, 0x59, 0xdf, 0xd0,
-    0xfb, 0xec, 0xbd, 0x60, 0x97, 0x13, 0x25, 0xe8, 0x92, 0x01, 0xb2, 0x5a, 0x38, 0x5d, 0x9e, 0xc7
-};
-
 void out(const void* data, size_t size, int connfd) { (void)write(connfd, data, size); }
 
+#define dummy(x, y, z) ((void)0)
+
 #define TRACEF(connfd, ...)                                                                                            \
-    EMTRACE_F_(__attribute__((used)) __attribute__((section(".emtrace"))), out, connfd, "", __VA_ARGS__)
+    EMTRACE_F_(                                                                                                        \
+        __attribute__((used)) __attribute__((section(".emtrace"))) static const, EMTRACE_PY_FORMAT, out, dummy, dummy, \
+        connfd, "", __VA_ARGS__                                                                                        \
+    )
 
 // Driver function
 int main() {
@@ -66,8 +66,7 @@ int main() {
         } else
             printf("server accept the client...\n");
 
-        const void* magic_address = emtraceMagicConstant;
-        out(&magic_address, sizeof(magic_address), connfd);
+        EMTRACE_INIT_(EMTRACE_DEFAULT_SEC_ATTR, out, connfd);
         int x = 1;
         int y = 2;
         void* ptr = &x;

@@ -2,12 +2,48 @@
 
 from typing import Callable, Literal, Any, override
 from elftools.elf.elffile import ELFFile
+from elftools.common.exceptions import ELFError
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentTypeError
 from pathlib import Path
 import sys
 import re
 import os
 import socket
+
+
+def detect_byteorder(b: bytes) -> Literal["little", "big", "unknown"] | None:
+    """
+    given a sequence of bytes this function returns:
+        None      if the sequence is longer than 256
+        None      if there is a duplicate byte in the sequence
+        "little"  if b[i] = b[i-1] + 1 and b[0] = 0
+        "big"     if b[i] = b[i+1] + 1 and b[0] = len(b) - 1
+        "unknown" otherwise
+    """
+    if len(b) > 256:
+        return None
+    found = [False for _ in range(len(b))]
+    if int(b[0]) == 0:
+        byteorder = "little"
+    elif int(b[0]) == len(b) - 1:
+        byteorder = "big"
+    else:
+        byteorder = "unknown"
+    for i, byte in enumerate(b):
+        if int(byte) >= len(b):
+            return None
+        if found[int(byte)]:
+            return None
+        found[int(byte)] = True
+        if byteorder == "unknown":
+            continue
+
+        if byteorder == "little" and i != int(byte):
+            byteorder = "unknown"
+        elif byteorder == "big" and len(b) - i - 1 != int(byte):
+            byteorder = "unknown"
+
+    return byteorder
 
 
 def signed_le(b: bytes):
@@ -52,12 +88,12 @@ class FmtInfo:
         fmt_string: str,
         size_t_size: int = 8,
         size_t_byteorder: Literal["little", "big"] = "little",
-        no_format: bool = False,
+        formatter: Callable[[str, list[Any]], str] = lambda fmt, l: fmt.format(*l),
     ) -> None:
         self.fmt_string: str = fmt_string
         self.size_t_size: int = size_t_size
         self.size_t_byteorder: Literal["little", "big"] = size_t_byteorder
-        self.no_format: bool = no_format
+        self.formatter: Callable[[str, list[Any]], str] = formatter
         self.parsers: list[Callable[[bytes], Any]] = []
         self.param_sizes: list[int | Literal["null_terminated", "length_prefixed"]] = []
         self.file: str = ""
@@ -76,8 +112,6 @@ class FmtInfo:
         self.param_sizes.append(size)
 
     def format(self, stream: Callable[[int], bytes]):
-        if self.no_format:
-            return self.fmt_string
         args: list[Any] = []
         for parser, size in zip(self.parsers, self.param_sizes):
             match size:
@@ -106,7 +140,7 @@ class FmtInfo:
             args.append(parser(b))
 
         try:
-            formatted = self.fmt_string.format(*args)
+            formatted = self.formatter(self.fmt_string, args)
         except (IndexError, ValueError) as err:
             return args + [err]
 
@@ -121,6 +155,8 @@ class Emtrace:
         data: bytes,
         ptr_size: int = 8,
         size_t_size: int = 8,
+        null_terminated: int | None = None,
+        length_prefixed: int | None = None,
         byteorder: Literal["little", "big"] = "little",
         debug_trace: Callable[[*tuple[Any, ...]], None] = lambda *args: None,
     ) -> None:
@@ -164,6 +200,17 @@ class Emtrace:
         }
         self.ptr_size: int = ptr_size
         self.size_t_size: int = size_t_size
+
+        if length_prefixed is None:
+            self.length_prefixed: int = (2**size_t_size) - 2
+        else:
+            self.length_prefixed = length_prefixed
+
+        if null_terminated is None:
+            self.null_terminated: int = (2**size_t_size) - 1
+        else:
+            self.null_terminated = null_terminated
+
         self.data: bytes = data
         self.offset: int = 0
         self.byteorder: Literal["little", "big"] = byteorder
@@ -203,9 +250,6 @@ class Emtrace:
 
         num_args = consume_size_t()
         self.debug_trace(f"  {num_args=}")
-        no_format: bool = num_args >= 2**self.size_t_size - 2 and num_args % 2 == 1
-        if no_format:
-            num_args = 0
 
         format_offset = consume_size_t()
         type_info_offsets: list[tuple[int, int]] = []
@@ -216,6 +260,19 @@ class Emtrace:
             type_size = consume_size_t()
             self.debug_trace(f"    {type_size=}")
             type_info_offsets.append((offset_type_desc, type_size))
+
+        formatter_id = consume_size_t()
+        match formatter_id:
+            case 0:
+                formatter: Callable[[str, list[Any]], str] = lambda fmt, l: fmt.format(
+                    *l
+                )
+            case 2:
+                formatter: Callable[[str, list[Any]], str] = lambda fmt, l: fmt % tuple(
+                    x for x in l
+                )
+            case 1 | _:
+                formatter: Callable[[str, list[Any]], str] = lambda fmt, _: fmt
 
         if with_src_loc:
             file_offset = consume_size_t()
@@ -229,7 +286,7 @@ class Emtrace:
         pos = ptr + offset + format_offset
         fmt_string = consume_until()[:-1].decode("utf-8")
         self.debug_trace(f"  {fmt_string=}")
-        info: FmtInfo = FmtInfo(fmt_string, self.size_t_size, self.byteorder, no_format)
+        info: FmtInfo = FmtInfo(fmt_string, self.size_t_size, self.byteorder, formatter)
         info.add_source_info(file, line)
 
         for offset_type_desc, type_size in type_info_offsets:
@@ -241,11 +298,11 @@ class Emtrace:
             if type_desc[-1] == "*":
                 type_desc = "*"
             self.debug_trace(f"    {type_desc=}")
-            if type_size >= 2**self.size_t_size - 2:
-                if type_size % 2 == 1:
-                    type_size = "null_terminated"
-                else:
-                    type_size = "length_prefixed"
+            if type_size == self.null_terminated:
+                type_size = "null_terminated"
+            elif type_size == self.length_prefixed:
+                type_size = "length_prefixed"
+
             info.add_param(self.type_mapping[type_desc], type_size)
 
         self.debug_trace()
@@ -256,8 +313,6 @@ class Emtrace:
 def main(
     elf: Path,
     istream: Callable[[int], bytes] = sys.stdin.buffer.read,
-    ptr_size: int = 8,
-    size_t_size: int = 8,
     section_name: str = ".emtrace",
     with_src_loc: Literal["none", "absolute", "relative"] = "none",
     src_hyperlinks: bool = False,
@@ -289,26 +344,67 @@ def main(
             )
 
     trace(
-        f"Main args: {elf=} {istream=} {ptr_size=} {size_t_size=} {section_name=} {with_src_loc=} {src_hyperlinks=} {debug_script=}"
+        f"Main args: {elf=} {istream=} {section_name=} {with_src_loc=} {src_hyperlinks=} {debug_script=}"
     )
 
     magic_constant = bytes.fromhex(
         "d197f522d9269fd1ad703392f659dfd0fbecbd60971325e89201b25a385d9ec7"
     )
-    elffile = ELFFile(open(elf, "rb"))
-    section = elffile.get_section_by_name(section_name)
-    assert section is not None
-    data: bytes = section.data()
-    magic_offset = data.find(magic_constant)
-    trace(magic_offset)
-    assert magic_offset >= 0
+    fd = open(elf, "rb")
+    try:
+        elffile = ELFFile(fd)
+        section = elffile.get_section_by_name(section_name)
+        assert section is not None
+        data: bytes = section.data()
+        elffile.close()
+    except ELFError:
+        _ = fd.seek(0)
+        data: bytes = fd.read()
+        fd.close()
 
-    emtrace = Emtrace(data, ptr_size, size_t_size, debug_trace=trace)
-    elffile.close()
+    magic_offset = data.find(magic_constant)
+    trace(f"{magic_offset=}")
+    assert magic_offset >= 0
+    info_location: int = magic_offset + 32
+    rest_info_loc = int(data[info_location]) + magic_offset
+    trace(f"{info_location=} {rest_info_loc=}")
+
+    size_t_size = int(data[info_location + 1])
+    ptr_size = int(data[info_location + 2])
+    trace(f"{size_t_size=} {ptr_size=}")
+
+    byteorder_id: bytes = data[rest_info_loc : rest_info_loc + size_t_size]
+    trace(f"{byteorder_id=}")
+    byteorder = detect_byteorder(byteorder_id)
+    trace(f"detected byteorder: {byteorder}")
+    if byteorder is None or byteorder == "unknown":
+        error(
+            f"Unable to detect byteorder based on byteorder-id: {byteorder_id} ({size_t_size=})."
+        )
+        exit(0)
+
+    null_terminated: int = int.from_bytes(
+        data[rest_info_loc + size_t_size : rest_info_loc + size_t_size * 2],
+        byteorder=byteorder,
+    )
+    length_prefixed: int = int.from_bytes(
+        data[rest_info_loc + size_t_size * 2 : rest_info_loc + size_t_size * 3],
+        byteorder=byteorder,
+    )
+    trace(f"{hex(null_terminated)=} {hex(length_prefixed)=} ")
+
+    emtrace = Emtrace(
+        data,
+        ptr_size,
+        size_t_size,
+        null_terminated,
+        length_prefixed,
+        debug_trace=trace,
+    )
 
     # info = emtrace.parse_fmt_info(0)
 
-    magic_address = int.from_bytes(istream(ptr_size), byteorder="little")
+    magic_address = int.from_bytes(istream(ptr_size), byteorder=byteorder)
     trace(f"{hex(magic_address)=}")
     emtrace.set_offset(magic_offset - magic_address)
 
@@ -480,8 +576,6 @@ if __name__ == "__main__":
         const="emtrace_input.bin",
         type=dump,
     )
-    _ = parser.add_argument("--ptr-size", nargs="?", default=8, type=int)
-    _ = parser.add_argument("--size_t-size", nargs="?", default=8, type=int)
     _ = parser.add_argument("--section-name", nargs="?", default=".emtrace", type=str)
     _ = parser.add_argument(
         "--with-src-loc",
@@ -508,8 +602,6 @@ if __name__ == "__main__":
     main(
         args.elf,
         patched_input,
-        args.ptr_size,
-        args.size_t_size,
         args.section_name,
         args.with_src_loc,
         args.src_hyperlinks,
