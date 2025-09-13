@@ -3,11 +3,25 @@
 Super fast, minimal overhead, tracing / logging library for multiple languages.
 All processing of logged information (like formatting) is deferred; the
 application only sends out those bytes that are relevant to what you are trying
-to log. By default these bytes are written to stdout, but in general the output
+to log. By default this data is written to stdout, but in general the output
 channel is completely customizable.
 
 Designed for low-latency, deeply-embedded, as well as bandwidth-constrained
-tasks.
+applications.
+
+## How it works
+
+All information needed to display the trace is written, at compile time, to a
+dedicated section of the output binary (`.emtrace` section by default, currently
+only supports ELF executables). Only data that can change at runtime is actually
+(barely) processed then, and sent out along with a pointer to associate it to
+the right piece of format information in this dedicated section. The section can
+be completely removed (or made no-load) from the final binary (e.g. with
+objcopy), and the program will still run.
+
+The [post-processing script](./emtrace.py) takes the data output by the program
+while running and the data from the special `.emtrace` section, and produces the
+log.
 
 ## TODO
 
