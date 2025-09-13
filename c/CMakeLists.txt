@@ -11,11 +11,15 @@ add_library(emtrace::emtrace ALIAS emtrace)
 
 # add_executable(emtrace ./emtrace.cpp)
 # target_link_libraries(blub fmt)
-add_compile_options(-fsanitize=thread)
-add_link_options(-fsanitize=thread)
-add_executable(test_c test/test.c)
+
+add_executable(test_c demos/test.c)
 target_link_libraries(test_c PRIVATE emtrace::emtrace)
-add_executable(test_c_socket test/test_socket.c)
+
+add_executable(test_c_socket demos/test_socket.c)
 target_link_libraries(test_c_socket PRIVATE emtrace::emtrace)
-add_executable(test_threads test/test_threads.cpp)
+
+add_executable(test_threads demos/test_threads.cpp)
 target_link_libraries(test_threads PRIVATE emtrace::emtrace)
+target_compile_options(test_threads PRIVATE -fsanitize=thread)
+target_link_options(test_threads PRIVATE -fsanitize=thread)
+
