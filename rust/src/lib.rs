@@ -6,8 +6,8 @@ pub union Transmute<T: Copy, U: Copy> {
     pub to: U,
 }
 
-pub const NULL_TERMINATED: usize = 1usize << (size_of::<usize>() * 8 - 1);
-pub const LENGTH_PREFIXED: usize = 1usize << (size_of::<usize>() * 8 - 2);
+pub const NULL_TERMINATED: usize = 1usize << (usize::BITS - 1);
+pub const LENGTH_PREFIXED: usize = 1usize << (usize::BITS - 2);
 pub const PY_FORMAT: usize = 0;
 pub const NO_FORMAT: usize = 1;
 pub const C_STYLE_FORMAT: usize = 2;
@@ -34,7 +34,7 @@ impl Out for StdoutLock<'_> {
     fn begin(&mut self, _info_addr: usize, _total_size: usize) {}
 }
 
-impl<'a> Out for &mut Vec<u8> {
+impl Out for &mut Vec<u8> {
     fn out(&mut self, b: &[u8]) {
         self.extend_from_slice(b);
     }
@@ -60,7 +60,7 @@ impl Trace for &str {
         f.out(self.as_bytes());
     }
     fn size(&self) -> usize {
-        self.as_bytes().len()
+        self.len()
     }
 }
 
