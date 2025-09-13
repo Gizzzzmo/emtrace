@@ -2,6 +2,9 @@
 
 current_preset := "rel"
 
+ruff *ARGS:
+    ruff {{ARGS}}
+
 alias c := cargo
 
 cargo *ARGS:
@@ -25,8 +28,6 @@ cargo-clippy *ARGS: (cargo "clippy" "--" "--remap-path-prefix src/=$(pwd)/src/" 
 
 alias clippy := cargo-clippy
 
-test: (cargo "test" "--" "--nocapture") (ctest ) 
-
 configure PRESET=current_preset: (cmake "--preset" PRESET)
     
 alias conf := configure
@@ -36,7 +37,10 @@ cbuild PRESET=current_preset: (cmake "--build" "--preset" PRESET)
 alias cb := cbuild
 
 [parallel]
-format: (cargo "fmt") clang-format
+test: (cargo "test" "--" "--nocapture") (ctest) 
+
+[parallel]
+format: (ruff "format" ".") (cargo "fmt") clang-format
 
 alias fmt := format
 
