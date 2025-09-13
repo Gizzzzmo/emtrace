@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [[bin]]
-name = "test_stdout"
+name = "demo_stdout"
 test = false
 
 [dependencies]
