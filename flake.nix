@@ -37,6 +37,8 @@
           ruff
           rustup
           xxd
+          just
+          gersemi
         ];
       in
         with pkgs; {

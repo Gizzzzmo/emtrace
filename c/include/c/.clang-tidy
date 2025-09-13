@@ -1,0 +1,9 @@
+InheritParentConfig: true
+CheckOptions:
+  readability-identifier-naming.FunctionPrefix: emt_
+  readability-identifier-naming.TypedefPrefix: emt_
+  readability-identifier-naming.EnumPrefix: emt_
+  readability-identifier-naming.StructPrefix: emt_
+  readability-identifier-naming.MacroDefinitionPrefix: EMT_
+  readability-identifier-naming.EnumConstantPrefix: EMT_
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "(EMTRACE_F|EMTRACE|EMTRACE_S|EMTRACELN|EMTRACELN_F|EMTRACELN_S|EMTRACE_INIT|EMTRACE_.*_H)"

@@ -1,0 +1,14 @@
+CompileFlags:
+  Add:
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+    - -Wconversion
+    - -Wmissing-prototypes
+  Remove: -W*
+  CompilationDatabase: build/
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: None
+  ClangTidy:
+    FastCheckFilter: Strict

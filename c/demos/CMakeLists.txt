@@ -1,5 +1,8 @@
-add_executable(demo demo.c)
+add_executable(demo demo.cpp)
 target_link_libraries(demo PRIVATE emtrace::emtrace)
+
+add_executable(demo_cpp demo.c)
+target_link_libraries(demo_cpp PRIVATE emtrace::emtrace)
 
 add_executable(demo_c_socket demo_socket.c)
 target_link_libraries(demo_c_socket PRIVATE emtrace::emtrace)

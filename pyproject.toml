@@ -1,0 +1,9 @@
+[build-system]
+requires = ["pyelftools >= 0.32"]
+
+[tool.pyright]
+reportAny = false
+reportExplicitAny = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false

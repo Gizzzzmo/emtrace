@@ -1,25 +1,43 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(emtrace)
+set(EMTRACE_ENABLE_DEMOS ON CACHE BOOL "Build demos")
+set(EMTRACE_ENABLE_TESTS ON CACHE BOOL "Build tests")
+set(EMTRACE_ENABLE_CXX ON CACHE BOOL "Enable dedicated C++ integration")
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(LANGUAGES C)
+if(EMTRACE_ENABLE_CXX)
+    list(APPEND LANGUAGES CXX)
+endif()
+if(NOT EMTRACE_ENABLE_DEMOS AND NOT EMTRACE_ENABLE_TESTS)
+    set(LANGUAGES "")
+endif()
 
-add_library(emtrace INTERFACE)
-target_include_directories(emtrace INTERFACE include)
+project(emtrace LANGUAGES ${LANGUAGES})
+
+if(EMTRACE_ENABLE_CXX)
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
+add_library(emtrace INTERFACE ./include/c/include/emtrace/emtrace.h)
+target_include_directories(emtrace INTERFACE ./include/c/include)
 add_library(emtrace::emtrace ALIAS emtrace)
 
-# add_executable(emtrace ./emtrace.cpp)
-# target_link_libraries(blub fmt)
+if(EMTRACE_ENABLE_DEMOS)
+    add_subdirectory(demos)
+endif()
 
-add_executable(test_c demos/test.c)
-target_link_libraries(test_c PRIVATE emtrace::emtrace)
-
-add_executable(test_c_socket demos/test_socket.c)
-target_link_libraries(test_c_socket PRIVATE emtrace::emtrace)
-
-add_executable(test_threads demos/test_threads.cpp)
-target_link_libraries(test_threads PRIVATE emtrace::emtrace)
-target_compile_options(test_threads PRIVATE -fsanitize=thread)
-target_link_options(test_threads PRIVATE -fsanitize=thread)
-
+if(
+    PROJECT_IS_TOP_LEVEL
+    AND CMAKE_EXPORT_COMPILE_COMMANDS
+    AND NOT ${CMAKE_BINARY_DIR}/compile_commands.json
+        STREQUAL
+        ${CMAKE_SOURCE_DIR}/build/compile_commands.json
+)
+    execute_process(
+        COMMAND
+            ${CMAKE_COMMAND} -E create_symlink
+            ${CMAKE_BINARY_DIR}/compile_commands.json
+            ${CMAKE_SOURCE_DIR}/build/compile_commands.json
+    )
+endif()

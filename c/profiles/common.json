@@ -1,0 +1,21 @@
+{
+    "$schema": "https://cmake.org/cmake/help/v3.28/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "gnu-flags",
+            "displayName": "GNU Flags",
+            "description": "Default flags to compile with gcc and clang",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_C_FLAGS_DEBUG": "-ggdb -O0 -fsanitize=undefined",
+                "CMAKE_CXX_FLAGS_DEBUG": "-ggdb -O0 -fsanitize=undefined",
+                "CMAKE_C_FLAGS_RELEASE": "-ggdb -O3",
+                "CMAKE_CXX_FLAGS_RELEASE": "-ggdb -O3",
+                "CMAKE_C_FLAGS_RELWITHDEBINFO": "-ggdb -O3 -fsanitize=undefined",
+                "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-ggdb -O3 -fsanitize=undefined"
+            }
+        }
+    ]
+}

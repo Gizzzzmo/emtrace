@@ -1,0 +1,4 @@
+InheritParentConfig: true
+CheckOptions:
+  readability-identifier-naming.MacroDefinitionPrefix: EMT_
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "(EMTRACE_F|EMTRACE|EMTRACE_S|EMTRACELN|EMTRACELN_F|EMTRACELN_S|EMTRACE_INIT|EMTRACE_.*_H)"

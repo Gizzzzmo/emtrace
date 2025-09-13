@@ -1,0 +1,32 @@
+Checks: >
+  -clang-analyzer-*,
+  clang-diagnostic-*,
+  bugprone-*,
+  modernize-*,-modernize-macro-to-enum,
+  readability-*,-readability-identifier-length,-readability-magic-numbers,
+  llvm-header-guard
+
+WarningsAsErrors: ""
+HeaderFileExtensions: ["", "h", "hh", "hpp", "hxx"]
+ImplementationFileExtensions: ["c", "cc", "cpp", "cxx"]
+HeaderFilterRegex: ".*"
+ExcludeHeaderFilterRegex: "/nix/.*"
+SystemHeaders: false
+InheritParentConfig: false
+ExtraArgsBefore:
+  - -Wall
+  - -Wextra
+  - -Wpedantic
+  - -Wconversion
+  - -Wmissing-prototypes
+
+CheckOptions:
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.GlobalFunctionPrefix: emt_
+  readability-identifier-naming.GlobalVariablePrefix: g_emt_
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.TypedefCase: lower_case
+  readability-identifier-naming.TypedefSuffix: _t
+  readability-identifier-naming.EnumConstantCase: UPPER_CASE
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+  readability-function-cognitive-complexity.IgnoreMacros: true

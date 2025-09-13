@@ -1,0 +1,47 @@
+{
+    "$schema": "https://cmake.org/cmake/help/v3.28/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+    "version": 8,
+    "include": [
+        "profiles/CMakeProfiles.json"
+    ],
+    "configurePresets": [
+        {
+            "name": "dbg",
+            "displayName": "Debug",
+            "description": "Build demos and tests with debug info, assertions enabled, optimizations disabled",
+            "inherits": "user-config"
+        },
+        {
+            "name": "rel",
+            "displayName": "Release",
+            "description": "Build demos and tests with debug info, assertions disabled, optimizations enabled",
+            "inherits": "user-config"
+        },
+        {
+            "name": "opt-dbg",
+            "displayName": "Optimized with Debug",
+            "description": "Build demos and tests with debug info, assertions enabled, optimizations enabled",
+            "inherits": "user-config"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "dbg",
+            "displayName": "Debug",
+            "description": "Build demos and tests with debug info, assertions enabled, optimizations disabled",
+            "configurePreset": "dbg"
+        },
+        {
+            "name": "rel",
+            "displayName": "Release",
+            "description": "Build demos and tests with debug info, assertions disabled, optimizations enabled",
+            "configurePreset": "rel"
+        },
+        {
+            "name": "opt-dbg",
+            "displayName": "Optimized with Debug",
+            "description": "Build demos and tests with debug info, assertions enabled, optimizations enabled",
+            "configurePreset": "opt-dbg"
+        }
+    ]
+}

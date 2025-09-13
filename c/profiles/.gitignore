@@ -1,0 +1,6 @@
+/*.json
+!/CMakeProfilesSample.json
+!/common.json
+!/ci*.json
+!/nix*.json
+
