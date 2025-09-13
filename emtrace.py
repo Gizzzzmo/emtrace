@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 
 from typing import Callable, Literal, Any, override
-from elftools.elf.elffile import ELFFile
-from elftools.common.exceptions import ELFError
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentTypeError
 from pathlib import Path
 import sys
 import re
 import os
 import socket
+
+try:
+    from elftools.elf.elffile import ELFFile
+    from elftools.common.exceptions import ELFError
+except Exception:
+    ELFFile: None | type = None
+    ELFError: type[Exception] = Exception
+    pass
 
 
 def detect_byteorder(b: bytes) -> Literal["little", "big", "unknown"] | None:
@@ -268,11 +274,9 @@ class Emtrace:
                     *l
                 )
             case 2:
-                formatter: Callable[[str, list[Any]], str] = lambda fmt, l: fmt % tuple(
-                    x for x in l
-                )
+                formatter = lambda fmt, l: fmt % tuple(x for x in l)
             case 1 | _:
-                formatter: Callable[[str, list[Any]], str] = lambda fmt, _: fmt
+                formatter = lambda fmt, _: fmt
 
         if with_src_loc:
             file_offset = consume_size_t()
@@ -318,7 +322,7 @@ def main(
     src_hyperlinks: bool = False,
     debug_script: bool = False,
 ):
-    def error(*args, **kwargs):
+    def error(*args: Any, **kwargs: Any):
         print(
             " ".join(
                 [
@@ -330,7 +334,7 @@ def main(
             **kwargs,
         )
 
-    def trace(*args, **kwargs):
+    def trace(*args: Any, **kwargs: Any):
         if debug_script:
             print(
                 " ".join(
@@ -347,24 +351,31 @@ def main(
         f"Main args: {elf=} {istream=} {section_name=} {with_src_loc=} {src_hyperlinks=} {debug_script=}"
     )
 
-    magic_constant = bytes.fromhex(
-        "d197f522d9269fd1ad703392f659dfd0fbecbd60971325e89201b25a385d9ec7"
-    )
     fd = open(elf, "rb")
+
     try:
+        if ELFFile is None:
+            trace("pyelftools was not found")
+            raise ELFError
         elffile = ELFFile(fd)
         section = elffile.get_section_by_name(section_name)
-        assert section is not None
         data: bytes = section.data()
         elffile.close()
     except ELFError:
+        trace("Could not interpret file as ELF, reading raw binary...")
         _ = fd.seek(0)
-        data: bytes = fd.read()
+        data = fd.read()
         fd.close()
 
+    magic_constant = bytes.fromhex(
+        "d197f522d9269fd1ad703392f659dfd0fbecbd60971325e89201b25a385d9ec7"
+    )
     magic_offset = data.find(magic_constant)
     trace(f"{magic_offset=}")
-    assert magic_offset >= 0
+    if magic_offset == -1:
+        trace(
+            "emtrac magic constant not found. Assuming info lies at beginning of section / data."
+        )
     info_location: int = magic_offset + 32
     rest_info_loc = int(data[info_location]) + magic_offset
     trace(f"{info_location=} {rest_info_loc=}")
@@ -608,4 +619,4 @@ if __name__ == "__main__":
         args.debug_script,
     )
     # flush
-    args.dump_input[1]()
+    _ = args.dump_input[1]()
