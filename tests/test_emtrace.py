@@ -11,6 +11,12 @@ from pathlib import Path
 # For Rust demos, you can build them with `just cargo build`.
 C_TEST_EXECUTABLES = [
     "test/test_basic",
+    "test/test_integers",
+    "test/test_strings",
+    "test/test_doubles",
+    "test/test_mixed",
+    "test/test_edge_cases",
+    "test/test_large_numbers",
 ]
 
 C_BUILD_DIRS = [
@@ -23,6 +29,12 @@ RUST_TEST_EXECUTABLES = [
     "test_basic",
     "test_bool",
     "test_f32",
+    "test_integers",
+    "test_strings",
+    "test_doubles",
+    "test_mixed",
+    "test_edge_cases",
+    "test_large_numbers",
 ]
 
 RUST_BUILD_DIRS = [

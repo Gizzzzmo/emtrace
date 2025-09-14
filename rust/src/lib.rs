@@ -82,7 +82,7 @@ macro_rules! impl_trace_for_primitive {
     };
 }
 
-impl_trace_for_primitive!(i8, "signed");
+impl_trace_for_primitive!(i8, "signed char");
 impl_trace_for_primitive!(i16, "signed");
 impl_trace_for_primitive!(i32, "signed");
 impl_trace_for_primitive!(i64, "signed");

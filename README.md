@@ -24,7 +24,7 @@ the data from the special `.emtrace` section, and produces the log.
 - [x] add basic documentation
 - [ ] add license
 - [ ] add usage examples to documentation
-- [ ] add basic tests
+- [x] add basic tests
 - [ ] push to github and add CI pipeline (github actions?)
 - [ ] add dedicated C++ implementation
 - [ ] add CMake profile-switching to justfile
