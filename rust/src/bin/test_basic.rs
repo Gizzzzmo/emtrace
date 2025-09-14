@@ -1,13 +1,12 @@
-use emtrace::{Out, magic_address_bytes, trace, traceln};
+use emtrace::{Out, expect, magic_address_bytes, trace, traceln};
 use std::io::{Write, stdout};
 
-#[unsafe(link_section = ".emtrace.test.expected")]
-static EXPECTED_OUTPUT: [u8; 61] =
-    *b"Hello from the basic test!\nAn integer: 42\nA string: a string\n";
-
 fn main() {
-    // Prevent the linker from optimizing away the EXPECTED_OUTPUT section.
-    let _ = unsafe { std::ptr::read_volatile(&EXPECTED_OUTPUT) };
+    expect!(
+        b"Hello from the basic test!\n\
+          An integer: 42\n\
+          A string: a string\n"
+    );
 
     stdout().lock().write_all(&magic_address_bytes()).unwrap();
     traceln!("Hello from the basic test!");

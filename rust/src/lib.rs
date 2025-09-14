@@ -340,6 +340,22 @@ macro_rules! traceln {
     };
 }
 
+#[macro_export]
+macro_rules! expect {
+    ($expected:literal, .section=$section:literal) => {
+        {
+            const LEN: usize = $expected.len();
+            #[unsafe(link_section = $section)]
+            #[unsafe(no_mangle)]
+            static EXPECTED_OUTPUT: [u8; LEN] = *$expected;
+            let _ = unsafe { std::ptr::read_volatile(&EXPECTED_OUTPUT) };
+        }
+    };
+    ($expected:literal) => {
+        expect!($expected, .section=".emtrace.test.expected")
+    };
+}
+
 const MAGIC_SIZE: usize = 35 + 3 * size_of::<usize>();
 #[unsafe(link_section = ".emtrace")]
 #[used]
