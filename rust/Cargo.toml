@@ -1,9 +1,41 @@
 [package]
 name = "emtrace"
+description = "Minimal overhead tracing/logging library for embedded, and resource constrained projects."
 version = "0.1.0"
 edition = "2024"
+authors = ["Jonas Beyer"]
+readme = "../README.md"
+repository = "https://github.com/Gizzzzmo/emtrace"
+license = "Apache-2.0"
 
-[[bin]]
+[[example]]
+name = "test_basic"
+
+[[example]]
+name = "test_bool"
+
+[[example]]
+name = "test_doubles"
+
+[[example]]
+name = "test_edge_cases"
+
+[[example]]
+name = "test_f32"
+
+[[example]]
+name = "test_integers"
+
+[[example]]
+name = "test_large_numbers"
+
+[[example]]
+name = "test_mixed"
+
+[[example]]
+name = "test_strings"
+
+[[example]]
 name = "demo_stdout"
 test = false
 

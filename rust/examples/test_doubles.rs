@@ -3,8 +3,8 @@ use std::io::{Write, stdout};
 
 fn main() {
     expect!(
-        b"Doubles: 3.14159 2.71828 nan inf -inf\n\
-          3.141590 2.718280 nan inf -inf\n\
+        b"Doubles: 3.141592653589793 2.718281828459045 nan inf -inf\n\
+          3.141593 2.718282 nan inf -inf\n\
           Extreme values: 1.7976931348623157e+308 2.2250738585072014e-308\n"
     );
 

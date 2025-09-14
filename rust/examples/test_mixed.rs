@@ -13,7 +13,7 @@ fn main() {
     // Test mixing different types in one trace
     traceln!("Mixed types: {} {} {} {}",
         i32: 42,
-        f32: f32::from_bits(0x40490001), // 3.140000104904175 as exact f32 bits
+        f32: 3.140000104904175f32,
         bool: true,
         &str: "hello"
     );
