@@ -1,5 +1,19 @@
+[project]
+name = "emtrace"
+version = "0.1.0"
+description = "A tool to parse and format emtrace data."
+dependencies = [
+    "pyelftools>=0.31",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.2.2",
+]
+
 [build-system]
-requires = ["pyelftools >= 0.32"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.pyright]
 reportAny = false
