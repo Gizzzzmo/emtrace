@@ -36,16 +36,23 @@ cbuild PRESET=current_preset: (cmake "--build" "--preset" PRESET)
 
 alias cb := cbuild
 
-[parallel]
-test: (cargo "test" "--" "--nocapture") (ctest) 
+alejandra *ARGS:
+    alejandra $(git ls-files | grep "\\.nix$") {{ARGS}}
+
+mdformat *ARGS:
+    mdformat $(git ls-files | grep "\\.md$") {{ARGS}}
 
 [parallel]
-format: (ruff "format" ".") (cargo "fmt") clang-format
+test: (cargo "test" "--" "--nocapture") (ctest "--preset" current_preset)
+    pytest
+
+[parallel]
+format: (ruff "format" ".") (cargo "fmt") clang-format alejandra mdformat
 
 alias fmt := format
 
 [parallel]
-lint: cargo-clippy (clang-tidy "--use-color")
+lint: (ruff "check") cargo-clippy (clang-tidy "--use-color")
 
 [parallel]
 build: (cargo "build") cbuild
