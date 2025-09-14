@@ -8,6 +8,7 @@ import sys
 import re
 import os
 import socket
+import struct
 
 try:
     from elftools.elf.elffile import ELFFile
@@ -75,6 +76,31 @@ def unsigned_be(b: bytes) -> int:
 def string(b: bytes) -> str:
     """Interpret bytes as a UTF-8 string."""
     return b.decode("utf-8")
+
+
+def to_bool(b: bytes) -> bool:
+    """Interpret a byte as a bool."""
+    return b[0] != 0
+
+
+def float_le(b: bytes) -> float:
+    """Interpret bytes as a little-endian float."""
+    return struct.unpack("<f", b)[0]
+
+
+def double_le(b: bytes) -> float:
+    """Interpret bytes as a little-endian double."""
+    return struct.unpack("<d", b)[0]
+
+
+def float_be(b: bytes) -> float:
+    """Interpret bytes as a big-endian float."""
+    return struct.unpack(">f", b)[0]
+
+
+def double_be(b: bytes) -> float:
+    """Interpret bytes as a big-endian double."""
+    return struct.unpack(">d", b)[0]
 
 
 class Char:
@@ -190,6 +216,8 @@ class Emtrace:
         """Initialize the Emtrace parser."""
         unsigned = unsigned_le if byteorder == "little" else unsigned_be
         signed = signed_le if byteorder == "little" else signed_be
+        float32 = float_le if byteorder == "little" else float_be
+        float64 = double_le if byteorder == "little" else double_be
         self.type_mapping: dict[str, Callable[[bytes], Any]] = {
             # signed
             "signed": signed,
@@ -225,6 +253,11 @@ class Emtrace:
             "*": unsigned,
             # string
             "string": string,
+            # other
+            "bool": to_bool,
+            "_Bool": to_bool,
+            "float": float32,
+            "double": float64,
         }
         self.ptr_size: int = ptr_size
         self.size_t_size: int = size_t_size
