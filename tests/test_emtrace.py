@@ -19,10 +19,15 @@ C_BUILD_DIRS = [
     "../c/build/clang/opt-dbg",
 ]
 
-RUST_TEST_EXECUTABLES = []
+RUST_TEST_EXECUTABLES = [
+    "test_basic",
+    "test_bool",
+    "test_f32",
+]
 
 RUST_BUILD_DIRS = [
     "../rust/target/debug",
+    "../rust/target/release",
 ]
 
 TEST_EXECUTABLES: list[Path] = []
@@ -89,8 +94,8 @@ def test_emtrace_on_executable(executable_path_str: str):
             "\n".join(
                 [
                     f"emtrace.py failed for {executable_path_str} with exit code {e.returncode}:",
-                    f"STDOUT:\n{e.stdout.decode()}",
                     f"STDERR:\n{e.stderr.decode()}",
+                    f"STDOUT:\n{e.stdout.decode()}",
                 ]
             ),
             pytrace=False,
