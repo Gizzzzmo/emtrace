@@ -5,6 +5,9 @@ current_preset := "rel"
 ruff *ARGS:
     ruff {{ARGS}}
 
+pytest *ARGS:
+    pytest {{ARGS}}
+
 alias c := cargo
 
 cargo *ARGS:
@@ -43,8 +46,7 @@ mdformat *ARGS:
     mdformat $(git ls-files | grep "\\.md$") {{ARGS}}
 
 [parallel]
-test: (cargo "test" "--" "--nocapture") (ctest "--preset" current_preset)
-    pytest
+test: (cargo "test" "--" "--nocapture") (ctest "--preset" current_preset) (pytest "-rs")
 
 [parallel]
 format: (ruff "format" ".") (cargo "fmt") clang-format alejandra mdformat
