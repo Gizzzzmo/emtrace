@@ -2,7 +2,7 @@
 
 ## Build/Test Commands
 
-- **Create Dev environment**: `nix develop`
+- **Run commands in dev environment**: `nix develop --command <command>`
 - **CMake build**: `just conf <preset>`
 - **CMake build**: `just cb <preset>`
 - **Rust build**: `just cargo build`
