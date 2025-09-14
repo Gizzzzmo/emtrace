@@ -320,7 +320,7 @@ macro_rules! trace {
 macro_rules! traceln {
     ($fmt:literal $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .out = $out:expr)?$(, .formatter=$formatter:expr)?)
      => {
-        $crate::trace!($fmt "\n" $(, $($types: $args)+)? $(, .section = $section)? $(, .out = $out)? $(, .formatter=$formatter)?)
+        $crate::trace!($fmt "\n" $(, $($types: $args),+)? $(, .section = $section)? $(, .out = $out)? $(, .formatter=$formatter)?)
     };
 }
 
