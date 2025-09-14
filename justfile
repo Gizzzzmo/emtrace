@@ -19,8 +19,8 @@ cmake *ARGS:
 ctest *ARGS:
     cd c && ctest {{ARGS}}
 
-clang-format:
-    clang-format -i $(git ls-files c | grep "\.\(h\|hpp\|c\|.cpp\)$")
+clang-format *ARGS:
+    clang-format $(git ls-files c | grep "\.\(h\|hpp\|c\|.cpp\)$") {{ARGS}}
 
 clang-tidy *ARGS:
     cd c && clang-tidy -p build/compile_commands.json $(git ls-files . | grep "\.\(c\|.cpp\)$") {{ARGS}}
@@ -49,12 +49,12 @@ mdformat *ARGS:
 test: (cargo "test" "--" "--nocapture") (ctest "--preset" current_preset) (pytest "-rs")
 
 [parallel]
-format: (ruff "format" ".") (cargo "fmt") clang-format alejandra mdformat
+format: (ruff "format" ".") (cargo "fmt") (clang-format "-i") alejandra mdformat
 
 alias fmt := format
 
 [parallel]
-lint: (ruff "check") cargo-clippy (clang-tidy "--use-color")
+lint: (ruff "check") cargo-clippy (clang-tidy "--use-color") (clang-format "--dry-run" "-Werror")
 
 [parallel]
 build: (cargo "build") cbuild
