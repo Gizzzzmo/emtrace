@@ -1,5 +1,5 @@
-#ifndef EMTRACE_TEST_UTILS_H
-#define EMTRACE_TEST_UTILS_H
+#ifndef TEST_UTILS_H
+#define TEST_UTILS_H
 
 #ifdef __GNUC__
 #define EMT_TEST_EXPECTED_SECTION __attribute__((section(".emtrace.test.expected"), used))
@@ -7,4 +7,4 @@
 #define EMT_TEST_EXPECTED_SECTION
 #endif
 
-#endif // EMTRACE_TEST_UTILS_H
+#endif // TEST_UTILS_H
