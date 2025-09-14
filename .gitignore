@@ -1,2 +1,3 @@
 .direnv
 .cache
+__pycache__
