@@ -38,19 +38,21 @@ RUST_TEST_EXECUTABLES = [
 ]
 
 RUST_BUILD_DIRS = [
-    "../rust/target/debug",
-    "../rust/target/release",
+    "../rust/target/debug/examples/",
+    "../rust/target/release/examples/",
 ]
 
 TEST_EXECUTABLES: list[Path] = []
 
 for build_dir in RUST_BUILD_DIRS:
     for test_exe in RUST_TEST_EXECUTABLES:
-        TEST_EXECUTABLES.append(Path(build_dir) / test_exe)
+        TEST_EXECUTABLES.append(Path(__file__).parent.resolve() / build_dir / test_exe)
 
 for build_dir in C_BUILD_DIRS:
     for test_exe in C_TEST_EXECUTABLES:
-        TEST_EXECUTABLES.append(Path(build_dir) / test_exe)
+        TEST_EXECUTABLES.append(Path(__file__).parent.resolve() / build_dir / test_exe)
+
+print(TEST_EXECUTABLES)
 
 
 @pytest.mark.parametrize("executable_path_str", TEST_EXECUTABLES)
