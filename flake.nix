@@ -39,6 +39,7 @@
           xxd
           just
           gersemi
+          python313Packages.pytest
         ];
       in
         with pkgs; {
