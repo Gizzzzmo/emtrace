@@ -96,11 +96,27 @@ impl_trace_for_primitive!(u64, "unsigned");
 impl_trace_for_primitive!(u128, "unsigned");
 impl_trace_for_primitive!(usize, "unsigned");
 
+impl_trace_for_primitive!(f32, "float");
+impl_trace_for_primitive!(f64, "double");
+
+impl Trace for bool {
+    const SIZE: usize = std::mem::size_of::<u8>();
+    const ID: &'static str = "bool";
+
+    fn serialize<O: Out>(&self, f: &mut O) {
+        f.out(&[*self as u8]);
+    }
+
+    fn size(&self) -> usize {
+        std::mem::size_of::<u8>()
+    }
+}
+
 #[macro_export]
 macro_rules! count {
-        () => (0usize);
-        ( $x:tt $($xs:tt)* ) => (1usize + $crate::count!($($xs)*));
-    }
+    () => (0usize);
+    ( $x:tt $($xs:tt)* ) => (1usize + $crate::count!($($xs)*));
+}
 
 /// Emit a trace.
 /// The format string is the concatenation of all string literals before the first comma.
