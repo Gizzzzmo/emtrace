@@ -1,5 +1,6 @@
 use std::io::StdoutLock;
 use std::io::Write;
+use std::mem::size_of;
 
 pub union Transmute<T: Copy, U: Copy> {
     pub from: T,
@@ -64,44 +65,36 @@ impl Trace for &str {
     }
 }
 
-impl Trace for i32 {
-    const SIZE: usize = size_of::<Self>();
-    const ID: &'static str = "signed";
-    fn serialize<O: Out>(&self, f: &mut O) {
-        unsafe {
-            let bytes = Transmute::<&Self, &[u8; size_of::<Self>()]> { from: self }.to;
-            f.out(bytes);
+macro_rules! impl_trace_for_primitive {
+    ($type:ty, $id:expr) => {
+        impl Trace for $type {
+            const SIZE: usize = std::mem::size_of::<Self>();
+            const ID: &'static str = $id;
+
+            fn serialize<O: Out>(&self, f: &mut O) {
+                f.out(&self.to_ne_bytes());
+            }
+
+            fn size(&self) -> usize {
+                std::mem::size_of::<Self>()
+            }
         }
-    }
-    fn size(&self) -> usize {
-        size_of::<Self>()
-    }
+    };
 }
 
-impl Trace for usize {
-    const SIZE: usize = size_of::<Self>();
-    const ID: &'static str = "unsigned";
-    fn serialize<O: Out>(&self, f: &mut O) {
-        unsafe {
-            let bytes = Transmute::<&Self, &[u8; size_of::<Self>()]> { from: self }.to;
-            f.out(bytes);
-        }
-    }
-    fn size(&self) -> usize {
-        size_of::<Self>()
-    }
-}
+impl_trace_for_primitive!(i8, "signed");
+impl_trace_for_primitive!(i16, "signed");
+impl_trace_for_primitive!(i32, "signed");
+impl_trace_for_primitive!(i64, "signed");
+impl_trace_for_primitive!(i128, "signed");
+impl_trace_for_primitive!(isize, "signed");
 
-impl Trace for u8 {
-    const SIZE: usize = size_of::<u8>();
-    const ID: &'static str = "char";
-    fn serialize<O: Out>(&self, f: &mut O) {
-        f.out(&[*self]);
-    }
-    fn size(&self) -> usize {
-        size_of::<u8>()
-    }
-}
+impl_trace_for_primitive!(u8, "char");
+impl_trace_for_primitive!(u16, "unsigned");
+impl_trace_for_primitive!(u32, "unsigned");
+impl_trace_for_primitive!(u64, "unsigned");
+impl_trace_for_primitive!(u128, "unsigned");
+impl_trace_for_primitive!(usize, "unsigned");
 
 #[macro_export]
 macro_rules! count {
