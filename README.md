@@ -22,7 +22,7 @@ the data from the special `.emtrace` section, and produces the log.
 ## TODO
 
 - [x] add basic documentation
-- [ ] add license
+- [x] add license
 - [ ] add usage examples to documentation
 - [x] add basic tests
 - [ ] push to github and add CI pipeline (github actions?)
