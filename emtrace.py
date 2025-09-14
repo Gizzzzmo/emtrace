@@ -103,6 +103,26 @@ def double_be(b: bytes) -> float:
     return struct.unpack(">d", b)[0]
 
 
+class SChar:
+    """A wrapper for a single byte that can be formatted as a character or an integer."""
+
+    def __init__(self, value: bytes) -> None:
+        """Initialize the Char with a single byte."""
+        self.value: int = value[0]
+        if self.value >= 128:
+            self.value -= 256
+
+    @override
+    def __format__(self, format_spec: str, /) -> str:
+        if len(format_spec) == 0 or not format_spec[-1].isalpha():
+            return ("{:" + format_spec + "c}").format(self.value)
+        return ("{:" + format_spec + "}").format(self.value)
+
+    @override
+    def __repr__(self) -> str:
+        return f"char({hex(self.value)})"
+
+
 class Char:
     """A wrapper for a single byte that can be formatted as a character or an integer."""
 
@@ -233,11 +253,14 @@ class Emtrace:
             "short": signed,
             "signed short": signed,
             "int16_t": signed,
+            "ssize_t": signed,
             "ptrdiff_t": signed,
             "intptr_t": signed,
             # char
+            "signed char": SChar,
+            "int8_t": SChar,
+            "unsigned char": Char,
             "char": Char,
-            "int8_t": Char,
             "uint8_t": Char,
             # unsigned
             "unsigned": unsigned,
