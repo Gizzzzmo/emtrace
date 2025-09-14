@@ -139,7 +139,8 @@ macro_rules! count {
 /// ```
 #[macro_export]
 macro_rules! trace {
-    ($($fmt:literal)+ $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .out = $out:expr)? $(, .formatter=$formatter:expr)?) => {
+    ($($fmt:literal)+ $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .out = $out:expr)? $(, .formatter=$formatter:expr)?)
+     => {
         {
             const FMT: &str = std::concat!($($fmt,)+);
             const NUM_PREFIX: usize = 5;
@@ -324,7 +325,8 @@ macro_rules! trace {
 
 #[macro_export]
 macro_rules! traceln {
-    ($fmt:literal $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .out = $out:expr)?$(, .formatter=$formatter:expr)?) => {
+    ($fmt:literal $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .out = $out:expr)?$(, .formatter=$formatter:expr)?)
+     => {
         $crate::trace!($fmt "\n" $(, $($types: $args)+)? $(, .section = $section)? $(, .out = $out)? $(, .formatter=$formatter)?)
     };
 }

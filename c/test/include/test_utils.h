@@ -1,0 +1,10 @@
+#ifndef EMTRACE_TEST_UTILS_H
+#define EMTRACE_TEST_UTILS_H
+
+#ifdef __GNUC__
+#define EMT_TEST_EXPECTED_SECTION __attribute__((section(".emtrace.test.expected"), used))
+#else
+#define EMT_TEST_EXPECTED_SECTION
+#endif
+
+#endif // EMTRACE_TEST_UTILS_H

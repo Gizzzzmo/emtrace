@@ -43,5 +43,25 @@
             "description": "Build demos and tests with debug info, assertions enabled, optimizations enabled",
             "configurePreset": "opt-dbg"
         }
+    ],
+    "testPresets": [
+        {
+            "name": "dbg",
+            "displayName": "Debug",
+            "description": "Test demos and tests with debug info, assertions enabled, optimizations disabled",
+            "configurePreset": "dbg"
+        },
+        {
+            "name": "rel",
+            "displayName": "Release",
+            "description": "Test demos and tests with debug info, assertions disabled, optimizations enabled",
+            "configurePreset": "rel"
+        },
+        {
+            "name": "opt-dbg",
+            "displayName": "Optimized with Debug",
+            "description": "Test demos and tests with debug info, assertions enabled, optimizations enabled",
+            "configurePreset": "opt-dbg"
+        }
     ]
 }

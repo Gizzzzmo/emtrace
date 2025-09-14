@@ -15,6 +15,7 @@ endif()
 project(emtrace LANGUAGES ${LANGUAGES})
 
 if(EMTRACE_ENABLE_CXX)
+    message(WARNINGS "Configured with EMTRACE_ENABLE_CXX=ON, but dedicated C++ integration doesn't exist yet.")
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
@@ -25,6 +26,10 @@ add_library(emtrace::emtrace ALIAS emtrace)
 
 if(EMTRACE_ENABLE_DEMOS)
     add_subdirectory(demos)
+endif()
+
+if(EMTRACE_ENABLE_TESTS)
+    add_subdirectory(test)
 endif()
 
 if(
