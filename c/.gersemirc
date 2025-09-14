@@ -4,8 +4,8 @@ definitions: []
 disable_formatting: false
 extensions: []
 indent: 4
-line_length: 80
-list_expansion: favour-expansion
+line_length: 100
+list_expansion: favour-inline
 unsafe: false
 warn_about_unknown_commands: true
 
