@@ -57,7 +57,10 @@ alias fmt := format
 lint: (ruff "check") cargo-clippy (clang-tidy "--use-color") (clang-format "--dry-run" "-Werror")
 
 [parallel]
-build: (cargo "build") cbuild
+build_all: (cargo "build" "--release" "--all-targets") (cargo "build" "--all-targets") (cbuild "dbg") (cbuild "rel") (cbuild "opt-dbg")
+
+[parallel]
+build: (cargo "build" "--all-targets") cbuild
 
 
 
