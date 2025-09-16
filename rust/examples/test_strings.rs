@@ -12,23 +12,23 @@ fn main() {
     stdout().lock().write_all(&magic_address_bytes()).unwrap();
 
     // Test basic string
-    traceln!("{}", &str: "Hello, World!");
+    traceln!("{}", str: *"Hello, World!");
 
     // Test empty string
     trace!("Empty string: ");
-    traceln!("{}", &str: "");
+    traceln!("{}", str: *"");
 
     // Test unicode strings
     traceln!("Unicode: {} {} {}",
-        &str: "😀",
-        &str: "✅",
-        &str: "©"
+        str: *"😀",
+        str: *"✅",
+        str: *"©"
     );
 
     // Test multiple strings
     traceln!("Multiple strings: {} {} {}",
-        &str: "first",
-        &str: "second",
-        &str: "third"
+        str: *"first",
+        str: *"second",
+        str: *"third"
     );
 }

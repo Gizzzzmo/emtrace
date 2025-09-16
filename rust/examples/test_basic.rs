@@ -14,5 +14,5 @@ fn main() {
     traceln!("An integer: {}", i32: x);
     let s: &str = "a string";
     trace!("A string: ");
-    traceln!("{}", &str: s);
+    traceln!("{}", str: *s);
 }

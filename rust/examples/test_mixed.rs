@@ -15,13 +15,13 @@ fn main() {
         i32: 42,
         f32: 3.140000104904175f32,
         bool: true,
-        &str: "hello"
+        str: *"hello"
     );
 
     // Test more complex formatting
     traceln!("Complex format: Value={}, Name={}, Active={}, Ratio={}",
         i32: 100,
-        &str: "test",
+        str: *"test",
         bool: false,
         f64: 0.5
     );

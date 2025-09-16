@@ -19,7 +19,7 @@ fn main() {
         i32: 0,
         f32: 0.0,
         bool: false,
-        &str: ""
+        str: *""
     );
 
     // Test extreme values (u8 shows as character)
@@ -35,5 +35,5 @@ fn main() {
     traceln!("");
 
     // Test C-style format
-    traceln!("C format: %s", &str: "test", .formatter=C_STYLE_FORMAT);
+    traceln!("C format: %s", str: *"test", .formatter=C_STYLE_FORMAT);
 }

@@ -54,7 +54,7 @@ pub trait Trace {
     fn size(&self) -> usize;
 }
 
-impl Trace for &str {
+impl Trace for str {
     const SIZE: usize = NULL_TERMINATED;
     const ID: &'static str = "string";
     fn serialize<O: Out>(&self, f: &mut O) {
@@ -318,11 +318,10 @@ macro_rules! trace {
             gadget.begin(addr, TOTAL_SIZE);
             $crate::Trace::serialize(&addr, &mut gadget);
             $($(
-                let x: $types = $args;
                 if (<$types as $crate::Trace>::SIZE & $crate::LENGTH_PREFIXED) != 0 {
-                    $crate::Trace::serialize(&$crate::Trace::size(&x), &mut gadget);
+                    $crate::Trace::serialize(&$crate::Trace::size(&$args), &mut gadget);
                 }
-                $crate::Trace::serialize(&x, &mut gadget);
+                $crate::Trace::serialize(&$args, &mut gadget);
                 if (<$types as $crate::Trace>::SIZE & $crate::NULL_TERMINATED) != 0 {
                     let null = 0u8;
                     $crate::Trace::serialize(&null, &mut gadget);
@@ -414,10 +413,15 @@ pub fn magic_address_bytes() -> [u8; size_of::<usize>()] {
 mod tests {
     use super::{Out, trace};
 
+    fn blub(x: &i32) {
+        let _y = x;
+    }
+
     #[test]
     fn test() {
+        blub(&32);
         let mut buffer = Vec::<u8>::new();
-        trace!("{}", i32: 0, .out=&mut buffer);
+        trace!("{}", i32: 32, .out=&mut buffer);
         assert_eq!(buffer.len(), size_of::<usize>() + size_of::<i32>());
         let mut arg_bytes: [u8; size_of::<i32>()] = [0; size_of::<i32>()];
         arg_bytes
