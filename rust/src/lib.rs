@@ -1,6 +1,8 @@
 use std::io::StdoutLock;
 use std::io::Write;
 use std::mem::size_of;
+use std::ops::DerefMut;
+use std::sync::MutexGuard;
 
 pub union Transmute<T: Copy, U: Copy> {
     pub from: T,
@@ -28,6 +30,15 @@ pub trait Out {
     fn begin(&mut self, info_addr: usize, total_size: usize);
 }
 
+impl<T: Out> Out for MutexGuard<'_, T> {
+    fn out(&mut self, b: &[u8]) {
+        self.deref_mut().out(b)
+    }
+    fn begin(&mut self, info_addr: usize, total_size: usize) {
+        self.deref_mut().begin(info_addr, total_size)
+    }
+}
+
 impl Out for StdoutLock<'_> {
     fn out(&mut self, b: &[u8]) {
         self.write_all(b).unwrap();
@@ -35,7 +46,7 @@ impl Out for StdoutLock<'_> {
     fn begin(&mut self, _info_addr: usize, _total_size: usize) {}
 }
 
-impl Out for &mut Vec<u8> {
+impl Out for Vec<u8> {
     fn out(&mut self, b: &[u8]) {
         self.extend_from_slice(b);
     }
@@ -54,6 +65,32 @@ pub trait Trace {
     fn size(&self) -> usize;
 }
 
+impl<T> Trace for &T
+where
+    T: Trace,
+    T: ?Sized,
+{
+    const SIZE: usize = T::SIZE;
+    const ID: &'static str = T::ID;
+    fn serialize<O: Out>(&self, f: &mut O) {
+        (*self).serialize(f)
+    }
+    fn size(&self) -> usize {
+        (*self).size()
+    }
+}
+
+impl<T: Trace> Trace for Box<T> {
+    const SIZE: usize = T::SIZE;
+    const ID: &'static str = T::ID;
+    fn serialize<O: Out>(&self, f: &mut O) {
+        self.as_ref().serialize(f)
+    }
+    fn size(&self) -> usize {
+        self.as_ref().size()
+    }
+}
+
 impl Trace for str {
     const SIZE: usize = NULL_TERMINATED;
     const ID: &'static str = "string";
@@ -62,6 +99,89 @@ impl Trace for str {
     }
     fn size(&self) -> usize {
         self.len()
+    }
+}
+
+impl Trace for String {
+    const SIZE: usize = str::SIZE;
+    const ID: &'static str = str::ID;
+    fn serialize<O: Out>(&self, f: &mut O) {
+        self.as_str().serialize(f)
+    }
+    fn size(&self) -> usize {
+        self.as_str().size()
+    }
+}
+
+impl<T: Trace> Trace for [T] {
+    const SIZE: usize = LENGTH_PREFIXED;
+    const ID: &'static str = T::ID;
+    fn serialize<O: Out>(&self, f: &mut O) {
+        for el in self {
+            if T::SIZE & LENGTH_PREFIXED != 0 {
+                el.size().serialize(f);
+            }
+            el.serialize(f);
+            if T::SIZE & NULL_TERMINATED != 0 {
+                el.size().serialize(f);
+            }
+        }
+    }
+    fn size(&self) -> usize {
+        let mut data_size = self.iter().map(|t| t.size()).sum();
+
+        if T::SIZE & LENGTH_PREFIXED != 0 {
+            data_size += self.len() * usize::SIZE;
+        }
+        if T::SIZE & NULL_TERMINATED != 0 {
+            data_size += self.len() * u8::SIZE;
+        }
+        data_size
+    }
+}
+
+impl<T: Trace> Trace for Vec<T> {
+    const SIZE: usize = <[T] as Trace>::SIZE;
+    const ID: &'static str = <[T] as Trace>::ID;
+    fn serialize<O: Out>(&self, f: &mut O) {
+        self[..].serialize(f)
+    }
+    fn size(&self) -> usize {
+        self[..].size()
+    }
+}
+
+impl<T: Trace, const N: usize> Trace for [T; N] {
+    const SIZE: usize = {
+        let t_size = !(LENGTH_PREFIXED | NULL_TERMINATED) & T::SIZE;
+        let total_size = N * t_size;
+        let flags = (LENGTH_PREFIXED | NULL_TERMINATED) & T::SIZE;
+        total_size & flags
+    };
+    const ID: &'static str = T::ID;
+
+    fn serialize<O: Out>(&self, f: &mut O) {
+        for el in self {
+            if T::SIZE & LENGTH_PREFIXED != 0 {
+                el.size().serialize(f);
+            }
+            el.serialize(f);
+            if T::SIZE & NULL_TERMINATED != 0 {
+                el.size().serialize(f);
+            }
+        }
+    }
+
+    fn size(&self) -> usize {
+        let mut data_size = self.iter().map(|el| el.size()).sum();
+
+        if T::SIZE & LENGTH_PREFIXED != 0 {
+            data_size += N * usize::SIZE;
+        }
+        if T::SIZE & NULL_TERMINATED != 0 {
+            data_size += N * u8::SIZE;
+        }
+        data_size
     }
 }
 
@@ -134,21 +254,11 @@ macro_rules! count {
 ///
 /// The trace will be emitted sequentially, and uninterrupted by outputs from other threads on stdout
 /// unless otherwise specified via `.out = <expr>` after the passed values.
-/// In this case <expr> must evaluate to an object with a member function out, which takes no arguments, and returns a
-/// function-like object that can be called with a byte slice. The macro uses this function-like
-/// object to emit the appropriate bytes.
-/// The implementation looks something like this:
-/// ``` ignore
-///{
-///    let mut guard = <expr>;
-///    let mut out = guard.out();
-///    // emitting trace bytes ...
-///    // guard goes out of scope...
-///}
+/// TODO: explain out-channel
 /// ```
 #[macro_export]
 macro_rules! trace {
-    ($($fmt:literal)+ $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .out = $out:expr)? $(, .formatter=$formatter:expr)?)
+    ($($fmt:literal)+ $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .consume_out = $consume_out:expr)? $(, .out = $out:expr)? $(, .formatter=$formatter:expr)?)
      => {
         {
             const FMT: &str = std::concat!($($fmt,)+);
@@ -161,7 +271,8 @@ macro_rules! trace {
                         size += N + 1 + size_of::<usize>() * 2;
                     }
                 ),*)?);
-                size + NUM_PREFIX * size_of::<usize>() + FMT.as_bytes().len() + file!().as_bytes().len() + 2
+                size += NUM_PREFIX * size_of::<usize>() + FMT.as_bytes().len() + file!().as_bytes().len() + 2;
+                size
             };
             #[unsafe(link_section = ".emtrace")]
             $(
@@ -303,8 +414,9 @@ macro_rules! trace {
 
                     total_size += mask & size;
                 )*)?
+                total_size += size_of::<usize>();
 
-                total_size + size_of::<usize>()
+                total_size
             };
 
             #[allow(unused_mut)]
@@ -312,19 +424,26 @@ macro_rules! trace {
             $(
                 let _dummy = gadget;
                 #[allow(unused_mut)]
-                let mut gadget = $out;
+                let mut gadget = $consume_out;
+            )?
+            let gadget_ref = &mut gadget;
+            $(
+                let _dummy = gadget_ref;
+                #[allow(unused_mut)]
+                let gadget_ref = &mut $out;
             )?
             let addr = FMT_INFO.as_ptr().addr();
-            gadget.begin(addr, TOTAL_SIZE);
-            $crate::Trace::serialize(&addr, &mut gadget);
+            gadget_ref.begin(addr, TOTAL_SIZE);
+            $crate::Trace::serialize(&addr, gadget_ref);
             $($(
+                let x:&$types = &$args;
                 if (<$types as $crate::Trace>::SIZE & $crate::LENGTH_PREFIXED) != 0 {
-                    $crate::Trace::serialize(&$crate::Trace::size(&$args), &mut gadget);
+                    $crate::Trace::serialize(&$crate::Trace::size(x), gadget_ref);
                 }
-                $crate::Trace::serialize(&$args, &mut gadget);
+                $crate::Trace::serialize(x, gadget_ref);
                 if (<$types as $crate::Trace>::SIZE & $crate::NULL_TERMINATED) != 0 {
                     let null = 0u8;
-                    $crate::Trace::serialize(&null, &mut gadget);
+                    $crate::Trace::serialize(&null, gadget_ref);
                 }
             )*)?
         }
@@ -413,20 +532,43 @@ pub fn magic_address_bytes() -> [u8; size_of::<usize>()] {
 mod tests {
     use super::{Out, trace};
 
-    fn blub(x: &i32) {
-        let _y = x;
-    }
-
     #[test]
     fn test() {
-        blub(&32);
         let mut buffer = Vec::<u8>::new();
-        trace!("{}", i32: 32, .out=&mut buffer);
+        trace!("{}", i32: 32, .out=buffer);
         assert_eq!(buffer.len(), size_of::<usize>() + size_of::<i32>());
         let mut arg_bytes: [u8; size_of::<i32>()] = [0; size_of::<i32>()];
         arg_bytes
             .copy_from_slice(&buffer[size_of::<usize>()..size_of::<usize>() + size_of::<i32>()]);
         let arg = i32::from_ne_bytes(arg_bytes);
-        assert_eq!(arg, 0);
+        assert_eq!(arg, 32);
+
+        // let vv = vec![vec![1, 2, 3], vec![4, 5, 6]];
+        // let vvv: Vec<&[i32]> = vec![&v, &vv[0]];
+    }
+
+    #[test]
+    fn flat_vec() {
+        let mut capture1 = Vec::<u8>::new();
+        let v = vec![1, 3, 4, 6];
+        trace!("{}", [i32]: v, .out=capture1);
+        assert_eq!(
+            capture1.len(),
+            2 * size_of::<usize>() + v.len() * size_of::<i32>()
+        );
+        let mut capture2 = Vec::<u8>::new();
+        trace!("{}", Vec<i32>: v, .out=capture2);
+        assert_eq!(
+            capture2.len(),
+            2 * size_of::<usize>() + v.len() * size_of::<i32>()
+        );
+        assert_eq!(
+            capture1[size_of::<usize>()..],
+            capture2[size_of::<usize>()..]
+        );
+        assert_ne!(
+            capture1[..size_of::<usize>()],
+            capture2[..size_of::<usize>()]
+        );
     }
 }
