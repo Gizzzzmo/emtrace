@@ -1,9 +1,10 @@
 #include "test_utils.h"
 #include <emtrace/emtrace.h>
 
-const char g_emt_expected_output[] EMT_TEST_EXPECTED_SECTION = "Hello from the basic test!\n"
-                                                               "An integer: 42\n"
-                                                               "A string: a string\n";
+EXPECT_OUTPUT(
+    "An integer: 42\n"
+    "A string: a string\n"
+);
 
 int main(void) {
     EMTRACE_INIT();

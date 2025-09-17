@@ -3,10 +3,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-const char g_emt_expected_output[] EMT_TEST_EXPECTED_SECTION =
+EXPECT_OUTPUT(
     "Mixed types: 42 3.140000104904175 True\n"
     "Complex format: Value=100, Active=False, Ratio=0.5\n"
-    "Numbers: \x01 \x02 \x03 \x04 \x05\n";
+    "Numbers: \x01 \x02 \x03 \x04 \x05\n"
+);
 
 int main(void) {
     EMTRACE_INIT();

@@ -3,11 +3,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-const char g_emt_expected_output[] EMT_TEST_EXPECTED_SECTION =
+EXPECT_OUTPUT(
     "Edge cases:\n"
     "Zero values: 0 0.0 False\n"
     "Extremes: 255 -128 4294967295 -2147483648\n"
-    "No format\n";
+    "No format\n"
+);
 // "C format: test\n";
 
 int main(void) {

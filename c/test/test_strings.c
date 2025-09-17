@@ -1,10 +1,12 @@
 #include "test_utils.h"
 #include <emtrace/emtrace.h>
 
-const char g_emt_expected_output[] EMT_TEST_EXPECTED_SECTION = "Hello, World!\n"
-                                                               "Empty string: \n"
-                                                               "Unicode: 😀✅©\n"
-                                                               "Long string: first second third\n";
+EXPECT_OUTPUT(
+    "Hello, World!\n"
+    "Empty string: \n"
+    "Unicode: 😀✅©\n"
+    "Long string: first second third\n"
+);
 
 int main(void) {
     EMTRACE_INIT();

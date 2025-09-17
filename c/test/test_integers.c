@@ -3,10 +3,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-const char g_emt_expected_output[] EMT_TEST_EXPECTED_SECTION =
+EXPECT_OUTPUT(
     "Signed integers: -128 -32768 -2147483648 -9223372036854775808\n"
     "Unsigned integers: 255 65535 4294967295 18446744073709551615\n"
-    "Size integers: 42 -42\n";
+    "Size integers: 42 -42\n"
+);
 
 int main(void) {
     EMTRACE_INIT();

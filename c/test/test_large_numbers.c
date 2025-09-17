@@ -3,13 +3,12 @@
 #include <limits.h>
 #include <stdint.h>
 
-// Note: C doesn't have native 128-bit integers like Rust,
-// so we'll use 64-bit integers as the largest available type
-const char g_emt_expected_output[] EMT_TEST_EXPECTED_SECTION =
+EXPECT_OUTPUT(
     "Large integers:\n"
     "int64_t max: 9223372036854775807\n"
     "uint64_t max: 18446744073709551615\n"
-    "int64_t min: -9223372036854775808\n";
+    "int64_t min: -9223372036854775808\n"
+);
 
 int main(void) {
     EMTRACE_INIT();

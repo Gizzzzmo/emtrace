@@ -3,10 +3,11 @@
 #include <float.h>
 #include <math.h>
 
-const char g_emt_expected_output[] EMT_TEST_EXPECTED_SECTION =
+EXPECT_OUTPUT(
     "Doubles: 3.14159 2.71828 nan inf -inf\n"
     // "3.141590 2.718280 nan inf -inf\n"
-    "Extreme values: 1.7976931348623157e+308 2.2250738585072014e-308\n";
+    "Extreme values: 1.7976931348623157e+308 2.2250738585072014e-308\n"
+);
 
 int main(void) {
     EMTRACE_INIT();
