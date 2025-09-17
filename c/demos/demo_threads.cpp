@@ -1,7 +1,7 @@
 #include "emtrace/emtrace.h"
 #include <thread>
 
-int main() {
+auto main() -> int {
     auto work = []() {
         for (int i = 0; i < 1000000; i++) {
             EMTRACE("Just a string\n");

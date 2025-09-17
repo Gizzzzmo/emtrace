@@ -20,10 +20,10 @@ ctest *ARGS:
     cd c && ctest {{ARGS}}
 
 clang-format *ARGS:
-    clang-format $(git ls-files c | grep "\.\(h\|hpp\|c\|.cpp\)$") {{ARGS}}
+    clang-format $(git ls-files c | grep "\.\(h\|hpp\|c\|cpp\)$") {{ARGS}}
 
 clang-tidy *ARGS:
-    cd c && clang-tidy -p build/compile_commands.json $(git ls-files . | grep "\.\(c\|.cpp\)$") {{ARGS}}
+    cd c && clang-tidy -p build/compile_commands.json $(git ls-files . | grep "\.\(c\|cpp\)$") {{ARGS}}
 
 alias tidy := clang-tidy
 

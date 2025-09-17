@@ -8,6 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+// NOLINTBEGIN(modernize-use-using,modernize-avoid-c-arrays)
 
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) ||                                  \
     (defined(__cplusplus) && __cplusplus >= 201103L)
@@ -947,6 +948,7 @@ EMT_STATIC_ASSERT(
 #define EMTRACE_INIT() EMT_INIT(EMT_DEFAULT_SEC_ATTR, emt_out_file, stdout)
 #endif // EMT_DEFAULT_SEC_ATTR
 
+// NOLINTEND(modernize-use-using,modernize-avoid-c-arrays)
 #ifdef __cplusplus
 }
 #endif
