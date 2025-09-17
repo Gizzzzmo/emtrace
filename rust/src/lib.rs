@@ -552,7 +552,6 @@ mod tests {
         let mut capture = Vec::<u8>::new();
         let v = Vec::<i32>::new();
         trace!("{}", [i32]: v, .out=capture);
-        println!("{:?}", capture);
         assert_eq!(capture.len(), usize::SIZE * 2);
         trace!("{}", Vec<i32>: v, .out=capture);
         assert_eq!(capture.len(), usize::SIZE * 4);
