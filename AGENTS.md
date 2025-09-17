@@ -25,16 +25,17 @@
 ### C and C++ Code (c/)
 
 - Follow `c/.clang-format` configuration (100 column limit, 4-space indent, pointer alignment left)
+- C code should be C99 compliant, except for how the section placement is specified
 - Use header guards: `#ifndef EMTRACE_EMTRACE_H` format is enforced by clang-tidy's
   llvm-header-guard check
 - C file endings: `.c` and `.h`
 - C++ file endings : `.cpp` and `.hpp`
 - Include `extern "C"` blocks for C++ compatibility in C headers
-- Follow `c/.clang-tidy` `readability-identifier-naming` settings for naming conventions
-- Standard includes first, then project headers
+- Follow `c/.clang-tidy` `readability-identifier-naming` settings for naming conventions, although
+  these are relaxed in tests, and examples with their own `.clang-tidy`
 - Use `static inline` for header-only functions
-- private headers of a target are in an `include/` subdirectory of the respective source directory,
-  and
+- private headers of a target are in an `include/` subdirectory of the respective source directory
+- In C always use typedefs for enums, structs and unions
 
 ### CMake code (c/)
 
