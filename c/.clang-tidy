@@ -2,6 +2,7 @@ Checks: >
   -clang-analyzer-*,
   clang-diagnostic-*,
   bugprone-*,
+  misc-include-cleaner,
   modernize-*,-modernize-macro-to-enum,
   readability-*,-readability-identifier-length,-readability-magic-numbers,
   llvm-header-guard

@@ -1,7 +1,8 @@
 #include "test_utils.h"
 #include <emtrace/emtrace.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
+#include <stdio.h>
 
 EXPECT_OUTPUT(
     "Signed integers: -128 -32768 -2147483648 -9223372036854775808\n"
