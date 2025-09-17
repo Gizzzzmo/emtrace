@@ -813,8 +813,8 @@ EMT_STATIC_ASSERT(
         lock(                                                                                      \
             (const void*) &info_ptr,                                                               \
             EMT_F_TOTAL_SIZE_HELPER(                                                               \
-                EMT_NUM_ARGS_REST(__VA_ARGS__) + sizeof(info_ptr), EMT_REST_ARGS(__VA_ARGS__, 0)   \
-            ),                                                                                     \
+                EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)                      \
+            ) + sizeof(info_ptr),                                                                  \
             extra_arg                                                                              \
         );                                                                                         \
         out_fn((const void*) &info_ptr, sizeof(info_ptr), extra_arg);                              \
@@ -824,8 +824,8 @@ EMT_STATIC_ASSERT(
         unlock(                                                                                    \
             (const void*) &info_ptr,                                                               \
             EMT_F_TOTAL_SIZE_HELPER(                                                               \
-                EMT_NUM_ARGS_REST(__VA_ARGS__) + sizeof(info_ptr), EMT_REST_ARGS(__VA_ARGS__, 0)   \
-            ),                                                                                     \
+                EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)                      \
+            ) + sizeof(info_ptr),                                                                  \
             extra_arg                                                                              \
         );                                                                                         \
     } while (0)
