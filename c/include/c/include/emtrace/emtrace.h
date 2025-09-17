@@ -9,15 +9,26 @@
 extern "C" {
 #endif
 
-#if __STDC_VERSION__ >= 201112L
-#define EMT_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
-#elif __STDC_VERSION__ >= 202311L || (defined(__cplusplus) && __cplusplus >= 201103L)
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) ||                                  \
+    (defined(__cplusplus) && __cplusplus >= 201103L)
 #define EMT_STATIC_ASSERT(cond, msg) static_assert(cond, msg)
+#define EMT_STATIC_ASSERT_INNER(cond, msg) static_assert(cond, msg)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#define EMT_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
+#define EMT_STATIC_ASSERT_INNER(cond, msg) _Static_assert(cond, msg)
 #else
-#define EMT_STATIC_ASSERT(cond, msg) typedef char static_assertion_failed[(cond) ? 1 : -1]
+#define EMT_LINE() __LINE__
+#define EMT_GLUE(a, b) EMT_GLUE_HELPER(a, b)
+#define EMT_GLUE_HELPER(a, b) a##b
+#define EMT_STATIC_ASSERT(cond, msg) enum { EMT_GLUE(assert_line_, __LINE__) = 1 / (!!(cond)) }
+#define EMT_STATIC_ASSERT_INNER(cond, msg)                                                         \
+    do {                                                                                           \
+        enum { assert = 1 / (!!(cond)) };                                                          \
+    } while (0)
 #endif
 
-#if __STDC_VERSION__ >= 202311L || (defined(__cplusplus) && __cplusplus >= 201103L)
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) ||                                  \
+    (defined(__cplusplus) && __cplusplus >= 201103L)
 enum : size_t {
     // In the format info signals whether a piece of dynamically sized data is null-terminated or
     // length-prefixed.
@@ -90,40 +101,60 @@ EMT_STATIC_ASSERT(
 #define EMT_F_2(out_fn, extra_arg, type_x, x, dummy)                                               \
     do {                                                                                           \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_4(out_fn, extra_arg, type_a, a, type_x, x, dummy)                                    \
     do {                                                                                           \
         EMT_F_2(out_fn, extra_arg, type_a, a, 0);                                                  \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_6(out_fn, extra_arg, type_a, a, type_b, b, type_x, x, dummy)                         \
     do {                                                                                           \
         EMT_F_4(out_fn, extra_arg, type_a, a, type_b, b, 0);                                       \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_8(out_fn, extra_arg, type_a, a, type_b, b, type_c, c, type_x, x, dummy)              \
     do {                                                                                           \
         EMT_F_6(out_fn, extra_arg, type_a, a, type_b, b, type_c, c, 0);                            \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_10(out_fn, extra_arg, type_a, a, type_b, b, type_c, c, type_d, d, type_x, x, dummy)  \
     do {                                                                                           \
         EMT_F_8(out_fn, extra_arg, type_a, a, type_b, b, type_c, c, type_d, d, 0);                 \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_12(                                                                                  \
@@ -132,8 +163,12 @@ EMT_STATIC_ASSERT(
     do {                                                                                           \
         EMT_F_10(out_fn, extra_arg, type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, 0);     \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_14(                                                                                  \
@@ -145,8 +180,12 @@ EMT_STATIC_ASSERT(
             out_fn, extra_arg, type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, 0 \
         );                                                                                         \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_16(                                                                                  \
@@ -159,8 +198,12 @@ EMT_STATIC_ASSERT(
             type_g, g, 0                                                                           \
         );                                                                                         \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_18(                                                                                  \
@@ -173,8 +216,12 @@ EMT_STATIC_ASSERT(
             type_g, g, 0                                                                           \
         );                                                                                         \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_20(                                                                                  \
@@ -187,8 +234,12 @@ EMT_STATIC_ASSERT(
             type_g, g, type_h, h, 0                                                                \
         );                                                                                         \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_22(                                                                                  \
@@ -201,8 +252,12 @@ EMT_STATIC_ASSERT(
             type_g, g, type_h, h, type_i, i, 0                                                     \
         );                                                                                         \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_24(                                                                                  \
@@ -215,8 +270,12 @@ EMT_STATIC_ASSERT(
             type_g, g, type_h, h, type_i, i, type_j, j, 0                                          \
         );                                                                                         \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_26(                                                                                  \
@@ -229,8 +288,12 @@ EMT_STATIC_ASSERT(
             type_g, g, type_h, h, type_i, i, type_j, j, type_k, k, 0                               \
         );                                                                                         \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_28(                                                                                  \
@@ -243,8 +306,12 @@ EMT_STATIC_ASSERT(
             type_g, g, type_h, h, type_i, i, type_j, j, type_k, k, type_l, l, 0                    \
         );                                                                                         \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_30(                                                                                  \
@@ -258,8 +325,12 @@ EMT_STATIC_ASSERT(
             type_g, g, type_h, h, type_i, i, type_j, j, type_k, k, type_l, l, type_m, m, 0         \
         );                                                                                         \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 #define EMT_F_32(                                                                                  \
@@ -274,8 +345,12 @@ EMT_STATIC_ASSERT(
             n, 0                                                                                   \
         );                                                                                         \
         type_x temp = x;                                                                           \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large");   \
-        EMT_STATIC_ASSERT(sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large");   \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_NULL_TERMINATED, "Size of type_x is too large"                   \
+        );                                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
+            sizeof(type_x) != EMT_LENGTH_PREFIXED, "Size of type_x is too large"                   \
+        );                                                                                         \
         out_fn((const void*) &temp, sizeof(type_x), extra_arg);                                    \
     } while (0)
 
@@ -720,7 +795,7 @@ EMT_STATIC_ASSERT(
             )                                                                                      \
             char file[sizeof(__FILE__)];                                                           \
         } info_t;                                                                                  \
-        EMT_STATIC_ASSERT(                                                                         \
+        EMT_STATIC_ASSERT_INNER(                                                                   \
             offsetof(info_t, layout) == 0, "layout member in info struct must have offset 0"       \
         );                                                                                         \
         fmt_info_attributes info_t info = {                                                        \
