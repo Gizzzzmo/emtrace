@@ -45,11 +45,15 @@ alejandra *ARGS:
 mdformat *ARGS:
     mdformat $(git ls-files | grep "\\.md$") {{ARGS}}
 
+gersemi *ARGS:
+    gersemi $(git ls-files | grep "\(\\.cmake\|CMakeLists.txt\)$") {{ARGS}}
+
+
 [parallel]
 test: (cargo "test" "--" "--nocapture") (ctest "--preset" current_preset) (pytest "-rs")
 
 [parallel]
-format: (ruff "format" ".") (cargo "fmt") (clang-format "-i") alejandra mdformat
+format: (ruff "format" ".") (cargo "fmt") (clang-format "-i") alejandra mdformat (gersemi "-i")
 
 alias fmt := format
 
