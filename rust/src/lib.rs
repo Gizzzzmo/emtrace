@@ -530,16 +530,16 @@ pub fn magic_address_bytes() -> [u8; size_of::<usize>()] {
 
 #[cfg(test)]
 mod tests {
-    use super::{Out, trace};
+    use super::{Out, Trace, trace};
+    use std::str::FromStr;
 
     #[test]
     fn test() {
         let mut buffer = Vec::<u8>::new();
         trace!("{}", i32: 32, .out=buffer);
-        assert_eq!(buffer.len(), size_of::<usize>() + size_of::<i32>());
-        let mut arg_bytes: [u8; size_of::<i32>()] = [0; size_of::<i32>()];
-        arg_bytes
-            .copy_from_slice(&buffer[size_of::<usize>()..size_of::<usize>() + size_of::<i32>()]);
+        assert_eq!(buffer.len(), usize::SIZE + i32::SIZE);
+        let mut arg_bytes: [u8; i32::SIZE] = [0; i32::SIZE];
+        arg_bytes.copy_from_slice(&buffer[usize::SIZE..usize::SIZE + i32::SIZE]);
         let arg = i32::from_ne_bytes(arg_bytes);
         assert_eq!(arg, 32);
 
@@ -548,27 +548,78 @@ mod tests {
     }
 
     #[test]
+    fn empty_vec() {
+        let mut capture = Vec::<u8>::new();
+        let v = Vec::<i32>::new();
+        trace!("{}", [i32]: v, .out=capture);
+        println!("{:?}", capture);
+        assert_eq!(capture.len(), usize::SIZE * 2);
+        trace!("{}", Vec<i32>: v, .out=capture);
+        assert_eq!(capture.len(), usize::SIZE * 4);
+    }
+
+    #[test]
     fn flat_vec() {
         let mut capture1 = Vec::<u8>::new();
         let v = vec![1, 3, 4, 6];
+
+        let expected_len = 2 * usize::SIZE + v.len() * i32::SIZE;
         trace!("{}", [i32]: v, .out=capture1);
-        assert_eq!(
-            capture1.len(),
-            2 * size_of::<usize>() + v.len() * size_of::<i32>()
-        );
+        assert_eq!(capture1.len(), expected_len);
         let mut capture2 = Vec::<u8>::new();
         trace!("{}", Vec<i32>: v, .out=capture2);
-        assert_eq!(
-            capture2.len(),
-            2 * size_of::<usize>() + v.len() * size_of::<i32>()
-        );
-        assert_eq!(
-            capture1[size_of::<usize>()..],
-            capture2[size_of::<usize>()..]
-        );
-        assert_ne!(
-            capture1[..size_of::<usize>()],
-            capture2[..size_of::<usize>()]
-        );
+        assert_eq!(capture2.len(), expected_len);
+
+        assert_eq!(capture1[usize::SIZE..], capture2[usize::SIZE..]);
+        assert_ne!(capture1[..usize::SIZE], capture2[..usize::SIZE]);
+    }
+
+    #[test]
+    fn nested_vecs() {
+        let mut capture1 = Vec::<u8>::new();
+        let mut capture2 = Vec::<u8>::new();
+        let mut capture3 = Vec::<u8>::new();
+        let mut capture4 = Vec::<u8>::new();
+        let owning = vec![vec![1, 2, 3, 4], vec![10]];
+        let referencing_vec = vec![&owning[0], &owning[1]];
+        let referencing_slice = vec![&owning[0][..], &owning[1]];
+
+        let expected_len = 2 * usize::SIZE
+            + owning
+                .iter()
+                .map(|inner| inner.len() * i32::SIZE + usize::SIZE)
+                .sum::<usize>();
+        trace!("{}", Vec<Vec<i32>>: owning, .out=capture1);
+        assert_eq!(capture1.len(), expected_len);
+        trace!("{}", [Vec<i32>]: owning, .out=capture2);
+        assert_eq!(capture2.len(), expected_len);
+        trace!("{}", [&Vec<i32>]: referencing_vec, .out=capture3);
+        assert_eq!(capture3.len(), expected_len);
+        trace!("{}", [&[i32]]: referencing_slice, .out=capture4);
+        assert_eq!(capture4.len(), expected_len);
+
+        assert_eq!(capture1[usize::SIZE..], capture2[usize::SIZE..]);
+        assert_eq!(capture1[usize::SIZE..], capture3[usize::SIZE..]);
+        assert_eq!(capture1[usize::SIZE..], capture4[usize::SIZE..]);
+    }
+
+    #[test]
+    fn string() {
+        let mut capture1 = Vec::<u8>::new();
+        let mut capture2 = Vec::<u8>::new();
+        let mut capture3 = Vec::<u8>::new();
+        let literal = "Hello, there!";
+        let owning = String::from_str(literal).unwrap();
+
+        let expected_len = usize::SIZE + literal.len() + u8::SIZE;
+        trace!("{}", str: literal, .out=capture1);
+        assert_eq!(capture1.len(), expected_len);
+        trace!("{}", str: owning, .out=capture2);
+        assert_eq!(capture2.len(), expected_len);
+        trace!("{}", String: owning, .out=capture3);
+        assert_eq!(capture3.len(), expected_len);
+
+        assert_eq!(capture1[usize::SIZE..], capture2[usize::SIZE..]);
+        assert_eq!(capture1[usize::SIZE..], capture3[usize::SIZE..]);
     }
 }
