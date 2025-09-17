@@ -23,6 +23,8 @@ the data from the special `.emtrace` section, and produces the log.
 
 - [x] add basic documentation
 - [x] add license
+- [ ] switch C tests from using `assert` to something else and combine all tests into a single
+  executable
 - [ ] add usage examples to documentation
 - [x] add basic tests
 - [ ] push to github and add CI pipeline (github actions?)
