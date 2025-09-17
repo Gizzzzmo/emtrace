@@ -9,19 +9,28 @@
             "name": "dbg",
             "displayName": "Debug",
             "description": "Build demos and tests with debug info, assertions enabled, optimizations disabled",
-            "inherits": "user-config"
+            "inherits": "user-config",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
         },
         {
             "name": "rel",
             "displayName": "Release",
             "description": "Build demos and tests with debug info, assertions disabled, optimizations enabled",
-            "inherits": "user-config"
+            "inherits": "user-config",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
         },
         {
             "name": "opt-dbg",
             "displayName": "Optimized with Debug",
             "description": "Build demos and tests with debug info, assertions enabled, optimizations enabled",
-            "inherits": "user-config"
+            "inherits": "user-config",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
         }
     ],
     "buildPresets": [
