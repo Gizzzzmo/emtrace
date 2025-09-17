@@ -3,20 +3,19 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Add paths to your test executables here.
-# These executables should have a .emtrace.test.expected section
+# Add paths to test executables here.
+# These executables have to have a .emtrace.test.expected section
 # with the expected output of emtrace.py.
-# The executables should be built before running the tests.
-# For C/C++ demos, you can build them with `just cb clang-dbg`.
-# For Rust demos, you can build them with `just cargo build`.
+# If a binary specified here does not exist, the test is skipped.
+# `just build_all` should build all binaries.
 C_TEST_EXECUTABLES = [
-    "test/test_basic",
-    "test/test_integers",
-    "test/test_strings",
-    "test/test_doubles",
-    "test/test_mixed",
-    "test/test_edge_cases",
-    "test/test_large_numbers",
+    "examples/test_basic",
+    "examples/test_integers",
+    "examples/test_strings",
+    "examples/test_doubles",
+    "examples/test_mixed",
+    "examples/test_edge_cases",
+    "examples/test_large_numbers",
 ]
 
 C_BUILD_DIRS = [

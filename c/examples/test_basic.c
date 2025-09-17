@@ -2,6 +2,7 @@
 #include <emtrace/emtrace.h>
 
 EXPECT_OUTPUT(
+    "Hello from the basic test!\n"
     "An integer: 42\n"
     "A string: a string\n"
 );
