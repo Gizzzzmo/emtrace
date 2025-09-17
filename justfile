@@ -50,7 +50,7 @@ gersemi *ARGS:
 
 
 [parallel]
-test: (cargo "test" "--" "--nocapture") (ctest "--preset" current_preset) (pytest "-rs")
+test: (cargo "test" "--" "--nocapture") (ctest "--preset" current_preset) (pytest "-rs" "-n" "auto")
 
 [parallel]
 format: (ruff "format" ".") (cargo "fmt") (clang-format "-i") alejandra mdformat (gersemi "-i")

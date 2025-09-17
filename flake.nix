@@ -40,6 +40,7 @@
           just
           gersemi
           python313Packages.pytest
+          python313Packages.pytest-xdist
         ];
       in
         with pkgs; {
