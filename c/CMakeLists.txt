@@ -33,6 +33,7 @@ if(EMTRACE_ENABLE_EXAMPLES OR EMTRACE_ENABLE_TESTS)
 endif()
 
 if(EMTRACE_ENABLE_TESTS)
+    enable_testing()
     add_subdirectory(test)
 endif()
 
