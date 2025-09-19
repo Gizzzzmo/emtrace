@@ -351,6 +351,8 @@ class Emtrace:
             self.debug_trace(f"    {offset_type_desc=}")
             type_size = consume_size_t()
             self.debug_trace(f"    {type_size=}")
+            num_children = consume_size_t()
+            self.debug_trace(f"    {num_children=}")
             type_info_offsets.append((offset_type_desc, type_size))
 
         formatter_id = consume_size_t()

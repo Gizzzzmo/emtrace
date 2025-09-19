@@ -23,6 +23,7 @@ the data from the special `.emtrace` section, and produces the log.
 
 - [x] add basic documentation
 - [x] add license
+- [ ] complete support for tracing nested types (lists, tuples, etc.) on post-processing side
 - [ ] switch C tests from using `assert` to something else and combine all tests into a single
   executable
 - [ ] add usage examples to documentation

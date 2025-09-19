@@ -15,4 +15,5 @@ fn main() {
     let s: &str = "a string";
     trace!("A string: ");
     traceln!("{}", str: *s);
+    // traceln!("A list: {}", [i32]: vec![1, 2, 3, 4]);
 }

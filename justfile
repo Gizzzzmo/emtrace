@@ -8,6 +8,8 @@ ruff *ARGS:
 pytest *ARGS:
     pytest {{ARGS}}
 
+eetest: (pytest "-rs" "-n" "auto")
+
 alias c := cargo
 
 cargo *ARGS:
@@ -50,7 +52,7 @@ gersemi *ARGS:
 
 
 [parallel]
-test: (cargo "test" "--" "--nocapture") (ctest "--preset" current_preset) (pytest "-rs" "-n" "auto")
+test: (cargo "test" "--" "--nocapture") (ctest "--preset" current_preset) eetest
 
 [parallel]
 format: (ruff "format" ".") (cargo "fmt") (clang-format "-i") alejandra mdformat (gersemi "-i")

@@ -654,31 +654,31 @@ EMT_STATIC_ASSERT(
 #define EMT_F_INFO_HELPER(n, ...) EMT_F_INFO_HELPER2(n, __VA_ARGS__)
 
 #define EMT_F_LAYOUT_0(a)
-#define EMT_F_LAYOUT_2(type_x, x, dummy) , offsetof(info_t, type_1), sizeof(type_x)
+#define EMT_F_LAYOUT_2(type_x, x, dummy) , offsetof(info_t, type_1), sizeof(type_x), 0
 #define EMT_F_LAYOUT_4(type_a, a, type_x, x, dummy)                                                \
-    EMT_F_LAYOUT_2(type_a, a, 0), offsetof(info_t, type_2), sizeof(type_x)
+    EMT_F_LAYOUT_2(type_a, a, 0), offsetof(info_t, type_2), sizeof(type_x), 0
 #define EMT_F_LAYOUT_6(type_a, a, type_b, b, type_x, x, dummy)                                     \
-    EMT_F_LAYOUT_4(type_a, a, type_b, b, 0), offsetof(info_t, type_3), sizeof(type_x)
+    EMT_F_LAYOUT_4(type_a, a, type_b, b, 0), offsetof(info_t, type_3), sizeof(type_x), 0
 #define EMT_F_LAYOUT_8(type_a, a, type_b, b, type_c, c, type_x, x, dummy)                          \
-    EMT_F_LAYOUT_6(type_a, a, type_b, b, type_c, c, 0), offsetof(info_t, type_4), sizeof(type_x)
+    EMT_F_LAYOUT_6(type_a, a, type_b, b, type_c, c, 0), offsetof(info_t, type_4), sizeof(type_x), 0
 #define EMT_F_LAYOUT_10(type_a, a, type_b, b, type_c, c, type_d, d, type_x, x, dummy)              \
     EMT_F_LAYOUT_8(type_a, a, type_b, b, type_c, c, type_d, d, 0), offsetof(info_t, type_5),       \
-        sizeof(type_x)
+        sizeof(type_x), 0
 #define EMT_F_LAYOUT_12(type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_x, x, dummy)   \
     EMT_F_LAYOUT_10(type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, 0),                     \
-        offsetof(info_t, type_6), sizeof(type_x)
+        offsetof(info_t, type_6), sizeof(type_x), 0
 #define EMT_F_LAYOUT_14(                                                                           \
     type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_x, x, dummy             \
 )                                                                                                  \
     EMT_F_LAYOUT_12(type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, 0),          \
-        offsetof(info_t, type_7), sizeof(type_x)
+        offsetof(info_t, type_7), sizeof(type_x), 0
 #define EMT_F_LAYOUT_16(                                                                           \
     type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_x, x, dummy  \
 )                                                                                                  \
     EMT_F_LAYOUT_14(                                                                               \
         type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, 0             \
     ),                                                                                             \
-        offsetof(info_t, type_8), sizeof(type_x)
+        offsetof(info_t, type_8), sizeof(type_x), 0
 #define EMT_F_LAYOUT_18(                                                                           \
     type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,        \
     type_x, x, dummy                                                                               \
@@ -686,7 +686,7 @@ EMT_STATIC_ASSERT(
     EMT_F_LAYOUT_16(                                                                               \
         type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h, 0  \
     ),                                                                                             \
-        offsetof(info_t, type_9), sizeof(type_x)
+        offsetof(info_t, type_9), sizeof(type_x), 0
 #define EMT_F_LAYOUT_20(                                                                           \
     type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,        \
     type_i, i, type_x, x, dummy                                                                    \
@@ -695,7 +695,7 @@ EMT_STATIC_ASSERT(
         type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,    \
         type_i, i, 0                                                                               \
     ),                                                                                             \
-        offsetof(info_t, type_10), sizeof(type_x)
+        offsetof(info_t, type_10), sizeof(type_x), 0
 #define EMT_F_LAYOUT_22(                                                                           \
     type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,        \
     type_i, i, type_j, j, type_x, x, dummy                                                         \
@@ -704,7 +704,7 @@ EMT_STATIC_ASSERT(
         type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,    \
         type_i, i, type_j, j, 0                                                                    \
     ),                                                                                             \
-        offsetof(info_t, type_11), sizeof(type_x)
+        offsetof(info_t, type_11), sizeof(type_x), 0
 #define EMT_F_LAYOUT_24(                                                                           \
     type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,        \
     type_i, i, type_j, j, type_k, k, type_x, x, dummy                                              \
@@ -713,7 +713,7 @@ EMT_STATIC_ASSERT(
         type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,    \
         type_i, i, type_j, j, type_k, k, 0                                                         \
     ),                                                                                             \
-        offsetof(info_t, type_12), sizeof(type_x)
+        offsetof(info_t, type_12), sizeof(type_x), 0
 #define EMT_F_LAYOUT_26(                                                                           \
     type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,        \
     type_i, i, type_j, j, type_k, k, type_l, l, type_x, x, dummy                                   \
@@ -722,7 +722,7 @@ EMT_STATIC_ASSERT(
         type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,    \
         type_i, i, type_j, j, type_k, k, type_l, l, 0                                              \
     ),                                                                                             \
-        offsetof(info_t, type_13), sizeof(type_x)
+        offsetof(info_t, type_13), sizeof(type_x), 0
 #define EMT_F_LAYOUT_28(                                                                           \
     type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,        \
     type_i, i, type_j, j, type_k, k, type_l, l, type_m, m, type_x, x, dummy                        \
@@ -731,7 +731,7 @@ EMT_STATIC_ASSERT(
         type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,    \
         type_i, i, type_j, j, type_k, k, type_l, l, type_m, m, 0                                   \
     ),                                                                                             \
-        offsetof(info_t, type_14), sizeof(type_x)
+        offsetof(info_t, type_14), sizeof(type_x), 0
 #define EMT_F_LAYOUT_30(                                                                           \
     type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,        \
     type_i, i, type_j, j, type_k, k, type_l, l, type_m, m, type_n, n, type_x, x, dummy             \
@@ -740,7 +740,7 @@ EMT_STATIC_ASSERT(
         type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,    \
         type_i, i, type_j, j, type_k, k, type_l, l, type_m, m, type_n, n, 0                        \
     ),                                                                                             \
-        offsetof(info_t, type_15), sizeof(type_x)
+        offsetof(info_t, type_15), sizeof(type_x), 0
 #define EMT_F_LAYOUT_32(                                                                           \
     type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,        \
     type_i, i, type_j, j, type_k, k, type_l, l, type_m, m, type_n, n, type_o, o, type_x, x, dummy  \
@@ -749,7 +749,7 @@ EMT_STATIC_ASSERT(
         type_a, a, type_b, b, type_c, c, type_d, d, type_e, e, type_f, f, type_g, g, type_h, h,    \
         type_i, i, type_j, j, type_k, k, type_l, l, type_m, m, type_n, n, type_o, o, 0             \
     ),                                                                                             \
-        offsetof(info_t, type_16), sizeof(type_x)
+        offsetof(info_t, type_16), sizeof(type_x), 0
 
 #define EMT_F_LAYOUT_HELPER2(n, ...) EMT_F_LAYOUT_##n(__VA_ARGS__)
 #define EMT_F_LAYOUT_HELPER(n, ...) EMT_F_LAYOUT_HELPER2(n, __VA_ARGS__)
@@ -789,7 +789,7 @@ EMT_STATIC_ASSERT(
 #define EMT_TRACE_F(fmt_info_attributes, formatter, out_fn, lock, unlock, extra_arg, postfix, ...) \
     do {                                                                                           \
         typedef struct {                                                                           \
-            size_t layout[EMT_NUM_ARGS_REST(__VA_ARGS__) + 5];                                     \
+            size_t layout[(EMT_NUM_ARGS_REST(__VA_ARGS__) * 3 + 1) / 2 + 5];                       \
             char fmt[sizeof(EMT_FIRST_ARG(__VA_ARGS__, 0) postfix)];                               \
             EMT_F_INFO_MEMBER_HELPER(                                                              \
                 EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)                      \
@@ -836,13 +836,13 @@ EMT_STATIC_ASSERT(
 #define EMT_TRACE_S(fmt_info_attributes, out_fn, lock, unlock, extra_arg, postfix, str)            \
     do {                                                                                           \
         typedef struct {                                                                           \
-            size_t layout[7];                                                                      \
+            size_t layout[8];                                                                      \
             char fmt[sizeof("{}" postfix)];                                                        \
             char type_1[sizeof("string")];                                                         \
             char file[sizeof(__FILE__)];                                                           \
         } info_t;                                                                                  \
         fmt_info_attributes info_t info = {                                                        \
-            {1, offsetof(info_t, fmt), offsetof(info_t, type_1), EMT_NULL_TERMINATED,              \
+            {1, offsetof(info_t, fmt), offsetof(info_t, type_1), EMT_NULL_TERMINATED, 0,           \
              EMT_PY_FORMAT, offsetof(info_t, file), __LINE__},                                     \
             "{}" postfix,                                                                          \
             "string",                                                                              \

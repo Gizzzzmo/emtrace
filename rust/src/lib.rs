@@ -4,11 +4,6 @@ use std::mem::size_of;
 use std::ops::DerefMut;
 use std::sync::MutexGuard;
 
-pub union Transmute<T: Copy, U: Copy> {
-    pub from: T,
-    pub to: U,
-}
-
 pub const NULL_TERMINATED: usize = 1usize << (usize::BITS - 1);
 pub const LENGTH_PREFIXED: usize = 1usize << (usize::BITS - 2);
 pub const PY_FORMAT: usize = 0;
@@ -56,11 +51,66 @@ impl Out for Vec<u8> {
     }
 }
 
+pub const DESCENDANTS_LIMIT: usize = 0x1000;
+
 pub trait Trace {
     const SIZE: usize;
     const ID: &'static str;
-    // fn serialize<Out>(&self, f: Out) where
-    //     Out: Fn(&[u8; Self::SIZE]) -> ();
+    const NUM_CHILDREN: usize;
+    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)];
+    /// How many usize fields the type requires in the offset table
+    const NUM_OFFSET_TABLE_ENTRIES: usize = {
+        let mut n = 0;
+        // to store own size, and number of children
+        n += 2;
+        // to store offset to own id
+        n += 1;
+
+        let mut i = 0;
+        let mut remaining = Self::NUM_CHILDREN;
+
+        // iterate over all descendants
+        while remaining > 0 {
+            let descendant = Self::DESCENDANTS[i];
+
+            // to store descendant's size and number of children
+            n += 2;
+            // to store offsets to descendant's name, and id
+            n += 2;
+
+            remaining += descendant.3;
+            remaining -= 1;
+            i += 1;
+        }
+
+        n
+    };
+
+    /// how many bytes this type needs to describe its type to the parser
+    const INFO_SIZE: usize = {
+        let mut size = 0;
+        // to store own id as null-terminated string
+        size += Self::ID.len() + size_of::<u8>();
+
+        let mut i = 0;
+        let mut remaining = Self::NUM_CHILDREN;
+
+        // iterate over all descendants
+        while remaining > 0 {
+            let descendant = Self::DESCENDANTS[i];
+
+            // to store descendant's name as null-terminated string
+            size += descendant.0.len() + size_of::<u8>();
+            // to store descendant's id as null-terminated string
+            size += descendant.1.len() + size_of::<u8>();
+
+            remaining += descendant.3;
+            remaining -= 1;
+            i += 1;
+        }
+
+        size
+    };
     fn serialize<O: Out>(&self, f: &mut O);
     fn size(&self) -> usize;
 }
@@ -72,6 +122,8 @@ where
 {
     const SIZE: usize = T::SIZE;
     const ID: &'static str = T::ID;
+    const NUM_CHILDREN: usize = T::NUM_CHILDREN;
+    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = T::DESCENDANTS;
     fn serialize<O: Out>(&self, f: &mut O) {
         (*self).serialize(f)
     }
@@ -83,6 +135,8 @@ where
 impl<T: Trace> Trace for Box<T> {
     const SIZE: usize = T::SIZE;
     const ID: &'static str = T::ID;
+    const NUM_CHILDREN: usize = T::NUM_CHILDREN;
+    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = T::DESCENDANTS;
     fn serialize<O: Out>(&self, f: &mut O) {
         self.as_ref().serialize(f)
     }
@@ -94,6 +148,8 @@ impl<T: Trace> Trace for Box<T> {
 impl Trace for str {
     const SIZE: usize = NULL_TERMINATED;
     const ID: &'static str = "string";
+    const NUM_CHILDREN: usize = 0;
+    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = &[];
     fn serialize<O: Out>(&self, f: &mut O) {
         f.out(self.as_bytes());
     }
@@ -105,6 +161,8 @@ impl Trace for str {
 impl Trace for String {
     const SIZE: usize = str::SIZE;
     const ID: &'static str = str::ID;
+    const NUM_CHILDREN: usize = str::NUM_CHILDREN;
+    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = str::DESCENDANTS;
     fn serialize<O: Out>(&self, f: &mut O) {
         self.as_str().serialize(f)
     }
@@ -115,7 +173,22 @@ impl Trace for String {
 
 impl<T: Trace> Trace for [T] {
     const SIZE: usize = LENGTH_PREFIXED;
-    const ID: &'static str = T::ID;
+    const ID: &'static str = "list";
+    const NUM_CHILDREN: usize = 1;
+    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = &{
+        let mut children = [("", T::ID, T::SIZE, T::NUM_CHILDREN); DESCENDANTS_LIMIT];
+
+        let mut remaining = T::NUM_CHILDREN;
+        let mut i = 0;
+        while remaining > 0 {
+            children[i + Self::NUM_CHILDREN] = T::DESCENDANTS[remaining];
+            remaining += T::DESCENDANTS[remaining].3;
+            remaining -= 1;
+            i += 1;
+        }
+
+        children
+    };
     fn serialize<O: Out>(&self, f: &mut O) {
         for el in self {
             if T::SIZE & LENGTH_PREFIXED != 0 {
@@ -143,6 +216,9 @@ impl<T: Trace> Trace for [T] {
 impl<T: Trace> Trace for Vec<T> {
     const SIZE: usize = <[T] as Trace>::SIZE;
     const ID: &'static str = <[T] as Trace>::ID;
+    const NUM_CHILDREN: usize = <[T] as Trace>::NUM_CHILDREN;
+    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] =
+        <[T] as Trace>::DESCENDANTS;
     fn serialize<O: Out>(&self, f: &mut O) {
         self[..].serialize(f)
     }
@@ -152,13 +228,11 @@ impl<T: Trace> Trace for Vec<T> {
 }
 
 impl<T: Trace, const N: usize> Trace for [T; N] {
-    const SIZE: usize = {
-        let t_size = !(LENGTH_PREFIXED | NULL_TERMINATED) & T::SIZE;
-        let total_size = N * t_size;
-        let flags = (LENGTH_PREFIXED | NULL_TERMINATED) & T::SIZE;
-        total_size & flags
-    };
-    const ID: &'static str = T::ID;
+    const SIZE: usize = N;
+    const ID: &'static str = "list";
+    const NUM_CHILDREN: usize = 1;
+    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] =
+        <[T] as Trace>::DESCENDANTS;
 
     fn serialize<O: Out>(&self, f: &mut O) {
         for el in self {
@@ -190,6 +264,8 @@ macro_rules! impl_trace_for_primitive {
         impl Trace for $type {
             const SIZE: usize = std::mem::size_of::<Self>();
             const ID: &'static str = $id;
+            const NUM_CHILDREN: usize = 0;
+            const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = &[];
 
             fn serialize<O: Out>(&self, f: &mut O) {
                 f.out(&self.to_ne_bytes());
@@ -222,6 +298,8 @@ impl_trace_for_primitive!(f64, "double");
 impl Trace for bool {
     const SIZE: usize = std::mem::size_of::<u8>();
     const ID: &'static str = "bool";
+    const NUM_CHILDREN: usize = 0;
+    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = &[];
 
     fn serialize<O: Out>(&self, f: &mut O) {
         f.out(&[*self as u8]);
@@ -262,15 +340,18 @@ macro_rules! trace {
      => {
         {
             const FMT: &str = std::concat!($($fmt,)+);
-            const NUM_PREFIX: usize = 5;
+            const NUM_PREFIX: usize = {
+                let mut size = 5;
+                $($(
+                    size += <$types as $crate::Trace>::NUM_OFFSET_TABLE_ENTRIES;
+                )*)?
+                size
+            };
             const INFO_SIZE: usize = {
                 let mut size: usize = 0;
-                ($($(
-                    {
-                        const N: usize = <$types as $crate::Trace>::ID.as_bytes().len();
-                        size += N + 1 + size_of::<usize>() * 2;
-                    }
-                ),*)?);
+                $($(
+                        size += <$types as $crate::Trace>::INFO_SIZE;
+                )*)?
                 size += NUM_PREFIX * size_of::<usize>() + FMT.as_bytes().len() + file!().as_bytes().len() + 2;
                 size
             };
@@ -280,11 +361,11 @@ macro_rules! trace {
                 #[unsafe(link_section = $section)]
             )?
             #[used]
-            static FMT_INFO: [u8; INFO_SIZE] = unsafe {
+            static FMT_INFO: [u8; INFO_SIZE] = {
                 let usize_size = size_of::<usize>();
                 let num_args: usize = $crate::count!($($($types)*)?);
                 let mut offset_idx: usize = 0;
-                let mut data_idx: usize = (NUM_PREFIX + num_args * 2) * usize_size;
+                let mut data_idx: usize = NUM_PREFIX * usize_size;
                 let mut info  = [0; INFO_SIZE];
 
                 let num_args_arr = num_args.to_ne_bytes();
@@ -303,12 +384,9 @@ macro_rules! trace {
                     i += 1;
                 }
 
-                const N: usize = FMT.as_bytes().len();
-                let fmt_str_arr = *$crate::Transmute::<*const [u8; N], &[u8; N]> {
-                    from: FMT.as_ptr() as *const [u8; N],
-                }.to;
+                let fmt_str_arr = FMT.as_bytes();
                 let mut i = 0;
-                while i < N {
+                while i < FMT.len() {
                     info[data_idx] = fmt_str_arr[i];
                     data_idx += 1;
                     i += 1;
@@ -333,17 +411,85 @@ macro_rules! trace {
                             i += 1;
                         }
 
-                        const N: usize = <$types as $crate::Trace>::ID.as_bytes().len();
-                        let id_arr = *$crate::Transmute::<*const [u8; N], &[u8; N]> {
-                            from: <$types as $crate::Trace>::ID.as_ptr() as *const [u8; N],
-                        }.to;
+                        let num_children_arr = <$types as $crate::Trace>::NUM_CHILDREN.to_ne_bytes();
                         let mut i = 0;
-                        while i < N {
+                        while i < usize_size {
+                            info[offset_idx] = num_children_arr[i];
+                            offset_idx += 1;
+                            i += 1;
+                        }
+
+                        let id_arr = <$types as $crate::Trace>::ID.as_bytes();
+                        let mut i = 0;
+                        while i < <$types as $crate::Trace>::ID.len() {
                             info[data_idx] = id_arr[i];
                             data_idx += 1;
                             i += 1;
                         }
                         data_idx += 1;
+
+                        let mut j = 0;
+                        let mut remaining = <$types as $crate::Trace>::NUM_CHILDREN;
+                        while remaining > 0 {
+                            let descendant = <$types as $crate::Trace>::DESCENDANTS[j];
+
+                            let name_offset_arr = data_idx.to_ne_bytes();
+                            let mut i = 0;
+                            while i < usize_size {
+                                info[offset_idx] = name_offset_arr[i];
+                                offset_idx += 1;
+                                i += 1;
+                            }
+
+                            let size_arr = descendant.2.to_ne_bytes();
+                            let mut i = 0;
+                            while i < usize_size {
+                                info[offset_idx] = size_arr[i];
+                                offset_idx += 1;
+                                i += 1;
+                            }
+
+                            let num_children_arr = descendant.3.to_ne_bytes();
+                            let mut i = 0;
+                            while i < usize_size {
+                                info[offset_idx] = num_children_arr[i];
+                                offset_idx += 1;
+                                i += 1;
+                            }
+
+                            let n = descendant.0.len();
+                            let name_arr = descendant.0.as_bytes();
+                            let mut i = 0;
+                            while i < n {
+                                info[data_idx] = name_arr[i];
+                                data_idx += 1;
+                                i += 1;
+                            }
+                            data_idx += 1;
+
+                            let id_offset_arr = data_idx.to_ne_bytes();
+                            let mut i = 0;
+                            while i < usize_size {
+                                info[offset_idx] = id_offset_arr[i];
+                                offset_idx += 1;
+                                i += 1;
+                            }
+
+                            let n = descendant.1.len();
+                            let id_arr = descendant.1.as_bytes();
+                            let mut i = 0;
+                            while i < n {
+                                info[data_idx] = id_arr[i];
+                                data_idx += 1;
+                                i += 1;
+                            }
+                            data_idx += 1;
+
+                            remaining += descendant.3;
+                            remaining -= 1;
+                            j += 1;
+                        }
+
                     }
                 ),*)?);
 
@@ -374,12 +520,9 @@ macro_rules! trace {
                     i += 1;
                 }
 
-                const M: usize = file!().as_bytes().len();
-                let file_arr = *$crate::Transmute::<*const [u8; M], &[u8; M]> {
-                    from: file!().as_ptr() as *const [u8; M],
-                }.to;
+                let file_arr = file!().as_bytes();
                 let mut i = 0;
-                while i < M {
+                while i < file!().len() {
                     info[data_idx] = file_arr[i];
                     data_idx += 1;
                     i += 1;
@@ -600,6 +743,8 @@ mod tests {
         assert_eq!(capture1[usize::SIZE..], capture2[usize::SIZE..]);
         assert_eq!(capture1[usize::SIZE..], capture3[usize::SIZE..]);
         assert_eq!(capture1[usize::SIZE..], capture4[usize::SIZE..]);
+        println!("{:?}", <[&[u8]; 0x10000] as Trace>::DESCENDANTS);
+        println!("{:?}", <&[u8] as Trace>::DESCENDANTS);
     }
 
     #[test]
