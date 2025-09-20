@@ -1,10 +1,10 @@
 # Emtrace
 
-Super fast, minimal overhead, tracing / logging library for multiple languages (currently C/C++ and
-Rust). All processing of logged information (like formatting) is deferred; the application only
-sends out those bytes that are relevant to what you are trying to log that isn't known at compile
-time. By default this data is written to stdout, but in general the output channel is completely
-customizable.
+Super fast (benchmarks WIP), minimal overhead, tracing / logging library for multiple languages
+(currently C/C++ and Rust). All processing of logged information (like formatting) is deferred; the
+application only sends out those bytes that are relevant to what you are trying to log that isn't
+known at compile time. By default this data is written to stdout, but in general the output channel
+is completely customizable.
 
 > [!Note]
 >
@@ -59,14 +59,18 @@ the data from the special `.emtrace` section, and produces the log.
 
 - [x] add basic documentation
 - [x] add license
-- [ ] complete support for tracing nested types (lists, tuples, etc.) on post-processing side
+- [ ] make rust's init function + magic_bytes variable into a macro to support different section
+  names
+- [ ] complete adding support for tracing nested types (lists, tuples, etc.) on post-processing side
 - [ ] switch C tests from using `assert` to something else and combine all tests into a single
   executable
 - [x] add usage examples to documentation
+- [ ] add download / install instructions to documentation
 - [x] add basic tests
 - [ ] add more detailed documentation
 - [ ] split the above todo item into separate items for separate features
 - [x] push to github
+- [ ] add some basic benchmarks
 - [ ] add CI pipeline (github actions?)
 - [ ] add dedicated C++ implementation
 - [ ] add CMake profile-switching to justfile
