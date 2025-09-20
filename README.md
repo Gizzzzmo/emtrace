@@ -1,15 +1,45 @@
 # Emtrace
 
-Super fast, minimal overhead, tracing / logging library for multiple languages. All processing of
-logged information (like formatting) is deferred; the application only sends out those bytes that
-are relevant to what you are trying to log. By default this data is written to stdout, but in
-general the output channel is completely customizable.
+Super fast, minimal overhead, tracing / logging library for multiple languages (currently C/C++ and
+Rust). All processing of logged information (like formatting) is deferred; the application only
+sends out those bytes that are relevant to what you are trying to log that isn't known at compile
+time. By default this data is written to stdout, but in general the output channel is completely
+customizable.
 
 > [!Note]
 >
-> Does not currently work with binaries that run on Windows, or Mac OS.
->
-> More precisely it only supports the ELF binary format.
+> Does not currently work with binaries that run on Windows, or Mac OS. More generally it only
+> supports the ELF binary format.
+
+In C:
+
+```c
+#include <emtrace/emtrace.h>
+
+int main() {
+    EMTRACE_INIT();
+    EMTRACELN("Hello World!");
+
+    int a = 1;
+    int b = 2;
+    EMTRACELN("{} + {} = {}", int, a, int, b, int, a + b);
+}
+```
+
+In Rust:
+
+```rust
+use emtrace::{Out, init, traceln};
+
+fn main() {
+    init(&mut std::io::stdout().lock());
+    traceln!("Hello World!");
+
+    let a = 1;
+    let b = 2;
+    traceln!("{} + {} = {}", i32: a, i32: b, i32: a + b);
+}
+```
 
 Designed for low-latency, deeply-embedded, as well as bandwidth-constrained applications.
 
@@ -32,9 +62,12 @@ the data from the special `.emtrace` section, and produces the log.
 - [ ] complete support for tracing nested types (lists, tuples, etc.) on post-processing side
 - [ ] switch C tests from using `assert` to something else and combine all tests into a single
   executable
-- [ ] add usage examples to documentation
+- [x] add usage examples to documentation
 - [x] add basic tests
-- [ ] push to github and add CI pipeline (github actions?)
+- [ ] add more detailed documentation
+- [ ] split the above todo item into separate items for separate features
+- [x] push to github
+- [ ] add CI pipeline (github actions?)
 - [ ] add dedicated C++ implementation
 - [ ] add CMake profile-switching to justfile
 - [ ] add versioning information
