@@ -2,9 +2,9 @@
 
 Super fast (benchmarks WIP), minimal overhead, tracing / logging library for multiple languages
 (currently C/C++ and Rust). All processing of logged information (like formatting) is deferred; the
-application only sends out those bytes that are relevant to what you are trying to log that isn't
-known at compile time. By default this data is written to stdout, but in general the output channel
-is completely customizable.
+application only sends out those bytes that are relevant to what you are trying to log and that
+aren't known at compile time. By default this data is written to stdout, but in general the output
+channel is completely customizable.
 
 > [!Note]
 >
