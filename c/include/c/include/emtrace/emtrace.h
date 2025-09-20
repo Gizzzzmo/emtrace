@@ -789,7 +789,7 @@ EMT_STATIC_ASSERT(
 #define EMT_TRACE_F(fmt_info_attributes, formatter, out_fn, lock, unlock, extra_arg, postfix, ...) \
     do {                                                                                           \
         typedef struct {                                                                           \
-            size_t layout[(EMT_NUM_ARGS_REST(__VA_ARGS__) * 3 + 1) / 2 + 5];                       \
+            size_t layout[((EMT_NUM_ARGS_REST(__VA_ARGS__) * 3 + 1) / 2) + 5];                     \
             char fmt[sizeof(EMT_FIRST_ARG(__VA_ARGS__, 0) postfix)];                               \
             EMT_F_INFO_MEMBER_HELPER(                                                              \
                 EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)                      \
