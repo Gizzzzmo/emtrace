@@ -747,8 +747,6 @@ mod tests {
         assert_eq!(capture1[usize::SIZE..], capture2[usize::SIZE..]);
         assert_eq!(capture1[usize::SIZE..], capture3[usize::SIZE..]);
         assert_eq!(capture1[usize::SIZE..], capture4[usize::SIZE..]);
-        println!("{:?}", <[&[u8]; 0x10000] as Trace>::DESCENDANTS);
-        println!("{:?}", <&[u8] as Trace>::DESCENDANTS);
     }
 
     #[test]
