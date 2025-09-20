@@ -1,5 +1,4 @@
-use emtrace::{C_STYLE_FORMAT, Out, expect, magic_address_bytes, trace, traceln};
-use std::io::{Write, stdout};
+use emtrace::{C_STYLE_FORMAT, Out, expect, init, trace, traceln};
 
 fn main() {
     expect!(
@@ -10,7 +9,7 @@ fn main() {
           C format: test\n"
     );
 
-    stdout().lock().write_all(&magic_address_bytes()).unwrap();
+    init(&mut std::io::stdout().lock());
 
     traceln!("Edge cases:");
 
@@ -19,7 +18,7 @@ fn main() {
         i32: 0,
         f32: 0.0,
         bool: false,
-        str: *""
+        str: ""
     );
 
     // Test extreme values (u8 shows as character)
@@ -35,5 +34,5 @@ fn main() {
     traceln!("");
 
     // Test C-style format
-    traceln!("C format: %s", str: *"test", .formatter=C_STYLE_FORMAT);
+    traceln!("C format: %s", str: "test", .formatter=C_STYLE_FORMAT);
 }

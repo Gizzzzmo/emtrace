@@ -1,11 +1,8 @@
-use emtrace::{C_STYLE_FORMAT, Out, magic_address_bytes, trace, traceln};
-use std::io::Write;
+use emtrace::{C_STYLE_FORMAT, Out, init, trace, traceln};
 
 fn main() {
-    std::io::stdout()
-        .lock()
-        .write_all(&magic_address_bytes())
-        .unwrap();
+    init(&mut std::io::stdout().lock());
+
     trace!("{}", i32: 0);
     trace!("Yeeha {} {}\n", i32: 9, i32: 10);
     traceln!("Yeeha {}", i32: 9);

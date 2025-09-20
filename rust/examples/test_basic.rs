@@ -1,5 +1,4 @@
-use emtrace::{Out, expect, magic_address_bytes, trace, traceln};
-use std::io::{Write, stdout};
+use emtrace::{Out, expect, init, trace, traceln};
 
 fn main() {
     expect!(
@@ -7,13 +6,13 @@ fn main() {
           An integer: 42\n\
           A string: a string\n"
     );
+    init(&mut std::io::stdout().lock());
 
-    stdout().lock().write_all(&magic_address_bytes()).unwrap();
     traceln!("Hello from the basic test!");
     let x: i32 = 42;
     traceln!("An integer: {}", i32: x);
     let s: &str = "a string";
     trace!("A string: ");
-    traceln!("{}", str: *s);
+    traceln!("{}", str: s);
     // traceln!("A list: {}", [i32]: vec![1, 2, 3, 4]);
 }

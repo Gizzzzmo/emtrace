@@ -1,5 +1,4 @@
-use emtrace::{Out, expect, magic_address_bytes, traceln};
-use std::io::{Write, stdout};
+use emtrace::{Out, expect, init, traceln};
 
 fn main() {
     expect!(
@@ -8,7 +7,7 @@ fn main() {
           Size integers: 42 -42\n"
     );
 
-    stdout().lock().write_all(&magic_address_bytes()).unwrap();
+    init(&mut std::io::stdout().lock());
 
     // Test various signed integer types
     traceln!("Signed integers: {:d} {} {} {}",

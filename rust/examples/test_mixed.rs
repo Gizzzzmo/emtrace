@@ -1,5 +1,4 @@
-use emtrace::{Out, expect, magic_address_bytes, traceln};
-use std::io::{Write, stdout};
+use emtrace::{Out, expect, init, traceln};
 
 fn main() {
     expect!(
@@ -8,20 +7,20 @@ fn main() {
           Numbers: \x01 \x02 \x03 \x04 \x05\n"
     );
 
-    stdout().lock().write_all(&magic_address_bytes()).unwrap();
+    init(&mut std::io::stdout().lock());
 
     // Test mixing different types in one trace
     traceln!("Mixed types: {} {} {} {}",
         i32: 42,
         f32: 3.140000104904175f32,
         bool: true,
-        str: *"hello"
+        str: "hello"
     );
 
     // Test more complex formatting
     traceln!("Complex format: Value={}, Name={}, Active={}, Ratio={}",
         i32: 100,
-        str: *"test",
+        str: "test",
         bool: false,
         f64: 0.5
     );

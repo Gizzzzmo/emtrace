@@ -25,6 +25,10 @@ pub trait Out {
     fn begin(&mut self, info_addr: usize, total_size: usize);
 }
 
+pub fn init<T: Out>(out: &mut T) {
+    magic_address_bytes().serialize(out);
+}
+
 impl<T: Out> Out for MutexGuard<'_, T> {
     fn out(&mut self, b: &[u8]) {
         self.deref_mut().out(b)

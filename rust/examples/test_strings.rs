@@ -1,5 +1,4 @@
-use emtrace::{Out, expect, magic_address_bytes, trace, traceln};
-use std::io::{Write, stdout};
+use emtrace::{Out, expect, init, trace, traceln};
 
 fn main() {
     expect!(
@@ -9,26 +8,26 @@ fn main() {
           Multiple strings: first second third\n"
     );
 
-    stdout().lock().write_all(&magic_address_bytes()).unwrap();
+    init(&mut std::io::stdout().lock());
 
     // Test basic string
-    traceln!("{}", str: *"Hello, World!");
+    traceln!("{}", str: "Hello, World!");
 
     // Test empty string
     trace!("Empty string: ");
-    traceln!("{}", str: *"");
+    traceln!("{}", str: "");
 
     // Test unicode strings
     traceln!("Unicode: {} {} {}",
-        str: *"😀",
-        str: *"✅",
-        str: *"©"
+        str: "😀",
+        str: "✅",
+        str: "©"
     );
 
     // Test multiple strings
     traceln!("Multiple strings: {} {} {}",
-        str: *"first",
-        str: *"second",
-        str: *"third"
+        str: "first",
+        str: "second",
+        str: "third"
     );
 }
