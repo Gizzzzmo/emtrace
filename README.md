@@ -5,6 +5,12 @@ logged information (like formatting) is deferred; the application only sends out
 are relevant to what you are trying to log. By default this data is written to stdout, but in
 general the output channel is completely customizable.
 
+> [!Note]
+>
+> Does not currently work with binaries that run on Windows, or Mac OS.
+>
+> More precisely it only supports the ELF binary format.
+
 Designed for low-latency, deeply-embedded, as well as bandwidth-constrained applications.
 
 ## How it works
@@ -35,4 +41,4 @@ the data from the special `.emtrace` section, and produces the log.
 - [ ] publish rust crate to crates.io
 - [ ] add nix build recipe and publish to nixpkgs
 - [ ] make CMake version installable, add conan recipe, and publish to conan center
-- [ ] add compatibility with other binary formats (mach-o and coff)
+- [ ] add compatibility with other binary formats (mach-o and pe)
