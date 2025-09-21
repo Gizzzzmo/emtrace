@@ -13,6 +13,9 @@ channel is completely customizable.
 
 In C:
 
+The library currently consists of [a single header](./c/include/c/include/emtrace/emtrace.h). Simply
+download, and include it (works out of the gate with gcc, and clang).
+
 ```c
 #include <emtrace/emtrace.h>
 
@@ -27,6 +30,16 @@ int main() {
 ```
 
 In Rust:
+
+> [!Note]
+>
+> If you *only* need this to work in Rust, and aren't planning on incorporating any other language,
+> you should probably be using [demft](https://github.com/knurling-rs/defmt). It is much more
+> mature, featureful, and can also pack bytes more efficiently . For more details see
+> [below](#Comparison).
+
+I've not yet published anything on crates.io. So you will need to clone this repository for now if
+you want to use it.
 
 ```rust
 use emtrace::{Out, init, traceln};
@@ -55,6 +68,33 @@ the program will still run.
 The [post-processing script](./emtrace.py) takes the data output by the program while running and
 the data from the special `.emtrace` section, and produces the log.
 
+## Development
+
+If you want to tinker with the code, and need to figure out how to build, lint, and test it check
+out [AGENTS.md](AGENTS.md) (also useful for some 🌈*vibe-coding*🌈). The easiest way to get an the
+right development environment is to use the provided [nix flake](./flake.nix).
+
+## Comparison
+
+There are a few other projects who do something smiliar. This table presents a comparison to those I
+know, and have tried:
+
+- [defmt](https://github.com/knurling-rs/defmt)
+
+  - \+ much more mature
+  - \+ supports different kinds of encodings
+  - \+ more efficient packing of format info into ELF (unfortunately I don't see how the mechanism
+    they use could be workable in the C version)
+  - \- always requires a custom linker script
+  - \- only works in rust
+
+- [trice](https://github.com/rokath/trice)
+
+  - \+ more mature
+  - \+ supports different kinds of encodings
+  - \- preprocessing of source files is a required step
+  - \- only works in C/C++
+
 ## TODO
 
 - [x] add basic documentation
@@ -65,7 +105,7 @@ the data from the special `.emtrace` section, and produces the log.
 - [ ] switch C tests from using `assert` to something else and combine all tests into a single
   executable
 - [x] add usage examples to documentation
-- [ ] add download / install instructions to documentation
+- [x] add download / install instructions to documentation
 - [x] add basic tests
 - [ ] add more detailed documentation
 - [ ] split the above todo item into separate items for separate features
