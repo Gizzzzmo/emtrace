@@ -27,8 +27,8 @@ has a few extra options that you can checkout by running `python emtrace.py -h`
 
 ### In C
 
-The library currently consists of ( a single header )(./c/include/c/include/emtrace/emtrace.h).
-Simply download, and include it (works out of the gate with gcc, and clang).
+The library currently consists of [a single header](./c/include/c/include/emtrace/emtrace.h). Simply
+download, and include it (works out of the gate with gcc, and clang).
 
 ```c
 #include <emtrace/emtrace.h>
