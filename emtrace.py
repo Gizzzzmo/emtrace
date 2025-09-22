@@ -21,13 +21,13 @@ except ImportError:
 def detect_byteorder(b: bytes) -> Literal["little", "big", "unknown"] | None:
     """Given a sequence of bytes, this function returns the byte order.
 
-    None is returned if the sequence is longer than 256 or if there is a
+    None is returned if the sequence is longer than 256, shorter than 2, or if there is a
     duplicate byte in the sequence.
     "little" is returned if b[i] = b[i-1] + 1 and b[0] = 0.
     "big" is returned if b[i] = b[i+1] + 1 and b[0] = len(b) - 1.
     "unknown" is returned otherwise.
     """
-    if len(b) > 256:
+    if len(b) > 256 or len(b) < 2:
         return None
     found = [False for _ in range(len(b))]
     if int(b[0]) == 0:
@@ -705,13 +705,17 @@ def dump(x: str | None) -> tuple[Callable[[bytes], Any], Callable[[], None]]:
 if __name__ == "__main__":
     parser = ArgumentParser("emtrace")
 
-    _ = parser.add_argument("elf")
+    _ = parser.add_argument(
+        "elf",
+        help="Path to either an elf executable, or a raw binary that contains the .emtrace section bytes of the program whose output you are processing.",
+    )
     _ = parser.add_argument(
         "--input",
         "-i",
         nargs="?",
         default=get_input_stream("stdin"),
         type=get_input_stream,
+        help="Where to get read the bytes from that the traced binary produces. If not supplied it reads from stdin, otherwise it defaults to interpreting the argument as a file path from which the data will be read. It can also read from either a unix- or IP-socket by specifying either tcp://<ip>:<port> or unix://<path/to/unix/socket>",
     )
     _ = parser.add_argument(
         "--dump-input",
@@ -719,8 +723,15 @@ if __name__ == "__main__":
         default=dump(None),
         const="emtrace_input.bin",
         type=dump,
+        help="Separately dump the bytes being processed to a file (by default to emtrace_input.bin).",
     )
-    _ = parser.add_argument("--section-name", nargs="?", default=".emtrace", type=str)
+    _ = parser.add_argument(
+        "--section-name",
+        nargs="?",
+        default=".emtrace",
+        type=str,
+        help="Specify which section of the elf file to read the format information from.",
+    )
     _ = parser.add_argument(
         "--with-src-loc",
         nargs="?",
@@ -728,9 +739,16 @@ if __name__ == "__main__":
         const="relative",
         choices=["none", "absolute", "relative"],
         type=str,
+        help="Prepend, to every line of trace output, the source location from which it originated.",
     )
-    _ = parser.add_argument("--src-hyperlinks", action="store_true")
-    _ = parser.add_argument("--debug-script", action="store_true")
+    _ = parser.add_argument(
+        "--src-hyperlinks", action="store_true", help="Doesn't work yet."
+    )
+    _ = parser.add_argument(
+        "--debug-script",
+        action="store_true",
+        help="Make the script output trace information for debugging.",
+    )
     _ = parser.add_argument(
         "--test",
         nargs="?",

@@ -11,10 +11,24 @@ channel is completely customizable.
 > Does not currently work with binaries that run on Windows, or Mac OS. More generally it only
 > supports the ELF binary format.
 
-In C:
+## Usage
 
-The library currently consists of [a single header](./c/include/c/include/emtrace/emtrace.h). Simply
-download, and include it (works out of the gate with gcc, and clang).
+Choose the language you want to use below. Once you have a compiled binary (regardless of source
+language) you can run it, and pipe its output into [`emtrace.py`](./emtrace.py), to which you also
+have to supply the path to the same binary. E.g. something like this (assuming your executable is
+a.out):
+
+```bash
+./a.out | python path/to/emtrace.py a.out
+```
+
+The script is more efficient, when you have pyelftools installed, but it also works without it. It
+has a few extra options that you can checkout by running `python emtrace.py -h`
+
+### In C
+
+The library currently consists of ( a single header )(./c/include/c/include/emtrace/emtrace.h).
+Simply download, and include it (works out of the gate with gcc, and clang).
 
 ```c
 #include <emtrace/emtrace.h>
@@ -29,14 +43,14 @@ int main() {
 }
 ```
 
-In Rust:
+### In Rust
 
 > [!Note]
 >
 > If you *only* need this to work in Rust, and aren't planning on incorporating any other language,
 > you should probably be using [demft](https://github.com/knurling-rs/defmt). It is much more
 > mature, featureful, and can also pack bytes more efficiently . For more details see
-> [below](#Comparison).
+> [below](#comparison).
 
 I've not yet published anything on crates.io. So you will need to clone this repository for now if
 you want to use it.
