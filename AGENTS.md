@@ -55,7 +55,7 @@
 - Use type annotations pervasively
 - use ruff for formatting
 
-### Build System and Configuration files:
+### Build System and Configuration files
 
 - Keep `flake.nix` up-to-date with all necessary packages for development
 - Follow `alejandra.toml` for configuration for nix code style (2-space indent)
