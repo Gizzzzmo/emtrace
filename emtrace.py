@@ -504,7 +504,7 @@ def main(
         error(
             f"Unable to detect byteorder based on byteorder-id: {byteorder_id} ({size_t_size=})."
         )
-        sys.exit(0)
+        sys.exit(1)
 
     null_terminated: int = int.from_bytes(
         data[rest_info_loc + size_t_size : rest_info_loc + size_t_size * 2],
