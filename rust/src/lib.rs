@@ -644,7 +644,7 @@ pub static EMTRACE_MAGIC: [u8; MAGIC_SIZE] = {
     let mut idx = 35;
 
     #[allow(overflowing_literals)]
-    let byte_order_id_arr = 0x100f0e0d0c0b0a090807060504030201usize.to_ne_bytes();
+    let byte_order_id_arr = 0x0f0e0d0c0b0a09080706050403020100usize.to_ne_bytes();
     let mut i = 0;
     while i < size_of::<usize>() {
         magic[idx] = byte_order_id_arr[i];
