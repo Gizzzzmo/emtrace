@@ -1,3 +1,6 @@
+add_executable(demo_readme demo_readme.c)
+target_link_libraries(demo_readme PRIVATE emtrace::emtrace)
+
 add_executable(demo demo.c)
 target_link_libraries(demo PRIVATE emtrace::emtrace)
 

@@ -33,13 +33,13 @@ download, and include it (works out of the gate with gcc, and clang).
 ```c
 #include <emtrace/emtrace.h>
 
-int main() {
+int main(void) {
     EMTRACE_INIT();
     EMTRACELN("Hello World!");
 
     int a = 1;
     int b = 2;
-    EMTRACELN("{} + {} = {}", int, a, int, b, int, a + b);
+    EMTRACELN_F("{} + {} = {}", int, a, int, b, int, a + b);
 }
 ```
 
