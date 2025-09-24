@@ -49,4 +49,5 @@ if(
             ${CMAKE_COMMAND} -E create_symlink ${CMAKE_BINARY_DIR}/compile_commands.json
             ${CMAKE_SOURCE_DIR}/build/compile_commands.json
     )
+    write_file(${CMAKE_SOURCE_DIR}/build/.build_dir ${CMAKE_BINARY_DIR})
 endif()

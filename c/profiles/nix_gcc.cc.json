@@ -1,0 +1,15 @@
+{
+    "$schema": "https://cmake.org/cmake/help/v3.28/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "cc",
+            "hidden": true,
+            "binaryDir": "build/@BUILD_DIR@/gcc/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        }
+    ]
+}

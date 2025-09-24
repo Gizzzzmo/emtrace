@@ -1,4 +1,6 @@
 /*.json
+/.current_preset
+/.current_profile*
 !/CMakeProfilesSample.json
 !/common.json
 !/ci*.json

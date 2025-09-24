@@ -19,9 +19,12 @@ C_TEST_EXECUTABLES = [
 ]
 
 C_BUILD_DIRS = [
-    "../c/build/clang/rel",
-    "../c/build/clang/dbg",
-    "../c/build/clang/opt-dbg",
+    "../c/build/main/gcc/rel",
+    "../c/build/main/gcc/dbg",
+    "../c/build/main/gcc/opt-dbg",
+    "../c/build/main/clang/rel",
+    "../c/build/main/clang/dbg",
+    "../c/build/main/clang/opt-dbg",
 ]
 
 RUST_TEST_EXECUTABLES = [

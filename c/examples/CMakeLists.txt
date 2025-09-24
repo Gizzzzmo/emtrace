@@ -4,14 +4,16 @@ target_link_libraries(demo_readme PRIVATE emtrace::emtrace)
 add_executable(demo demo.c)
 target_link_libraries(demo PRIVATE emtrace::emtrace)
 
-add_executable(demo_cpp demo.cpp)
-target_link_libraries(demo_cpp PRIVATE emtrace::emtrace)
-
 add_executable(demo_c_socket demo_socket.c)
 target_link_libraries(demo_c_socket PRIVATE emtrace::emtrace)
 
-add_executable(demo_threads demo_threads.cpp)
-target_link_libraries(demo_threads PRIVATE emtrace::emtrace)
+if(EMTRACE_ENABLE_CXX)
+    add_executable(demo_cpp demo.cpp)
+    target_link_libraries(demo_cpp PRIVATE emtrace::emtrace)
+
+    add_executable(demo_threads demo_threads.cpp)
+    target_link_libraries(demo_threads PRIVATE emtrace::emtrace)
+endif()
 
 # End-to-end tests are part of examples,
 # because the ctest configuration doesn't actually test anything about them.

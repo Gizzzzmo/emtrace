@@ -127,7 +127,7 @@ know, and have tried:
 - [ ] add some basic benchmarks
 - [ ] add CI pipeline (github actions?)
 - [ ] add dedicated C++ implementation
-- [ ] add CMake profile-switching to justfile
+- [x] add CMake profile-switching to justfile
 - [ ] add versioning information
 - [ ] publish rust crate to crates.io
 - [ ] add nix build recipe and publish to nixpkgs
