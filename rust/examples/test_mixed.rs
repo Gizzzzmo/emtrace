@@ -2,7 +2,7 @@ use emtrace::{Out, expect, init, traceln};
 
 fn main() {
     expect!(
-        b"Mixed types: 42 3.140000104904175 True hello\n\
+        "Mixed types: 42 3.140000104904175 True hello\n\
           Complex format: Value=100, Name=test, Active=False, Ratio=0.5\n\
           Numbers: \x01 \x02 \x03 \x04 \x05\n"
     );

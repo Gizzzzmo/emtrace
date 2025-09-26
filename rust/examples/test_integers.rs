@@ -2,7 +2,7 @@ use emtrace::{Out, expect, init, traceln};
 
 fn main() {
     expect!(
-        b"Signed integers: -128 -32768 -2147483648 -9223372036854775808\n\
+        "Signed integers: -128 -32768 -2147483648 -9223372036854775808\n\
           Unsigned integers: 255 65535 4294967295 18446744073709551615\n\
           Size integers: 42 -42\n"
     );

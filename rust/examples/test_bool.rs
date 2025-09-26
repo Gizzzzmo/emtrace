@@ -1,7 +1,7 @@
 use emtrace::{C_STYLE_FORMAT, Out, expect, init, trace};
 
 fn main() {
-    expect!(b"True FalseTrue False");
+    expect!("True FalseTrue False");
 
     init(&mut std::io::stdout().lock());
     trace!("{} {}", bool: true, bool: false);

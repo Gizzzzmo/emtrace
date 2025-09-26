@@ -2,7 +2,7 @@ use emtrace::{C_STYLE_FORMAT, Out, expect, init, trace, traceln};
 
 fn main() {
     expect!(
-        b"Edge cases:\n\
+        "Edge cases:\n\
           Zero values: 0 0.0 False \n\
           Extremes: 255 -128 4294967295 -2147483648\n\
           No format\n\

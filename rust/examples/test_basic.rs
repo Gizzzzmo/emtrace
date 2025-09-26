@@ -2,9 +2,9 @@ use emtrace::{Out, expect, init, trace, traceln};
 
 fn main() {
     expect!(
-        b"Hello from the basic test!\n\
-          An integer: 42\n\
-          A string: a string\n"
+        "Hello from the basic test!\n\
+         An integer: 42\n\
+         A string: a string\n"
     );
     init(&mut std::io::stdout().lock());
 

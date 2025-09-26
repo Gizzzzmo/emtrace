@@ -2,10 +2,10 @@ use emtrace::{Out, expect, init, trace, traceln};
 
 fn main() {
     expect!(
-        b"Hello, World!\n\
-          Empty string: \n\
-          Unicode: \xF0\x9F\x98\x80 \xE2\x9C\x85 \xC2\xA9\n\
-          Multiple strings: first second third\n"
+        "Hello, World!\n\
+         Empty string: \n\
+         Unicode: 😀 ✅ ©\n\
+         Multiple strings: first second third\n"
     );
 
     init(&mut std::io::stdout().lock());

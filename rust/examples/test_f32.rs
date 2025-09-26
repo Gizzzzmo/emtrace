@@ -2,7 +2,7 @@ use emtrace::{C_STYLE_FORMAT, Out, expect, init, traceln};
 
 fn main() {
     expect!(
-        b"1.0 0.5 nan inf -inf\n\
+        "1.0 0.5 nan inf -inf\n\
           1.000000 0.500000 nan inf -inf\n"
     );
 

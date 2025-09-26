@@ -2,7 +2,7 @@ use emtrace::{Out, expect, init, traceln};
 
 fn main() {
     expect!(
-        b"Large integers:\n\
+        "Large integers:\n\
           i128: 170141183460469231731687303715884105727\n\
           u128: 340282366920938463463374607431768211455\n\
           Negative i128: -170141183460469231731687303715884105728\n"

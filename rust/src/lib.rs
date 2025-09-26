@@ -612,7 +612,17 @@ macro_rules! expect {
             const LEN: usize = $expected.len();
             #[unsafe(link_section = $section)]
             #[unsafe(no_mangle)]
-            static EXPECTED_OUTPUT: [u8; LEN] = *$expected;
+            static EXPECTED_OUTPUT: [u8; LEN] = {
+                let mut bytes: [u8; LEN] = [0; LEN];
+
+                let mut i = 0usize;
+                while i < LEN {
+                    bytes[i] = $expected.as_bytes()[i];
+                    i += 1;
+                }
+
+                bytes
+            };
             let _ = unsafe { std::ptr::read_volatile(&EXPECTED_OUTPUT) };
         }
     };
