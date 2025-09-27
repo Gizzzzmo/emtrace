@@ -886,44 +886,43 @@ EMT_STATIC_ASSERT(
 #define EMT_INIT(attrs, out, extra_arg)                                                            \
     do {                                                                                           \
         attrs emt_magic_t magic = {                                                                \
-            .main =                                                                                \
-                {0xd1,                                                                             \
-                 0x97,                                                                             \
-                 0xf5,                                                                             \
-                 0x22,                                                                             \
-                 0xd9,                                                                             \
-                 0x26,                                                                             \
-                 0x9f,                                                                             \
-                 0xd1,                                                                             \
-                 0xad,                                                                             \
-                 0x70,                                                                             \
-                 0x33,                                                                             \
-                 0x92,                                                                             \
-                 0xf6,                                                                             \
-                 0x59,                                                                             \
-                 0xdf,                                                                             \
-                 0xd0,                                                                             \
-                 0xfb,                                                                             \
-                 0xec,                                                                             \
-                 0xbd,                                                                             \
-                 0x60,                                                                             \
-                 0x97,                                                                             \
-                 0x13,                                                                             \
-                 0x25,                                                                             \
-                 0xe8,                                                                             \
-                 0x92,                                                                             \
-                 0x01,                                                                             \
-                 0xb2,                                                                             \
-                 0x5a,                                                                             \
-                 0x38,                                                                             \
-                 0x5d,                                                                             \
-                 0x9e,                                                                             \
-                 0xc7,                                                                             \
-                 offsetof(emt_magic_t, info) - offsetof(emt_magic_t, main),                        \
-                 sizeof(emt_size_t),                                                               \
-                 sizeof(emt_ptr_t),                                                                \
-                 EMT_ALIGNMENT_POWER},                                                             \
-            .info = {                                                                              \
+            {0xd1,                                                                                 \
+             0x97,                                                                                 \
+             0xf5,                                                                                 \
+             0x22,                                                                                 \
+             0xd9,                                                                                 \
+             0x26,                                                                                 \
+             0x9f,                                                                                 \
+             0xd1,                                                                                 \
+             0xad,                                                                                 \
+             0x70,                                                                                 \
+             0x33,                                                                                 \
+             0x92,                                                                                 \
+             0xf6,                                                                                 \
+             0x59,                                                                                 \
+             0xdf,                                                                                 \
+             0xd0,                                                                                 \
+             0xfb,                                                                                 \
+             0xec,                                                                                 \
+             0xbd,                                                                                 \
+             0x60,                                                                                 \
+             0x97,                                                                                 \
+             0x13,                                                                                 \
+             0x25,                                                                                 \
+             0xe8,                                                                                 \
+             0x92,                                                                                 \
+             0x01,                                                                                 \
+             0xb2,                                                                                 \
+             0x5a,                                                                                 \
+             0x38,                                                                                 \
+             0x5d,                                                                                 \
+             0x9e,                                                                                 \
+             0xc7,                                                                                 \
+             offsetof(emt_magic_t, info) - offsetof(emt_magic_t, main),                            \
+             sizeof(emt_size_t),                                                                   \
+             sizeof(emt_ptr_t),                                                                    \
+             EMT_ALIGNMENT_POWER},                                                                 \
+            {                                                                                      \
                 (emt_size_t) 0x0706050403020100,                                                   \
                 EMT_NULL_TERMINATED,                                                               \
                 EMT_LENGTH_PREFIXED,                                                               \

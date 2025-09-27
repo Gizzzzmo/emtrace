@@ -93,23 +93,23 @@ class Char:
 
 
 class MyList[T]:
-    def __init__(self, l: list[T]) -> None:
-        self.l: list[T] = l
+    def __init__(self, list_arg: list[T]) -> None:
+        self.list: list[T] = list_arg
 
     @override
     def __format__(self, format_spec: str, /) -> str:
         parts = format_spec.split("*", 1)
         match parts:
             case [_]:
-                return self.l.__format__(format_spec)
+                return self.list.__format__(format_spec)
             case [sep, el_spec]:
-                return sep.join([el.__format__(el_spec) for el in self.l])
+                return sep.join([el.__format__(el_spec) for el in self.list])
             case _:
                 assert False
 
     @override
     def __repr__(self) -> str:
-        return self.l.__repr__()
+        return self.list.__repr__()
 
 
 def _py_formatter(fmt: str, args: list[Any]) -> str:
@@ -380,12 +380,12 @@ def to_list(parser: Parser, info: TypeInfo) -> MyList[Any]:
 
     parser.debug_trace(f"{size=}")
 
-    l = []
+    parsed = []
     for _ in range(size):
         child_id, child_info = info.children[""]
-        l.append(parser.parse(child_id, child_info))
+        parsed.append(parser.parse(child_id, child_info))
 
-    return MyList(l)
+    return MyList(parsed)
 
 
 translation_le: dict[str, Callable[[Parser, TypeInfo], Any]] = {
