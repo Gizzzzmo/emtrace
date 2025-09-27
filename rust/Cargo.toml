@@ -8,6 +8,31 @@ readme = "../README.md"
 repository = "https://github.com/Gizzzzmo/emtrace"
 license = "Apache-2.0"
 
+[features]
+alignment_power_0 = []
+alignment_power_1 = []
+alignment_power_2 = []
+alignment_power_3 = []
+alignment_power_4 = []
+alignment_power_5 = []
+alignment_power_6 = []
+alignment_power_7 = []
+alignment_power_8 = []
+alignment_power_9 = []
+alignment_power_10 = []
+
+ptr_u128 = []
+ptr_u64 = []
+ptr_u32 = []
+ptr_u16 = []
+ptr_u8 = []
+
+size_u128 = []
+size_u64 = []
+size_u32 = []
+size_u16 = []
+size_u8 = []
+
 [[example]]
 name = "test_basic"
 
@@ -40,3 +65,4 @@ name = "demo_stdout"
 test = false
 
 [dependencies]
+cfg-if = "1.0.3"

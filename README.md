@@ -115,7 +115,7 @@ know, and have tried:
 - [x] add license
 - [ ] make rust's init function + magic_bytes variable into a macro to support different section
   names
-- [ ] complete adding support for tracing nested types (lists, tuples, etc.) on post-processing side
+- [x] complete adding support for tracing nested types (lists, tuples, etc.) on post-processing side
 - [ ] switch C tests from using `assert` to something else and combine all tests into a single
   executable
 - [x] add usage examples to documentation

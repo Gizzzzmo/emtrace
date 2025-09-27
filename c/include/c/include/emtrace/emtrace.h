@@ -28,16 +28,32 @@ extern "C" {
     } while (0)
 #endif
 
+#ifdef EMT_PTR_T
+typedef EMTRACE_PTR_T emt_ptr_t;
+#else
+typedef uint32_t emt_ptr_t;
+#endif
+
+#ifdef EMT_SIZE_T
+typedef EMTRACE_SIZE_T emt_size_t;
+#else
+typedef uint32_t emt_size_t;
+#endif
+
+#ifndef EMT_ALIGNMENT_POWER
+#define EMT_ALIGNMENT_POWER 0
+#endif
+
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) ||                                  \
     (defined(__cplusplus) && __cplusplus >= 201103L)
-enum : size_t {
+enum : emt_size_t {
     // In the format info signals whether a piece of dynamically sized data is null-terminated or
     // length-prefixed.
     EMT_NULL_TERMINATED = ///< associated bytes are variable in length and null-terminated
-    (((size_t) 1) << (8 * sizeof(size_t) - 1)),
+    (((emt_size_t) 1) << (8 * sizeof(emt_size_t) - 1)),
     EMT_LENGTH_PREFIXED = ///< associates bytes are variable in length prefixed by how many there
                           ///< will be
-    (((size_t) 1) << (8 * sizeof(size_t) - 2)),
+    (((emt_size_t) 1) << (8 * sizeof(emt_size_t) - 2)),
 
     // In the format info signals what formatter to use.
     EMT_PY_FORMAT = 0, ///< Use python's str.format function for formatting.
@@ -45,34 +61,39 @@ enum : size_t {
                     ///< are discarded.
     1,
     EMT_C_STYLE_FORMAT = 2, ///< Use python's C-style formatter
+
+    EMT_ALIGNMENT = 1 << (EMT_ALIGNMENT_POWER),
 };
 #else
+
 /// associated bytes are variable in length and null-terminated
-#define EMT_NULL_TERMINATED (((size_t) 1) << (8 * sizeof(size_t) - 1))
+#define EMT_NULL_TERMINATED (((emt_size_t) 1) << (8 * sizeof(emt_size_t) - 1))
 /// associates bytes are variable in length prefixed by how many there will be
-#define EMT_LENGTH_PREFIXED (((size_t) 1) << (8 * sizeof(size_t) - 2))
+#define EMT_LENGTH_PREFIXED (((emt_size_t) 1) << (8 * sizeof(emt_size_t) - 2))
 
 /// Use python's str.format function for formatting.
-#define EMT_PY_FORMAT ((size_t) 0)
+#define EMT_PY_FORMAT ((emt_size_t) 0)
 /// Do not use any formatter; print the string as-is. All additional arguments are discarded.
-#define EMT_NO_FORMAT ((size_t) 1)
+#define EMT_NO_FORMAT ((emt_size_t) 1)
 /// Use python's C-style formatter
-#define EMT_C_STYLE_FORMAT ((size_t) 2)
+#define EMT_C_STYLE_FORMAT ((emt_size_t) 2)
+
+#define EMT_ALIGNMENT (1 << (EMT_ALIGNMENT_POWER))
 #endif
 
 typedef struct {
-    uint8_t
-        main[35]; ///< first 32 bytes are emtrace's magic constant.
-                  ///< next byte contains the offset from start of member main to start of member
-                  ///< info. final two bytes contain sizeof(size_t), and sizeof(void*) respectively
-    size_t info[4];
-    // size_t byteorder_id;
-    // size_t null_terminated;
-    // size_t length_prefixed;
-    // size_t no_format;
+    uint8_t main[36]; ///< first 32 bytes are emtrace's magic constant.
+                      ///< next byte contains the offset from start of member main to start of
+                      ///< member info. final three bytes contain sizeof(emt_size_t), sizeof(void*),
+                      ///< and the power of two to which all format info is aligned respectively
+    emt_size_t info[4];
+    // emt_size_t byteorder_id;
+    // emt_size_t null_terminated;
+    // emt_size_t length_prefixed;
+    // emt_size_t no_format;
 } emt_magic_t;
 
-static inline void emt_out_file(const void* data, size_t size, FILE* file) {
+static inline void emt_out_file(const void* data, emt_size_t size, FILE* file) {
     fwrite(data, 1, size, file);
 }
 
@@ -789,7 +810,7 @@ EMT_STATIC_ASSERT(
 #define EMT_TRACE_F(fmt_info_attributes, formatter, out_fn, lock, unlock, extra_arg, postfix, ...) \
     do {                                                                                           \
         typedef struct {                                                                           \
-            size_t layout[((EMT_NUM_ARGS_REST(__VA_ARGS__) * 3 + 1) / 2) + 5];                     \
+            emt_size_t layout[((EMT_NUM_ARGS_REST(__VA_ARGS__) * 3 + 1) / 2) + 5];                 \
             char fmt[sizeof(EMT_FIRST_ARG(__VA_ARGS__, 0) postfix)];                               \
             EMT_F_INFO_MEMBER_HELPER(                                                              \
                 EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)                      \
@@ -809,7 +830,7 @@ EMT_STATIC_ASSERT(
             EMT_F_INFO_HELPER(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))       \
                 __FILE__,                                                                          \
         };                                                                                         \
-        const void* info_ptr = &info;                                                              \
+        emt_ptr_t info_ptr = (emt_ptr_t) ((uintptr_t) &info >> EMT_ALIGNMENT_POWER);               \
         lock(                                                                                      \
             (const void*) &info_ptr,                                                               \
             EMT_F_TOTAL_SIZE_HELPER(                                                               \
@@ -836,7 +857,7 @@ EMT_STATIC_ASSERT(
 #define EMT_TRACE_S(fmt_info_attributes, out_fn, lock, unlock, extra_arg, postfix, str)            \
     do {                                                                                           \
         typedef struct {                                                                           \
-            size_t layout[8];                                                                      \
+            emt_size_t layout[8];                                                                  \
             char fmt[sizeof("{}" postfix)];                                                        \
             char type_1[sizeof("string")];                                                         \
             char file[sizeof(__FILE__)];                                                           \
@@ -849,7 +870,7 @@ EMT_STATIC_ASSERT(
             __FILE__,                                                                              \
                                                                                                    \
         };                                                                                         \
-        const void* info_ptr = &info;                                                              \
+        emt_ptr_t info_ptr = (emt_ptr_t) ((uintptr_t) &info >> EMT_ALIGNMENT_POWER);               \
         lock((const void*) &info_ptr, sizeof(info_ptr) | EMT_NULL_TERMINATED, extra_arg);          \
         out_fn((const void*) &info_ptr, sizeof(info_ptr), extra_arg);                              \
         const char* ptr = str;                                                                     \
@@ -865,55 +886,56 @@ EMT_STATIC_ASSERT(
 #define EMT_INIT(attrs, out, extra_arg)                                                            \
     do {                                                                                           \
         attrs emt_magic_t magic = {                                                                \
-            .main = {0xd1,                                                                         \
-                     0x97,                                                                         \
-                     0xf5,                                                                         \
-                     0x22,                                                                         \
-                     0xd9,                                                                         \
-                     0x26,                                                                         \
-                     0x9f,                                                                         \
-                     0xd1,                                                                         \
-                     0xad,                                                                         \
-                     0x70,                                                                         \
-                     0x33,                                                                         \
-                     0x92,                                                                         \
-                     0xf6,                                                                         \
-                     0x59,                                                                         \
-                     0xdf,                                                                         \
-                     0xd0,                                                                         \
-                     0xfb,                                                                         \
-                     0xec,                                                                         \
-                     0xbd,                                                                         \
-                     0x60,                                                                         \
-                     0x97,                                                                         \
-                     0x13,                                                                         \
-                     0x25,                                                                         \
-                     0xe8,                                                                         \
-                     0x92,                                                                         \
-                     0x01,                                                                         \
-                     0xb2,                                                                         \
-                     0x5a,                                                                         \
-                     0x38,                                                                         \
-                     0x5d,                                                                         \
-                     0x9e,                                                                         \
-                     0xc7,                                                                         \
-                     offsetof(emt_magic_t, info) - offsetof(emt_magic_t, main),                    \
-                     sizeof(size_t),                                                               \
-                     sizeof(void*)},                                                               \
+            .main =                                                                                \
+                {0xd1,                                                                             \
+                 0x97,                                                                             \
+                 0xf5,                                                                             \
+                 0x22,                                                                             \
+                 0xd9,                                                                             \
+                 0x26,                                                                             \
+                 0x9f,                                                                             \
+                 0xd1,                                                                             \
+                 0xad,                                                                             \
+                 0x70,                                                                             \
+                 0x33,                                                                             \
+                 0x92,                                                                             \
+                 0xf6,                                                                             \
+                 0x59,                                                                             \
+                 0xdf,                                                                             \
+                 0xd0,                                                                             \
+                 0xfb,                                                                             \
+                 0xec,                                                                             \
+                 0xbd,                                                                             \
+                 0x60,                                                                             \
+                 0x97,                                                                             \
+                 0x13,                                                                             \
+                 0x25,                                                                             \
+                 0xe8,                                                                             \
+                 0x92,                                                                             \
+                 0x01,                                                                             \
+                 0xb2,                                                                             \
+                 0x5a,                                                                             \
+                 0x38,                                                                             \
+                 0x5d,                                                                             \
+                 0x9e,                                                                             \
+                 0xc7,                                                                             \
+                 offsetof(emt_magic_t, info) - offsetof(emt_magic_t, main),                        \
+                 sizeof(emt_size_t),                                                               \
+                 sizeof(emt_ptr_t),                                                                \
+                 EMT_ALIGNMENT_POWER},                                                             \
             .info = {                                                                              \
-                (size_t) 0x0706050403020100,                                                       \
+                (emt_size_t) 0x0706050403020100,                                                   \
                 EMT_NULL_TERMINATED,                                                               \
                 EMT_LENGTH_PREFIXED,                                                               \
             }                                                                                      \
         };                                                                                         \
-        const void* magic_ptr = &magic;                                                            \
+        emt_ptr_t magic_ptr = (emt_ptr_t) ((uintptr_t) &magic >> EMT_ALIGNMENT_POWER);             \
         out((const void*) &magic_ptr, sizeof(magic_ptr), extra_arg);                               \
     } while (0)
 
 #ifdef __GNUC__
-#define EMT_DEFAULT_SEC_ATTR __attribute__((used)) __attribute__((section(".emtrace"))) static const
-#elif defined(__TINYC__)
-#define EMT_DEFAULT_SEC_ATTR __attribute__((section(".emtrace"))) static const
+#define EMT_DEFAULT_SEC_ATTR                                                                       \
+    __attribute__((used, aligned(EMT_ALIGNMENT), section(".emtrace"))) static const
 #endif
 
 #define EMT_FLOCK_FILE(x, y, file) flockfile(file)

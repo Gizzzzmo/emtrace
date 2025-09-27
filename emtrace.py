@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Callable, Literal, Any, override
 from argparse import ArgumentParser, ArgumentTypeError
 from pathlib import Path
+from dataclasses import dataclass
 import sys
 import re
 import os
@@ -27,7 +28,7 @@ def detect_byteorder(b: bytes) -> Literal["little", "big", "unknown"] | None:
     "big" is returned if b[i] = b[i+1] + 1 and b[0] = len(b) - 1.
     "unknown" is returned otherwise.
     """
-    if len(b) > 256 or len(b) < 2:
+    if len(b) > 256 or len(b) < 1:
         return None
     found = [False for _ in range(len(b))]
     if int(b[0]) == 0:
@@ -51,56 +52,6 @@ def detect_byteorder(b: bytes) -> Literal["little", "big", "unknown"] | None:
             byteorder = "unknown"
 
     return byteorder
-
-
-def signed_le(b: bytes) -> int:
-    """Interpret bytes as a little-endian signed integer."""
-    return int.from_bytes(b, byteorder="little", signed=True)
-
-
-def signed_be(b: bytes) -> int:
-    """Interpret bytes as a big-endian signed integer."""
-    return int.from_bytes(b, byteorder="big", signed=True)
-
-
-def unsigned_le(b: bytes) -> int:
-    """Interpret bytes as a little-endian unsigned integer."""
-    return int.from_bytes(b, byteorder="little", signed=False)
-
-
-def unsigned_be(b: bytes) -> int:
-    """Interpret bytes as a big-endian unsigned integer."""
-    return int.from_bytes(b, byteorder="big", signed=False)
-
-
-def string(b: bytes) -> str:
-    """Interpret bytes as a UTF-8 string."""
-    return b.decode("utf-8")
-
-
-def to_bool(b: bytes) -> bool:
-    """Interpret a byte as a bool."""
-    return b[0] != 0
-
-
-def float_le(b: bytes) -> float:
-    """Interpret bytes as a little-endian float."""
-    return struct.unpack("<f", b)[0]
-
-
-def double_le(b: bytes) -> float:
-    """Interpret bytes as a little-endian double."""
-    return struct.unpack("<d", b)[0]
-
-
-def float_be(b: bytes) -> float:
-    """Interpret bytes as a big-endian float."""
-    return struct.unpack(">f", b)[0]
-
-
-def double_be(b: bytes) -> float:
-    """Interpret bytes as a big-endian double."""
-    return struct.unpack(">d", b)[0]
 
 
 class SChar:
@@ -141,6 +92,26 @@ class Char:
         return f"char({hex(self.value)})"
 
 
+class MyList[T]:
+    def __init__(self, l: list[T]) -> None:
+        self.l: list[T] = l
+
+    @override
+    def __format__(self, format_spec: str, /) -> str:
+        parts = format_spec.split("*", 1)
+        match parts:
+            case [_]:
+                return self.l.__format__(format_spec)
+            case [sep, el_spec]:
+                return sep.join([el.__format__(el_spec) for el in self.l])
+            case _:
+                assert False
+
+    @override
+    def __repr__(self) -> str:
+        return self.l.__repr__()
+
+
 def _py_formatter(fmt: str, args: list[Any]) -> str:
     return fmt.format(*args)
 
@@ -160,8 +131,7 @@ class FmtInfo:
         self.size_t_size: int = size_t_size
         self.size_t_byteorder: Literal["little", "big"] = size_t_byteorder
         self.formatter: Callable[[str, list[Any]], str] = formatter
-        self.parsers: list[Callable[[bytes], Any]] = []
-        self.param_sizes: list[int | Literal["null_terminated", "length_prefixed"]] = []
+        self.type_infos: list[tuple[str, TypeInfo]] = []
         self.file: str = ""
         self.line: int = -1
 
@@ -170,45 +140,15 @@ class FmtInfo:
         self.file = file
         self.line = line
 
-    def add_param(
-        self,
-        parser: Callable[[bytes], Any],
-        size: int | Literal["null_terminated", "length_prefixed"],
-    ) -> None:
+    def add_param(self, id: str, type_info: TypeInfo) -> None:
         """Add a parameter to the format info."""
-        self.parsers.append(parser)
-        self.param_sizes.append(size)
+        self.type_infos.append((id, type_info))
 
-    def format(
-        self, stream: Callable[[int], bytes]
-    ) -> str | list[Any] | tuple[list[Any], bytes]:
+    def format(self, parser: Parser) -> str | list[Any] | tuple[list[Any], bytes]:
         """Format the trace message from the stream."""
         args: list[Any] = []
-        for parser, size in zip(self.parsers, self.param_sizes):
-            match size:
-                case "null_terminated":
-                    arr = bytearray()
-                    while len(arr) == 0 or arr[-1] != 0:
-                        b = stream(1)
-                        if len(b) == 0:
-                            return (args, bytes(arr))
-                        arr.append(b[0])
-                    args.append(parser(bytes(arr[:-1])))
-                    continue
-
-                case "length_prefixed":
-                    b = stream(self.size_t_size)
-                    if len(b) < self.size_t_size:
-                        return (args, b)
-                    size = int.from_bytes(b, byteorder=self.size_t_byteorder)
-                case int(size):
-                    pass
-
-            b = stream(size)
-            if len(b) < size:
-                return (args, b)
-
-            args.append(parser(b))
+        for id, type_info in self.type_infos:
+            args.append(parser.parse(id, type_info))
 
         try:
             formatted = self.formatter(self.fmt_string, args)
@@ -216,6 +156,331 @@ class FmtInfo:
             return [*args, err]
 
         return formatted
+
+
+@dataclass
+class Size:
+    min_size: int
+    length_prefixed: bool
+    null_terminated: bool
+
+
+class TypeInfo:
+    size: Size
+    children: dict[int | str, tuple[str, TypeInfo]]
+
+    def __init__(
+        self, size: Size, children: dict[int | str, tuple[str, TypeInfo]] | None = None
+    ) -> None:
+        self.size = size
+        if children is None:
+            self.children = {}
+        else:
+            self.children = children
+
+
+class EndOfStreamException(Exception):
+    pass
+
+
+class Parser:
+    translation: dict[str, Callable[[Parser, TypeInfo], Any]]
+    _istream: Callable[[int], bytes]
+    debug_trace: Callable[[*tuple[Any, ...]], None] = lambda *args: None
+    size_t_size: int
+    ptr_size: int
+    size_t_byteorder: Literal["big", "little"]
+    ptr_byteorder: Literal["big", "little"]
+
+    def __init__(
+        self,
+        translation: dict[str, Callable[[Parser, TypeInfo], Any]],
+        istream: Callable[[int], bytes],
+        debug_trace: Callable[[*tuple[Any, ...]], None] = lambda *args: None,
+        size_t_size: int = 8,
+        ptr_size: int = 8,
+        size_t_byteorder: Literal["big", "little"] = "little",
+        ptr_byteorder: Literal["big", "little"] = "little",
+    ):
+        self.translation = translation
+        self._istream = istream
+        self.debug_trace = debug_trace
+        self.size_t_size = size_t_size
+        self.ptr_size = ptr_size
+        self.size_t_byteorder = size_t_byteorder
+        self.ptr_byteorder = ptr_byteorder
+        pass
+
+    def parse(self, id: str, info: TypeInfo):
+        return self.translation[id](self, info)
+
+    def read(self, amount: int):
+        b = self._istream(amount)
+        if len(b) < amount:
+            raise EndOfStreamException
+
+        return b
+
+    def read_ptr(self):
+        return int.from_bytes(
+            self.read(self.ptr_size), byteorder=self.ptr_byteorder, signed=False
+        )
+
+    def read_size_t(self):
+        return int.from_bytes(
+            self.read(self.size_t_size), byteorder=self.size_t_byteorder, signed=False
+        )
+
+    def read_until(self, b: bytes = b"\x00") -> bytes:
+        bs = bytearray(self.read(len(b)))
+        while bytes(bs[-len(b) :]) != b:
+            bs.extend(self.read(1))
+
+        return bytes(bs[: -len(b)])
+
+
+def signed_le(parser: Parser, info: TypeInfo) -> int:
+    """Interpret bytes as a little-endian signed integer."""
+    assert not info.size.null_terminated
+
+    if info.size.length_prefixed:
+        size = parser.read_size_t()
+    else:
+        size = info.size.min_size
+
+    b = parser.read(size)
+    return int.from_bytes(b, byteorder="little", signed=True)
+
+
+def signed_be(parser: Parser, info: TypeInfo) -> int:
+    """Interpret bytes as a big-endian signed integer."""
+    assert not info.size.null_terminated
+
+    if info.size.length_prefixed:
+        size = parser.read_size_t()
+    else:
+        size = info.size.min_size
+
+    b = parser.read(size)
+    return int.from_bytes(b, byteorder="big", signed=True)
+
+
+def unsigned_le(parser: Parser, info: TypeInfo) -> int:
+    """Interpret bytes as a little-endian unsigned integer."""
+    assert not info.size.null_terminated
+
+    if info.size.length_prefixed:
+        size = parser.read_size_t()
+    else:
+        size = info.size.min_size
+
+    b = parser.read(size)
+    return int.from_bytes(b, byteorder="little", signed=False)
+
+
+def unsigned_be(parser: Parser, info: TypeInfo) -> int:
+    """Interpret bytes as a big-endian unsigned integer."""
+    assert not info.size.null_terminated
+
+    if info.size.length_prefixed:
+        size = parser.read_size_t()
+    else:
+        size = info.size.min_size
+
+    b = parser.read(size)
+    return int.from_bytes(b, byteorder="little", signed=True)
+
+
+def string(parser: Parser, info: TypeInfo) -> str:
+    if info.size.null_terminated:
+        assert not info.size.length_prefixed
+        b = parser.read_until()
+        parser.debug_trace(b)
+        return b.decode("utf-8")
+
+    if info.size.length_prefixed:
+        size = parser.read_size_t()
+    else:
+        size = info.size.min_size
+
+    return parser.read(size).decode("utf-8")
+
+
+def to_bool(parser: Parser, info: TypeInfo):
+    x = unsigned_be(parser, info)
+    return x != 0
+
+
+def float_le(parser: Parser, info: TypeInfo) -> float:
+    """Interpret bytes as a little-endian float."""
+    assert not info.size.null_terminated
+
+    if info.size.length_prefixed:
+        size = parser.read_size_t()
+    else:
+        size = info.size.min_size
+
+    assert size in [2, 4, 8]
+    b = parser.read(size)
+    match size:
+        case 2:
+            return struct.unpack("<e", b)[0]
+        case 4:
+            return struct.unpack("<f", b)[0]
+        case 8:
+            return struct.unpack("<d", b)[0]
+        case _:
+            assert False
+
+
+def float_be(parser: Parser, info: TypeInfo) -> float:
+    """Interpret bytes as a big-endian float."""
+    assert not info.size.null_terminated
+
+    if info.size.length_prefixed:
+        size = parser.read_size_t()
+    else:
+        size = info.size.min_size
+
+    assert size in [2, 4, 8]
+    b = parser.read(size)
+    match size:
+        case 2:
+            return struct.unpack(">e", b)[0]
+        case 4:
+            return struct.unpack(">f", b)[0]
+        case 8:
+            return struct.unpack(">d", b)[0]
+        case _:
+            assert False
+
+
+def signed_char(parser: Parser, info: TypeInfo):
+    assert not info.size.null_terminated
+    assert not info.size.length_prefixed
+    assert info.size.min_size == 1
+
+    return SChar(parser.read(info.size.min_size))
+
+
+def char(parser: Parser, info: TypeInfo):
+    assert not info.size.null_terminated
+    assert not info.size.length_prefixed
+    assert info.size.min_size == 1
+
+    return Char(parser.read(info.size.min_size))
+
+
+def to_list(parser: Parser, info: TypeInfo) -> MyList[Any]:
+    parser.debug_trace(info.size)
+    if info.size.length_prefixed:
+        size = parser.read_size_t()
+    else:
+        size = info.size.min_size
+
+    parser.debug_trace(f"{size=}")
+
+    l = []
+    for _ in range(size):
+        child_id, child_info = info.children[""]
+        l.append(parser.parse(child_id, child_info))
+
+    return MyList(l)
+
+
+translation_le: dict[str, Callable[[Parser, TypeInfo], Any]] = {
+    # signed
+    "signed": signed_le,
+    "int": signed_le,
+    "signed int": signed_le,
+    "int32_t": signed_le,
+    "long": signed_le,
+    "signed long": signed_le,
+    "long long": signed_le,
+    "signed long long": signed_le,
+    "int64_t": signed_le,
+    "int128_t": signed_le,
+    "short": signed_le,
+    "signed short": signed_le,
+    "int16_t": signed_le,
+    "ssize_t": signed_le,
+    "ptrdiff_t": signed_le,
+    "intptr_t": signed_le,
+    # char
+    "signed char": signed_char,
+    "int8_t": signed_char,
+    "unsigned char": char,
+    "char": char,
+    "uint8_t": char,
+    # unsigned
+    "unsigned": unsigned_le,
+    "unsigned int": unsigned_le,
+    "uint32_t": unsigned_le,
+    "unsigned long": unsigned_le,
+    "unsigned long long": unsigned_le,
+    "uint64_t": unsigned_le,
+    "uint128_t": unsigned_le,
+    "uint16_t": unsigned_le,
+    "size_t": unsigned_le,
+    "uintptr_t": unsigned_le,
+    "*": unsigned_le,
+    # string
+    "string": string,
+    # other
+    "bool": to_bool,
+    "_Bool": to_bool,
+    "float": float_le,
+    "double": float_le,
+    # list
+    "list": to_list,
+}
+
+translation_be: dict[str, Callable[[Parser, TypeInfo], Any]] = {
+    # signed
+    "signed": signed_be,
+    "int": signed_be,
+    "signed int": signed_be,
+    "int32_t": signed_be,
+    "long": signed_be,
+    "signed long": signed_be,
+    "long long": signed_be,
+    "signed long long": signed_be,
+    "int64_t": signed_be,
+    "int128_t": signed_be,
+    "short": signed_be,
+    "signed short": signed_be,
+    "int16_t": signed_be,
+    "ssize_t": signed_be,
+    "ptrdiff_t": signed_be,
+    "intptr_t": signed_be,
+    # char
+    "signed char": signed_char,
+    "int8_t": signed_char,
+    "unsigned char": char,
+    "char": char,
+    "uint8_t": char,
+    # unsigned
+    "unsigned": unsigned_be,
+    "unsigned int": unsigned_be,
+    "uint32_t": unsigned_be,
+    "unsigned long": unsigned_be,
+    "unsigned long long": unsigned_be,
+    "uint64_t": unsigned_be,
+    "uint128_t": unsigned_be,
+    "uint16_t": unsigned_be,
+    "size_t": unsigned_be,
+    "uintptr_t": unsigned_be,
+    "*": unsigned_be,
+    # string
+    "string": string,
+    # other
+    "bool": to_bool,
+    "_Bool": to_bool,
+    "float": float_be,
+    "double": float_be,
+    # list
+    "list": to_list,
+}
 
 
 class Emtrace:
@@ -234,54 +499,6 @@ class Emtrace:
         debug_trace: Callable[[*tuple[Any, ...]], None] = lambda *args: None,
     ) -> None:
         """Initialize the Emtrace parser."""
-        unsigned = unsigned_le if byteorder == "little" else unsigned_be
-        signed = signed_le if byteorder == "little" else signed_be
-        float32 = float_le if byteorder == "little" else float_be
-        float64 = double_le if byteorder == "little" else double_be
-        self.type_mapping: dict[str, Callable[[bytes], Any]] = {
-            # signed
-            "signed": signed,
-            "int": signed,
-            "signed int": signed,
-            "int32_t": signed,
-            "long": signed,
-            "signed long": signed,
-            "long long": signed,
-            "signed long long": signed,
-            "int64_t": signed,
-            "int128_t": signed,
-            "short": signed,
-            "signed short": signed,
-            "int16_t": signed,
-            "ssize_t": signed,
-            "ptrdiff_t": signed,
-            "intptr_t": signed,
-            # char
-            "signed char": SChar,
-            "int8_t": SChar,
-            "unsigned char": Char,
-            "char": Char,
-            "uint8_t": Char,
-            # unsigned
-            "unsigned": unsigned,
-            "unsigned int": unsigned,
-            "uint32_t": unsigned,
-            "unsigned long": unsigned,
-            "unsigned long long": unsigned,
-            "uint64_t": unsigned,
-            "uint128_t": unsigned,
-            "uint16_t": unsigned,
-            "size_t": unsigned,
-            "uintptr_t": unsigned,
-            "*": unsigned,
-            # string
-            "string": string,
-            # other
-            "bool": to_bool,
-            "_Bool": to_bool,
-            "float": float32,
-            "double": float64,
-        }
         self.ptr_size: int = ptr_size
         self.size_t_size: int = size_t_size
 
@@ -310,6 +527,13 @@ class Emtrace:
     def _no_format_formatter(self, fmt: str, _: list[Any]) -> str:
         return fmt
 
+    def size_from_raw_size(self, raw_size: int):
+        return Size(
+            raw_size & ~(self.null_terminated | self.length_prefixed),
+            (raw_size & self.length_prefixed) == self.length_prefixed,
+            (raw_size & self.null_terminated) == self.null_terminated,
+        )
+
     def parse_fmt_info(
         self, ptr: int, with_src_loc: bool = True, offset: int | None = None
     ) -> FmtInfo:
@@ -330,30 +554,67 @@ class Emtrace:
         def consume_size_t() -> int:
             return int.from_bytes(consume(self.size_t_size), byteorder=self.byteorder)
 
-        def consume_until(b: bytes = b"\x00") -> bytes:
-            nonlocal pos
-            s = self.data[pos : pos + len(b)]
+        def get_string_at(pos: int, delimiter: bytes = b"\x00") -> str:
+            s = self.data[pos : pos + len(delimiter)]
             start = pos
-            while s != b and len(s) == len(b):
-                s = self.data[pos : pos + len(b)]
+            while s != delimiter and len(s) == len(delimiter):
+                s = self.data[pos : pos + len(delimiter)]
                 pos += 1
 
-            return self.data[start:pos]
+            return self.data[start : pos - len(delimiter)].decode("utf-8")
 
         num_args = consume_size_t()
         self.debug_trace(f"  {num_args=}")
 
         format_offset = consume_size_t()
-        type_info_offsets: list[tuple[int, int]] = []
+        fmt_string = get_string_at(ptr + offset + format_offset)
+        self.debug_trace(f"  {fmt_string=}")
+
+        type_infos: list[tuple[str, TypeInfo]] = []
         for i in range(num_args):
             self.debug_trace(f"  {i + 1}:")
             offset_type_desc = consume_size_t()
             self.debug_trace(f"    {offset_type_desc=}")
-            type_size = consume_size_t()
+            type_id = get_string_at(ptr + offset + offset_type_desc)
+            self.debug_trace(f"    {type_id=}")
+            type_size = self.size_from_raw_size(consume_size_t())
             self.debug_trace(f"    {type_size=}")
+            type_info = TypeInfo(type_size)
             num_children = consume_size_t()
             self.debug_trace(f"    {num_children=}")
-            type_info_offsets.append((offset_type_desc, type_size))
+
+            if num_children > 0:
+                stack: tuple[list[TypeInfo], list[int]] = [type_info], [num_children]
+            else:
+                stack = [], []
+
+            while len(stack[0]) > 0:
+                assert len(stack[0]) == len(stack[1])
+                assert stack[1][-1] > 0
+                self.debug_trace(f"      {stack[1]=}")
+                child_offset_name = consume_size_t()
+                child_size = self.size_from_raw_size(consume_size_t())
+                child_num_children = consume_size_t()
+                child_offset_type_id = consume_size_t()
+                child_name = get_string_at(ptr + offset + child_offset_name)
+                child_type_id = get_string_at(ptr + offset + child_offset_type_id)
+                self.debug_trace(
+                    f"      {child_name=} {child_type_id=} {child_size=} {child_num_children=}"
+                )
+                child_type_info = TypeInfo(child_size)
+
+                stack[0][-1].children[child_name] = (child_type_id, child_type_info)
+                stack[1][-1] -= 1
+
+                if stack[1][-1] == 0:
+                    _ = stack[0].pop()
+                    _ = stack[1].pop()
+
+                if child_num_children > 0:
+                    stack[0].append(child_type_info)
+                    stack[1].append(child_num_children)
+
+            type_infos.append((type_id, type_info))
 
         formatter_id = consume_size_t()
         match formatter_id:
@@ -367,33 +628,16 @@ class Emtrace:
         if with_src_loc:
             file_offset = consume_size_t()
             line = consume_size_t()
-            pos = ptr + offset + file_offset
-            file = consume_until()[:-1].decode("utf-8")
+            file = get_string_at(ptr + offset + file_offset)
         else:
             file = ""
             line = -1
 
-        pos = ptr + offset + format_offset
-        fmt_string = consume_until()[:-1].decode("utf-8")
-        self.debug_trace(f"  {fmt_string=}")
         info: FmtInfo = FmtInfo(fmt_string, self.size_t_size, self.byteorder, formatter)
         info.add_source_info(file, line)
 
-        for offset_type_desc, type_size in type_info_offsets:
-            pos = ptr + offset + offset_type_desc
-            type_desc = consume_until()[:-1]
-            type_desc = Emtrace.remove_qualifiers.sub(
-                "", type_desc.decode("utf-8")
-            ).strip()
-            if type_desc and type_desc[-1] == "*":
-                type_desc = "*"
-            self.debug_trace(f"    {type_desc=}")
-            if type_size == self.null_terminated:
-                type_size = "null_terminated"
-            elif type_size == self.length_prefixed:
-                type_size = "length_prefixed"
-
-            info.add_param(self.type_mapping[type_desc], type_size)
+        for type_id, type_info in type_infos:
+            info.add_param(type_id, type_info)
 
         self.debug_trace()
 
@@ -494,7 +738,8 @@ def main(
 
     size_t_size = int(data[info_location + 1])
     ptr_size = int(data[info_location + 2])
-    trace(f"{size_t_size=} {ptr_size=}")
+    alignment_power = int(data[info_location + 3])
+    trace(f"{size_t_size=} {ptr_size=} {alignment_power=}")
 
     byteorder_id: bytes = data[rest_info_loc : rest_info_loc + size_t_size]
     trace(f"{byteorder_id=}")
@@ -527,11 +772,22 @@ def main(
 
     magic_address = int.from_bytes(istream(ptr_size), byteorder=byteorder)
     trace(f"{hex(magic_address)=}")
+    magic_address *= 2**alignment_power
     emtrace.set_offset(magic_offset - magic_address)
 
     cache: dict[int, FmtInfo] = {}
     min_path_length: int = 0
     new_line_missing = True
+
+    parser = Parser(
+        translation_le if byteorder == "little" else translation_be,
+        istream,
+        trace,
+        size_t_size,
+        ptr_size,
+        byteorder,
+        byteorder,
+    )
     while True:
         trace("")
         b = istream(ptr_size)
@@ -546,16 +802,18 @@ def main(
         trace(f"Next format info location bytes: {b}")
         address = int.from_bytes(b, byteorder="little")
         trace(f"as address: {hex(address)}")
+        address *= 2**alignment_power
+        trace(f"adjusted address: {hex(address)}")
         if address in cache:
             trace("Associated format info already parsed into cache.")
             info = cache[address]
         else:
             trace("Not cached yet.")
-            info = emtrace.parse_fmt_info(int.from_bytes(b, byteorder="little"))
+            info = emtrace.parse_fmt_info(address)
             cache[address] = info
 
         trace(hex(address))
-        formatted = info.format(istream)
+        formatted = info.format(parser)
         match formatted:
             case tuple():
                 error(

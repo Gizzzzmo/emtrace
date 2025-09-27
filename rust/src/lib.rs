@@ -4,11 +4,172 @@ use std::mem::size_of;
 use std::ops::DerefMut;
 use std::sync::MutexGuard;
 
-pub const NULL_TERMINATED: usize = 1usize << (usize::BITS - 1);
-pub const LENGTH_PREFIXED: usize = 1usize << (usize::BITS - 2);
-pub const PY_FORMAT: usize = 0;
-pub const NO_FORMAT: usize = 1;
-pub const C_STYLE_FORMAT: usize = 2;
+cfg_if::cfg_if!(
+    if #[cfg(feature="ptr_u128")] {
+        pub type PointerT = u128;
+    } else if #[cfg(feature="ptr_u64")] {
+        pub type PointerT = u64;
+    } else if #[cfg(feature="ptr_u32")] {
+        pub type PointerT = u32;
+    } else if #[cfg(feature="ptr_u16")] {
+        pub type PointerT = u16;
+    } else if #[cfg(feature="ptr_u8")] {
+        pub type PointerT = u8;
+    } else {
+        pub type PointerT = u128;
+    }
+);
+
+cfg_if::cfg_if!(
+    if #[cfg(feature="size_u128")] {
+        pub type SizeT = u128;
+    } else if #[cfg(feature="size_u64")] {
+        pub type SizeT = u64;
+    } else if #[cfg(feature="size_u32")] {
+        pub type SizeT = u32;
+    } else if #[cfg(feature="size_u16")] {
+        pub type SizeT = u16;
+    } else if #[cfg(feature="size_u8")] {
+        pub type SizeT = u8;
+    } else {
+        pub type SizeT = u128;
+    }
+);
+
+const MAGIC_SIZE: usize = 36 + 3 * size_of::<SizeT>();
+
+cfg_if::cfg_if!(
+    if #[cfg(feature="alignment_power_0")] {
+        pub const ALIGNMENT_POWER: u8 = 0;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(1), C)]
+                $struct
+            }
+        }
+    } else if #[cfg(feature="alignment_power_1")] {
+        pub const ALIGNMENT_POWER: u8 = 1;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(2), C)]
+                $struct
+            }
+        }
+    } else if #[cfg(feature="alignment_power_2")] {
+        pub const ALIGNMENT_POWER: u8 = 2;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(4), C)]
+                $struct
+            }
+        }
+    } else if #[cfg(feature="alignment_power_3")] {
+        pub const ALIGNMENT_POWER: u8 = 3;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(8), C)]
+                $struct
+            }
+        }
+    } else if #[cfg(feature="alignment_power_4")] {
+        pub const ALIGNMENT_POWER: u8 = 4;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(16), C)]
+                $struct
+            }
+        }
+    } else if #[cfg(feature="alignment_power_5")] {
+        pub const ALIGNMENT_POWER: u8 = 5;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(32), C)]
+                $struct
+            }
+        }
+    } else if #[cfg(feature="alignment_power_6")] {
+        pub const ALIGNMENT_POWER: u8 = 6;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(64), C)]
+                $struct
+            }
+        }
+    } else if #[cfg(feature="alignment_power_7")] {
+        pub const ALIGNMENT_POWER: u8 = 7;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(128), C)]
+                $struct
+            }
+        }
+    } else if #[cfg(feature="alignment_power_8")] {
+        pub const ALIGNMENT_POWER: u8 = 8;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(256), C)]
+                $struct
+            }
+        }
+    } else if #[cfg(feature="alignment_power_9")] {
+        pub const ALIGNMENT_POWER: u8 = 9;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(512), C)]
+                $struct
+            }
+        }
+    } else if #[cfg(feature="alignment_power_10")] {
+        pub const ALIGNMENT_POWER: u8 = 10;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(1024), C)]
+                $struct
+            }
+        }
+    } else {
+        pub const ALIGNMENT_POWER: u8 = 6;
+        macro_rules! with_alignment {
+            ($struct:item) => {
+                #[repr(align(64), C)]
+                $struct
+            }
+        }
+    }
+);
+with_alignment! {
+    pub struct Magic {
+        pub bytes: [u8; MAGIC_SIZE],
+    }
+}
+with_alignment! {
+    pub struct FormatInfo<const LEN: usize> {
+        pub bytes: [u8; LEN],
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum Size {
+    Static(usize),
+    NullTerminated,
+    LengthPrefixed,
+}
+
+impl Size {
+    pub const fn bytes(&self) -> [u8; size_of::<SizeT>()] {
+        match self {
+            Self::NullTerminated => NULL_TERMINATED.to_ne_bytes(),
+            Self::LengthPrefixed => LENGTH_PREFIXED.to_ne_bytes(),
+            Self::Static(size) => (*size as SizeT).to_ne_bytes(),
+        }
+    }
+}
+
+pub const NULL_TERMINATED: SizeT = 1 << (SizeT::BITS - 1);
+pub const LENGTH_PREFIXED: SizeT = 1 << (SizeT::BITS - 2);
+pub const PY_FORMAT: SizeT = 0;
+pub const NO_FORMAT: SizeT = 1;
+pub const C_STYLE_FORMAT: SizeT = 2;
 
 /// Trait for emtrace output gadgets.
 pub trait Out {
@@ -22,7 +183,7 @@ pub trait Out {
     /// If the trace contains dynamically sized data, then `total_size` is provided as
     /// the minimal number of bytes that will be sent, bitwise ored with either `emtrace::NULL_TERMINATED` or
     /// `emtrace::LENGTH_PREFIXED`, depending on the kind of dynamic data.
-    fn begin(&mut self, info_addr: usize, total_size: usize);
+    fn begin(&mut self, info_addr: PointerT, total_size: SizeT);
 }
 
 pub fn init<T: Out>(out: &mut T) {
@@ -33,7 +194,7 @@ impl<T: Out> Out for MutexGuard<'_, T> {
     fn out(&mut self, b: &[u8]) {
         self.deref_mut().out(b)
     }
-    fn begin(&mut self, info_addr: usize, total_size: usize) {
+    fn begin(&mut self, info_addr: PointerT, total_size: SizeT) {
         self.deref_mut().begin(info_addr, total_size)
     }
 }
@@ -42,27 +203,27 @@ impl Out for StdoutLock<'_> {
     fn out(&mut self, b: &[u8]) {
         self.write_all(b).unwrap();
     }
-    fn begin(&mut self, _info_addr: usize, _total_size: usize) {}
+    fn begin(&mut self, _info_addr: PointerT, _total_size: SizeT) {}
 }
 
 impl Out for Vec<u8> {
     fn out(&mut self, b: &[u8]) {
         self.extend_from_slice(b);
     }
-    fn begin(&mut self, _info_addr: usize, total_size: usize) {
+    fn begin(&mut self, _info_addr: PointerT, total_size: SizeT) {
         let total_size = total_size & !(NULL_TERMINATED | LENGTH_PREFIXED);
-        self.reserve(total_size);
+        self.reserve(total_size as usize);
     }
 }
 
 pub const DESCENDANTS_LIMIT: usize = 0x1000;
 
 pub trait Trace {
-    const SIZE: usize;
+    const SIZE: Size;
     const ID: &'static str;
     const NUM_CHILDREN: usize;
-    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)];
-    /// How many usize fields the type requires in the offset table
+    const DESCENDANTS: &'static [(&'static str, &'static str, Size, usize)];
+    /// How many SizeT fields the type requires in the offset table
     const NUM_OFFSET_TABLE_ENTRIES: usize = {
         let mut n = 0;
         // to store own size, and number of children
@@ -124,10 +285,10 @@ where
     T: Trace,
     T: ?Sized,
 {
-    const SIZE: usize = T::SIZE;
+    const SIZE: Size = T::SIZE;
     const ID: &'static str = T::ID;
     const NUM_CHILDREN: usize = T::NUM_CHILDREN;
-    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = T::DESCENDANTS;
+    const DESCENDANTS: &'static [(&'static str, &'static str, Size, usize)] = T::DESCENDANTS;
     fn serialize<O: Out>(&self, f: &mut O) {
         (*self).serialize(f)
     }
@@ -137,10 +298,10 @@ where
 }
 
 impl<T: Trace> Trace for Box<T> {
-    const SIZE: usize = T::SIZE;
+    const SIZE: Size = T::SIZE;
     const ID: &'static str = T::ID;
     const NUM_CHILDREN: usize = T::NUM_CHILDREN;
-    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = T::DESCENDANTS;
+    const DESCENDANTS: &'static [(&'static str, &'static str, Size, usize)] = T::DESCENDANTS;
     fn serialize<O: Out>(&self, f: &mut O) {
         self.as_ref().serialize(f)
     }
@@ -150,10 +311,10 @@ impl<T: Trace> Trace for Box<T> {
 }
 
 impl Trace for str {
-    const SIZE: usize = NULL_TERMINATED;
+    const SIZE: Size = Size::NullTerminated;
     const ID: &'static str = "string";
     const NUM_CHILDREN: usize = 0;
-    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = &[];
+    const DESCENDANTS: &'static [(&'static str, &'static str, Size, usize)] = &[];
     fn serialize<O: Out>(&self, f: &mut O) {
         f.out(self.as_bytes());
     }
@@ -163,10 +324,10 @@ impl Trace for str {
 }
 
 impl Trace for String {
-    const SIZE: usize = str::SIZE;
+    const SIZE: Size = str::SIZE;
     const ID: &'static str = str::ID;
     const NUM_CHILDREN: usize = str::NUM_CHILDREN;
-    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = str::DESCENDANTS;
+    const DESCENDANTS: &'static [(&'static str, &'static str, Size, usize)] = str::DESCENDANTS;
     fn serialize<O: Out>(&self, f: &mut O) {
         self.as_str().serialize(f)
     }
@@ -176,10 +337,10 @@ impl Trace for String {
 }
 
 impl<T: Trace> Trace for [T] {
-    const SIZE: usize = LENGTH_PREFIXED;
+    const SIZE: Size = Size::LengthPrefixed;
     const ID: &'static str = "list";
     const NUM_CHILDREN: usize = 1;
-    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = &{
+    const DESCENDANTS: &'static [(&'static str, &'static str, Size, usize)] = &{
         let mut children = [("", T::ID, T::SIZE, T::NUM_CHILDREN); DESCENDANTS_LIMIT];
 
         let mut remaining = T::NUM_CHILDREN;
@@ -195,33 +356,25 @@ impl<T: Trace> Trace for [T] {
     };
     fn serialize<O: Out>(&self, f: &mut O) {
         for el in self {
-            if T::SIZE & LENGTH_PREFIXED != 0 {
-                el.size().serialize(f);
+            if matches!(T::SIZE, Size::LengthPrefixed) {
+                (el.size() as SizeT).serialize(f);
             }
             el.serialize(f);
-            if T::SIZE & NULL_TERMINATED != 0 {
-                el.size().serialize(f);
+            if matches!(T::SIZE, Size::NullTerminated) {
+                0u8.serialize(f);
             }
         }
     }
     fn size(&self) -> usize {
-        let mut data_size = self.iter().map(|t| t.size()).sum();
-
-        if T::SIZE & LENGTH_PREFIXED != 0 {
-            data_size += self.len() * usize::SIZE;
-        }
-        if T::SIZE & NULL_TERMINATED != 0 {
-            data_size += self.len() * u8::SIZE;
-        }
-        data_size
+        self.len()
     }
 }
 
 impl<T: Trace> Trace for Vec<T> {
-    const SIZE: usize = <[T] as Trace>::SIZE;
+    const SIZE: Size = <[T] as Trace>::SIZE;
     const ID: &'static str = <[T] as Trace>::ID;
     const NUM_CHILDREN: usize = <[T] as Trace>::NUM_CHILDREN;
-    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] =
+    const DESCENDANTS: &'static [(&'static str, &'static str, Size, usize)] =
         <[T] as Trace>::DESCENDANTS;
     fn serialize<O: Out>(&self, f: &mut O) {
         self[..].serialize(f)
@@ -232,44 +385,36 @@ impl<T: Trace> Trace for Vec<T> {
 }
 
 impl<T: Trace, const N: usize> Trace for [T; N] {
-    const SIZE: usize = N;
+    const SIZE: Size = Size::Static(N);
     const ID: &'static str = "list";
     const NUM_CHILDREN: usize = 1;
-    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] =
+    const DESCENDANTS: &'static [(&'static str, &'static str, Size, usize)] =
         <[T] as Trace>::DESCENDANTS;
 
     fn serialize<O: Out>(&self, f: &mut O) {
         for el in self {
-            if T::SIZE & LENGTH_PREFIXED != 0 {
-                el.size().serialize(f);
+            if matches!(T::SIZE, Size::LengthPrefixed) {
+                (el.size() as SizeT).serialize(f);
             }
             el.serialize(f);
-            if T::SIZE & NULL_TERMINATED != 0 {
-                el.size().serialize(f);
+            if matches!(T::SIZE, Size::NullTerminated) {
+                0u8.serialize(f);
             }
         }
     }
 
     fn size(&self) -> usize {
-        let mut data_size = self.iter().map(|el| el.size()).sum();
-
-        if T::SIZE & LENGTH_PREFIXED != 0 {
-            data_size += N * usize::SIZE;
-        }
-        if T::SIZE & NULL_TERMINATED != 0 {
-            data_size += N * u8::SIZE;
-        }
-        data_size
+        N
     }
 }
 
 macro_rules! impl_trace_for_primitive {
     ($type:ty, $id:expr) => {
         impl Trace for $type {
-            const SIZE: usize = std::mem::size_of::<Self>();
+            const SIZE: Size = Size::Static(std::mem::size_of::<Self>());
             const ID: &'static str = $id;
             const NUM_CHILDREN: usize = 0;
-            const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = &[];
+            const DESCENDANTS: &'static [(&'static str, &'static str, Size, usize)] = &[];
 
             fn serialize<O: Out>(&self, f: &mut O) {
                 f.out(&self.to_ne_bytes());
@@ -300,10 +445,10 @@ impl_trace_for_primitive!(f32, "float");
 impl_trace_for_primitive!(f64, "double");
 
 impl Trace for bool {
-    const SIZE: usize = std::mem::size_of::<u8>();
+    const SIZE: Size = Size::Static(std::mem::size_of::<u8>());
     const ID: &'static str = "bool";
     const NUM_CHILDREN: usize = 0;
-    const DESCENDANTS: &'static [(&'static str, &'static str, usize, usize)] = &[];
+    const DESCENDANTS: &'static [(&'static str, &'static str, Size, usize)] = &[];
 
     fn serialize<O: Out>(&self, f: &mut O) {
         f.out(&[*self as u8]);
@@ -356,7 +501,7 @@ macro_rules! trace {
                 $($(
                         size += <$types as $crate::Trace>::INFO_SIZE;
                 )*)?
-                size += NUM_PREFIX * size_of::<usize>() + FMT.as_bytes().len() + file!().as_bytes().len() + 2;
+                size += NUM_PREFIX * size_of::<$crate::SizeT>() + FMT.as_bytes().len() + file!().as_bytes().len() + 2;
                 size
             };
             #[unsafe(link_section = ".emtrace")]
@@ -365,16 +510,16 @@ macro_rules! trace {
                 #[unsafe(link_section = $section)]
             )?
             #[used]
-            static FMT_INFO: [u8; INFO_SIZE] = {
-                let usize_size = size_of::<usize>();
-                let num_args: usize = $crate::count!($($($types)*)?);
+            static FMT_INFO: $crate::FormatInfo<INFO_SIZE> = {
+                let size_t_size = size_of::<$crate::SizeT>();
+                let num_args = ($crate::count!($($($types)*)?)) as $crate::SizeT;
                 let mut offset_idx: usize = 0;
-                let mut data_idx: usize = NUM_PREFIX * usize_size;
+                let mut data_idx = (NUM_PREFIX * size_t_size) as $crate::SizeT;
                 let mut info  = [0; INFO_SIZE];
 
                 let num_args_arr = num_args.to_ne_bytes();
                 let mut i = 0;
-                while i < usize_size {
+                while i < size_t_size {
                     info[offset_idx] = num_args_arr[i];
                     offset_idx += 1;
                     i += 1;
@@ -382,7 +527,7 @@ macro_rules! trace {
 
                 let fmt_offset_arr = data_idx.to_ne_bytes();
                 let mut i = 0;
-                while i < usize_size {
+                while i < size_t_size {
                     info[offset_idx] = fmt_offset_arr[i];
                     offset_idx += 1;
                     i += 1;
@@ -391,7 +536,7 @@ macro_rules! trace {
                 let fmt_str_arr = FMT.as_bytes();
                 let mut i = 0;
                 while i < FMT.len() {
-                    info[data_idx] = fmt_str_arr[i];
+                    info[data_idx as usize] = fmt_str_arr[i];
                     data_idx += 1;
                     i += 1;
                 }
@@ -401,23 +546,23 @@ macro_rules! trace {
                     {
                         let id_offset_arr = data_idx.to_ne_bytes();
                         let mut i = 0;
-                        while i < usize_size {
+                        while i < size_t_size {
                             info[offset_idx] = id_offset_arr[i];
                             offset_idx += 1;
                             i += 1;
                         }
 
-                        let size_arr = <$types as $crate::Trace>::SIZE.to_ne_bytes();
+                        let size_arr = <$types as $crate::Trace>::SIZE.bytes();
                         let mut i = 0;
-                        while i < usize_size {
+                        while i < size_t_size {
                             info[offset_idx] = size_arr[i];
                             offset_idx += 1;
                             i += 1;
                         }
 
-                        let num_children_arr = <$types as $crate::Trace>::NUM_CHILDREN.to_ne_bytes();
+                        let num_children_arr = (<$types as $crate::Trace>::NUM_CHILDREN as $crate::SizeT).to_ne_bytes();
                         let mut i = 0;
-                        while i < usize_size {
+                        while i < size_t_size {
                             info[offset_idx] = num_children_arr[i];
                             offset_idx += 1;
                             i += 1;
@@ -426,7 +571,7 @@ macro_rules! trace {
                         let id_arr = <$types as $crate::Trace>::ID.as_bytes();
                         let mut i = 0;
                         while i < <$types as $crate::Trace>::ID.len() {
-                            info[data_idx] = id_arr[i];
+                            info[data_idx as usize] = id_arr[i];
                             data_idx += 1;
                             i += 1;
                         }
@@ -439,23 +584,23 @@ macro_rules! trace {
 
                             let name_offset_arr = data_idx.to_ne_bytes();
                             let mut i = 0;
-                            while i < usize_size {
+                            while i < size_t_size {
                                 info[offset_idx] = name_offset_arr[i];
                                 offset_idx += 1;
                                 i += 1;
                             }
 
-                            let size_arr = descendant.2.to_ne_bytes();
+                            let size_arr = descendant.2.bytes();
                             let mut i = 0;
-                            while i < usize_size {
+                            while i < size_t_size {
                                 info[offset_idx] = size_arr[i];
                                 offset_idx += 1;
                                 i += 1;
                             }
 
-                            let num_children_arr = descendant.3.to_ne_bytes();
+                            let num_children_arr = (descendant.3 as $crate::SizeT).to_ne_bytes();
                             let mut i = 0;
-                            while i < usize_size {
+                            while i < size_t_size {
                                 info[offset_idx] = num_children_arr[i];
                                 offset_idx += 1;
                                 i += 1;
@@ -465,7 +610,7 @@ macro_rules! trace {
                             let name_arr = descendant.0.as_bytes();
                             let mut i = 0;
                             while i < n {
-                                info[data_idx] = name_arr[i];
+                                info[data_idx as usize] = name_arr[i];
                                 data_idx += 1;
                                 i += 1;
                             }
@@ -473,7 +618,7 @@ macro_rules! trace {
 
                             let id_offset_arr = data_idx.to_ne_bytes();
                             let mut i = 0;
-                            while i < usize_size {
+                            while i < size_t_size {
                                 info[offset_idx] = id_offset_arr[i];
                                 offset_idx += 1;
                                 i += 1;
@@ -483,7 +628,7 @@ macro_rules! trace {
                             let id_arr = descendant.1.as_bytes();
                             let mut i = 0;
                             while i < n {
-                                info[data_idx] = id_arr[i];
+                                info[data_idx as usize] = id_arr[i];
                                 data_idx += 1;
                                 i += 1;
                             }
@@ -502,15 +647,16 @@ macro_rules! trace {
                 // then this will overwrite the default NO_FORMAT formatter to PY_FORMAT
                 $($(
                     let _dummy = formatter;
-                    let formatter = <$types as $crate::Trace>::SIZE - <$types as $crate::Trace>::SIZE + $crate::PY_FORMAT;
+                    let _dumme = <$types as $crate::Trace>::SIZE;
+                    let formatter =  $crate::PY_FORMAT;
                 )*)?
                 $(
                     let _dummy = formatter;
                     let formatter = $formatter;
                 )?
-                let formatter_arr = (formatter as usize).to_ne_bytes();
+                let formatter_arr = (formatter as $crate::SizeT).to_ne_bytes();
                 let mut i = 0;
-                while i < usize_size {
+                while i < size_t_size {
                     info[offset_idx] = formatter_arr[i];
                     offset_idx += 1;
                     i += 1;
@@ -518,7 +664,7 @@ macro_rules! trace {
 
                 let file_offset_arr = data_idx.to_ne_bytes();
                 let mut i = 0;
-                while i < usize_size {
+                while i < size_t_size {
                     info[offset_idx] = file_offset_arr[i];
                     offset_idx += 1;
                     i += 1;
@@ -527,41 +673,34 @@ macro_rules! trace {
                 let file_arr = file!().as_bytes();
                 let mut i = 0;
                 while i < file!().len() {
-                    info[data_idx] = file_arr[i];
+                    info[data_idx as usize] = file_arr[i];
                     data_idx += 1;
                     i += 1;
                 }
 
-                let line_arr = (line!() as usize).to_ne_bytes();
+                let line_arr = (line!() as $crate::SizeT).to_ne_bytes();
                 let mut i = 0;
-                while i < usize_size {
+                while i < size_t_size {
                     info[offset_idx] = line_arr[i];
                     offset_idx += 1;
                     i += 1;
                 }
 
-                info
+                $crate::FormatInfo{
+                    bytes: info
+                }
 
             };
             const TOTAL_SIZE: usize = {
                 let mut total_size = 0usize;
                 $($(
-                    let size:usize = <$types as $crate::Trace>::SIZE;
-                    let mut mask = !0usize;
-                    if (size & $crate::LENGTH_PREFIXED) != 0 {
-                        total_size |= $crate::LENGTH_PREFIXED;
-                        mask &= !$crate::LENGTH_PREFIXED;
-                        total_size += size_of::<usize>();
-                    }
-                    if (size & $crate::NULL_TERMINATED) != 0 {
-                        total_size |= $crate::NULL_TERMINATED;
-                        mask &= !$crate::NULL_TERMINATED;
-                        total_size += 1;
-                    }
+                    total_size += match <$types as $crate::Trace>::SIZE {
+                        $crate::Size::NullTerminated |$crate::Size::LengthPrefixed => 0,
+                        $crate::Size::Static(size) => size,
 
-                    total_size += mask & size;
+                    };
                 )*)?
-                total_size += size_of::<usize>();
+                total_size += size_of::<$crate::SizeT>();
 
                 total_size
             };
@@ -579,16 +718,16 @@ macro_rules! trace {
                 #[allow(unused_mut)]
                 let gadget_ref = &mut $out;
             )?
-            let addr = FMT_INFO.as_ptr().addr();
-            gadget_ref.begin(addr, TOTAL_SIZE);
+            let addr = (FMT_INFO.bytes.as_ptr().addr() >> $crate::ALIGNMENT_POWER) as $crate::PointerT;
+            gadget_ref.begin(addr, TOTAL_SIZE.try_into().unwrap());
             $crate::Trace::serialize(&addr, gadget_ref);
             $($(
                 let x:&$types = &$args;
-                if (<$types as $crate::Trace>::SIZE & $crate::LENGTH_PREFIXED) != 0 {
-                    $crate::Trace::serialize(&$crate::Trace::size(x), gadget_ref);
+                if matches!(<$types as $crate::Trace>::SIZE, $crate::Size::LengthPrefixed) {
+                    $crate::Trace::serialize(&($crate::Trace::size(x) as $crate::SizeT), gadget_ref);
                 }
                 $crate::Trace::serialize(x, gadget_ref);
-                if (<$types as $crate::Trace>::SIZE & $crate::NULL_TERMINATED) != 0 {
+                if matches!(<$types as $crate::Trace>::SIZE, $crate::Size::NullTerminated) {
                     let null = 0u8;
                     $crate::Trace::serialize(&null, gadget_ref);
                 }
@@ -631,10 +770,9 @@ macro_rules! expect {
     };
 }
 
-const MAGIC_SIZE: usize = 35 + 3 * size_of::<usize>();
 #[unsafe(link_section = ".emtrace")]
 #[used]
-pub static EMTRACE_MAGIC: [u8; MAGIC_SIZE] = {
+pub static EMTRACE_MAGIC: Magic = {
     let id = [
         0xd1, 0x97, 0xf5, 0x22, 0xd9, 0x26, 0x9f, 0xd1, 0xad, 0x70, 0x33, 0x92, 0xf6, 0x59, 0xdf,
         0xd0, 0xfb, 0xec, 0xbd, 0x60, 0x97, 0x13, 0x25, 0xe8, 0x92, 0x01, 0xb2, 0x5a, 0x38, 0x5d,
@@ -647,16 +785,17 @@ pub static EMTRACE_MAGIC: [u8; MAGIC_SIZE] = {
         magic[i] = id[i];
         i += 1;
     }
-    magic[32] = 35;
-    magic[33] = size_of::<usize>() as u8;
-    magic[34] = size_of::<usize>() as u8;
+    magic[32] = 36;
+    magic[33] = size_of::<SizeT>() as u8;
+    magic[34] = size_of::<PointerT>() as u8;
+    magic[35] = ALIGNMENT_POWER;
 
-    let mut idx = 35;
+    let mut idx = 36;
 
     #[allow(overflowing_literals)]
-    let byte_order_id_arr = 0x0f0e0d0c0b0a09080706050403020100usize.to_ne_bytes();
+    let byte_order_id_arr = (0x0f0e0d0c0b0a09080706050403020100 as SizeT).to_ne_bytes();
     let mut i = 0;
-    while i < size_of::<usize>() {
+    while i < size_of::<SizeT>() {
         magic[idx] = byte_order_id_arr[i];
         idx += 1;
         i += 1;
@@ -664,7 +803,7 @@ pub static EMTRACE_MAGIC: [u8; MAGIC_SIZE] = {
 
     let null_terminated_arr = NULL_TERMINATED.to_ne_bytes();
     let mut i = 0;
-    while i < size_of::<usize>() {
+    while i < size_of::<SizeT>() {
         magic[idx] = null_terminated_arr[i];
         idx += 1;
         i += 1;
@@ -672,79 +811,82 @@ pub static EMTRACE_MAGIC: [u8; MAGIC_SIZE] = {
 
     let length_prefixed_arr = LENGTH_PREFIXED.to_ne_bytes();
     let mut i = 0;
-    while i < size_of::<usize>() {
+    while i < size_of::<SizeT>() {
         magic[idx] = length_prefixed_arr[i];
         idx += 1;
         i += 1;
     }
-    magic
+    Magic { bytes: magic }
 };
 
-pub fn magic_address_bytes() -> [u8; size_of::<usize>()] {
-    (&EMTRACE_MAGIC as *const [u8; MAGIC_SIZE])
-        .addr()
-        .to_ne_bytes()
+pub fn magic_address_bytes() -> [u8; size_of::<PointerT>()] {
+    let raw_address = (&EMTRACE_MAGIC as *const Magic).addr();
+    ((raw_address >> ALIGNMENT_POWER) as PointerT).to_ne_bytes()
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Out, Trace, trace};
+    use super::{Out, SizeT, trace};
     use std::str::FromStr;
 
     #[test]
     fn test() {
-        let mut buffer = Vec::<u8>::new();
-        trace!("{}", i32: 32, .out=buffer);
-        assert_eq!(buffer.len(), usize::SIZE + i32::SIZE);
-        let mut arg_bytes: [u8; i32::SIZE] = [0; i32::SIZE];
-        arg_bytes.copy_from_slice(&buffer[usize::SIZE..usize::SIZE + i32::SIZE]);
+        let mut capture = Vec::new();
+        trace!("{}", i32: 32, .out=capture);
+        assert_eq!(capture.len(), size_of::<SizeT>() + size_of::<i32>());
+        let mut arg_bytes: [u8; size_of::<i32>()] = [0; size_of::<i32>()];
+        arg_bytes
+            .copy_from_slice(&capture[size_of::<SizeT>()..size_of::<SizeT>() + size_of::<i32>()]);
         let arg = i32::from_ne_bytes(arg_bytes);
         assert_eq!(arg, 32);
-
-        // let vv = vec![vec![1, 2, 3], vec![4, 5, 6]];
-        // let vvv: Vec<&[i32]> = vec![&v, &vv[0]];
     }
 
     #[test]
     fn empty_vec() {
-        let mut capture = Vec::<u8>::new();
+        let mut capture = Vec::new();
         let v = Vec::<i32>::new();
         trace!("{}", [i32]: v, .out=capture);
-        assert_eq!(capture.len(), usize::SIZE * 2);
+        assert_eq!(capture.len(), size_of::<SizeT>() * 2);
         trace!("{}", Vec<i32>: v, .out=capture);
-        assert_eq!(capture.len(), usize::SIZE * 4);
+        assert_eq!(capture.len(), size_of::<SizeT>() * 4);
     }
 
     #[test]
     fn flat_vec() {
-        let mut capture1 = Vec::<u8>::new();
+        let mut capture1 = Vec::new();
+        let mut capture2 = Vec::new();
         let v = vec![1, 3, 4, 6];
 
-        let expected_len = 2 * usize::SIZE + v.len() * i32::SIZE;
+        let expected_len = 2 * size_of::<SizeT>() + v.len() * size_of::<i32>();
         trace!("{}", [i32]: v, .out=capture1);
         assert_eq!(capture1.len(), expected_len);
-        let mut capture2 = Vec::<u8>::new();
         trace!("{}", Vec<i32>: v, .out=capture2);
         assert_eq!(capture2.len(), expected_len);
 
-        assert_eq!(capture1[usize::SIZE..], capture2[usize::SIZE..]);
-        assert_ne!(capture1[..usize::SIZE], capture2[..usize::SIZE]);
+        assert_eq!(
+            capture1[size_of::<SizeT>()..],
+            capture2[size_of::<SizeT>()..]
+        );
+        assert_ne!(
+            capture1[..size_of::<SizeT>()],
+            capture2[..size_of::<SizeT>()]
+        );
     }
 
     #[test]
     fn nested_vecs() {
-        let mut capture1 = Vec::<u8>::new();
-        let mut capture2 = Vec::<u8>::new();
-        let mut capture3 = Vec::<u8>::new();
-        let mut capture4 = Vec::<u8>::new();
+        let mut capture1 = Vec::new();
+        let mut capture2 = Vec::new();
+        let mut capture3 = Vec::new();
+        let mut capture4 = Vec::new();
         let owning = vec![vec![1, 2, 3, 4], vec![10]];
         let referencing_vec = vec![&owning[0], &owning[1]];
         let referencing_slice = vec![&owning[0][..], &owning[1]];
 
-        let expected_len = 2 * usize::SIZE
+        let expected_len = 2 * size_of::<SizeT>()
             + owning
                 .iter()
-                .map(|inner| inner.len() * i32::SIZE + usize::SIZE)
+                .map(|inner| inner.len() * size_of::<i32>() + size_of::<SizeT>())
                 .sum::<usize>();
         trace!("{}", Vec<Vec<i32>>: owning, .out=capture1);
         assert_eq!(capture1.len(), expected_len);
@@ -755,20 +897,29 @@ mod tests {
         trace!("{}", [&[i32]]: referencing_slice, .out=capture4);
         assert_eq!(capture4.len(), expected_len);
 
-        assert_eq!(capture1[usize::SIZE..], capture2[usize::SIZE..]);
-        assert_eq!(capture1[usize::SIZE..], capture3[usize::SIZE..]);
-        assert_eq!(capture1[usize::SIZE..], capture4[usize::SIZE..]);
+        assert_eq!(
+            capture1[size_of::<SizeT>()..],
+            capture2[size_of::<SizeT>()..]
+        );
+        assert_eq!(
+            capture1[size_of::<SizeT>()..],
+            capture3[size_of::<SizeT>()..]
+        );
+        assert_eq!(
+            capture1[size_of::<SizeT>()..],
+            capture4[size_of::<SizeT>()..]
+        );
     }
 
     #[test]
     fn string() {
-        let mut capture1 = Vec::<u8>::new();
-        let mut capture2 = Vec::<u8>::new();
-        let mut capture3 = Vec::<u8>::new();
+        let mut capture1 = Vec::new();
+        let mut capture2 = Vec::new();
+        let mut capture3 = Vec::new();
         let literal = "Hello, there!";
         let owning = String::from_str(literal).unwrap();
 
-        let expected_len = usize::SIZE + literal.len() + u8::SIZE;
+        let expected_len = size_of::<SizeT>() + literal.len() + size_of::<u8>();
         trace!("{}", str: literal, .out=capture1);
         assert_eq!(capture1.len(), expected_len);
         trace!("{}", str: owning, .out=capture2);
@@ -776,7 +927,39 @@ mod tests {
         trace!("{}", String: owning, .out=capture3);
         assert_eq!(capture3.len(), expected_len);
 
-        assert_eq!(capture1[usize::SIZE..], capture2[usize::SIZE..]);
-        assert_eq!(capture1[usize::SIZE..], capture3[usize::SIZE..]);
+        assert_eq!(
+            capture1[size_of::<SizeT>()..],
+            capture2[size_of::<SizeT>()..]
+        );
+        assert_eq!(
+            capture1[size_of::<SizeT>()..],
+            capture3[size_of::<SizeT>()..]
+        );
+    }
+
+    #[test]
+    fn vec_of_string() {
+        let mut capture1 = Vec::new();
+        let mut capture2 = Vec::new();
+        let slices = vec!["A", "vector", "of", "strings"];
+        let owning = slices
+            .iter()
+            .map(|s| String::from_str(s).unwrap())
+            .collect();
+
+        let expected_len = 2 * size_of::<SizeT>()// for pointer, and length-prefix
+            + slices
+                .iter()
+                .map(|inner| inner.len() + size_of::<u8>()) // for content and null-terminator
+                .sum::<usize>();
+        trace!("{}", Vec<&str>: slices, .out=capture1);
+        assert_eq!(capture1.len(), expected_len);
+        trace!("{}", Vec<String>: owning, .out=capture2);
+        assert_eq!(capture2.len(), expected_len);
+
+        assert_eq!(
+            capture1[size_of::<SizeT>()..],
+            capture2[size_of::<SizeT>()..]
+        );
     }
 }

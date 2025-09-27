@@ -37,6 +37,7 @@ RUST_TEST_EXECUTABLES = [
     "test_mixed",
     "test_edge_cases",
     "test_large_numbers",
+    "test_vec",
 ]
 
 RUST_BUILD_DIRS = [
