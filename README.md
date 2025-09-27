@@ -68,8 +68,6 @@ fn main() {
 }
 ```
 
-Designed for low-latency, deeply-embedded, as well as bandwidth-constrained applications.
-
 ## How it works
 
 All information needed to display the trace is written, at compile time, to a dedicated section of
@@ -85,8 +83,8 @@ the data from the special `.emtrace` section, and produces the log.
 ## Development
 
 If you want to tinker with the code, and need to figure out how to build, lint, and test it check
-out [AGENTS.md](AGENTS.md) (also useful for some 🌈*vibe-coding*🌈). The easiest way to get an the
-right development environment is to use the provided [nix flake](./flake.nix).
+out [AGENTS.md](AGENTS.md) (also useful for some 🌈*vibe-coding*🌈). The easiest way to get a working
+development environment is to use the provided [nix flake](./flake.nix).
 
 ## Comparison
 

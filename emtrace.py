@@ -965,7 +965,7 @@ if __name__ == "__main__":
 
     _ = parser.add_argument(
         "elf",
-        help="Path to either an elf executable, or a raw binary that contains the .emtrace section bytes of the program whose output you are processing.",
+        help="Path to either an elf executable, or a raw binary that contains the .emtrace section bytes of the program whose output to process.",
     )
     _ = parser.add_argument(
         "--input",
@@ -973,7 +973,7 @@ if __name__ == "__main__":
         nargs="?",
         default=get_input_stream("stdin"),
         type=get_input_stream,
-        help="Where to get read the bytes from that the traced binary produces. If not supplied it reads from stdin, otherwise it defaults to interpreting the argument as a file path from which the data will be read. It can also read from either a unix- or IP-socket by specifying either tcp://<ip>:<port> or unix://<path/to/unix/socket>",
+        help="Where to get the bytes from that the traced binary produces. If not supplied it reads from stdin, otherwise it defaults to interpreting the argument as a file path from which the data will be read. It can also read from either a unix- or IP-socket by specifying either tcp://<ip>:<port> or unix://<path/to/unix/socket>",
     )
     _ = parser.add_argument(
         "--dump-input",
@@ -997,7 +997,7 @@ if __name__ == "__main__":
         const="relative",
         choices=["none", "absolute", "relative"],
         type=str,
-        help="Prepend, to every line of trace output, the source location from which it originated.",
+        help="Prepend, to every line of trace output, the source location where it originated.",
     )
     _ = parser.add_argument(
         "--src-hyperlinks", action="store_true", help="Doesn't work yet."
@@ -1012,7 +1012,7 @@ if __name__ == "__main__":
         nargs="?",
         const=".emtrace.test.expected",
         default=None,
-        help="Run emtrace in test mode. This will read the expected output from the ELF section specified (default: .emtrace.test.expected), and will compare it against the actual output.",
+        help="Run emtrace in test mode. This will read the expected output from the ELF section specified (default: .emtrace.test.expected), and will compare it against the actual output. A non-zero exit code is returned, and a diff is written to stdout in case of failure.",
     )
 
     args = parser.parse_args()
