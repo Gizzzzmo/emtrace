@@ -1,4 +1,4 @@
-use emtrace::{C_STYLE_FORMAT, Out, expect, init, traceln};
+use emtrace::{C_STYLE_FORMAT, Sink, expect, init, traceln};
 
 fn main() {
     expect!(
@@ -7,7 +7,7 @@ fn main() {
           Extreme values: 1.7976931348623157e+308 2.2250738585072014e-308\n"
     );
 
-    init(&mut std::io::stdout().lock());
+    init(&mut std::io::stdout().lock()).unwrap();
 
     // Test asic double values (use exact values to avoid clippy warnings)
     traceln!("Doubles: {} {} {} {} {}",

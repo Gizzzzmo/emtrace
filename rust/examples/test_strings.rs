@@ -1,4 +1,4 @@
-use emtrace::{Out, expect, init, trace, traceln};
+use emtrace::{Sink, expect, init, trace, traceln};
 
 fn main() {
     expect!(
@@ -8,7 +8,7 @@ fn main() {
          Multiple strings: first second third\n"
     );
 
-    init(&mut std::io::stdout().lock());
+    init(&mut std::io::stdout().lock()).unwrap();
 
     // Test basic string
     traceln!("{}", str: "Hello, World!");

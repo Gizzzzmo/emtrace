@@ -1,7 +1,7 @@
-use emtrace::{C_STYLE_FORMAT, Out, init, trace, traceln};
+use emtrace::{C_STYLE_FORMAT, Sink, init, trace, traceln};
 
 fn main() {
-    init(&mut std::io::stdout().lock());
+    init(&mut std::io::stdout().lock()).unwrap();
 
     trace!("{}", i32: 0);
     trace!("Yeeha {} {}\n", i32: 9, i32: 10);

@@ -1,4 +1,4 @@
-use emtrace::{Out, expect, init, traceln};
+use emtrace::{Sink, expect, init, traceln};
 
 fn main() {
     expect!(
@@ -8,7 +8,7 @@ fn main() {
           Negative i128: -170141183460469231731687303715884105728\n"
     );
 
-    init(&mut std::io::stdout().lock());
+    init(&mut std::io::stdout().lock()).unwrap();
 
     traceln!("Large integers:");
 

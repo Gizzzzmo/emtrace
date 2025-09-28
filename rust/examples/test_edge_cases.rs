@@ -1,4 +1,4 @@
-use emtrace::{C_STYLE_FORMAT, Out, expect, init, trace, traceln};
+use emtrace::{C_STYLE_FORMAT, Sink, expect, init, trace, traceln};
 
 fn main() {
     expect!(
@@ -9,7 +9,7 @@ fn main() {
           C format: test\n"
     );
 
-    init(&mut std::io::stdout().lock());
+    init(&mut std::io::stdout().lock()).unwrap();
 
     traceln!("Edge cases:");
 

@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use emtrace::{Out, expect, init, traceln};
+use emtrace::{Sink, expect, init, traceln};
 
 fn main() {
     expect!(
@@ -21,7 +21,7 @@ fn main() {
          "
     );
 
-    init(&mut std::io::stdout().lock());
+    init(&mut std::io::stdout().lock()).unwrap();
     let v = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     traceln!("{}\n{}", Vec<i32>: v, [i32]: v);
 

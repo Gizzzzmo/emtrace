@@ -1,4 +1,4 @@
-use emtrace::{Out, expect, init, traceln};
+use emtrace::{Sink, expect, init, traceln};
 
 fn main() {
     expect!(
@@ -7,7 +7,7 @@ fn main() {
           Size integers: 42 -42\n"
     );
 
-    init(&mut std::io::stdout().lock());
+    init(&mut std::io::stdout().lock()).unwrap();
 
     // Test various signed integer types
     traceln!("Signed integers: {:d} {} {} {}",

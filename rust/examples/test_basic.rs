@@ -1,4 +1,4 @@
-use emtrace::{Out, expect, init, trace, traceln};
+use emtrace::{Sink, expect, init, trace, traceln};
 
 fn main() {
     expect!(
@@ -6,7 +6,7 @@ fn main() {
          An integer: 42\n\
          A string: a string\n"
     );
-    init(&mut std::io::stdout().lock());
+    init(&mut std::io::stdout().lock()).unwrap();
 
     traceln!("Hello from the basic test!");
     let x: i32 = 42;

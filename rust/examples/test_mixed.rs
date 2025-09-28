@@ -1,4 +1,4 @@
-use emtrace::{Out, expect, init, traceln};
+use emtrace::{Sink, expect, init, traceln};
 
 fn main() {
     expect!(
@@ -7,7 +7,7 @@ fn main() {
           Numbers: \x01 \x02 \x03 \x04 \x05\n"
     );
 
-    init(&mut std::io::stdout().lock());
+    init(&mut std::io::stdout().lock()).unwrap();
 
     // Test mixing different types in one trace
     traceln!("Mixed types: {} {} {} {}",

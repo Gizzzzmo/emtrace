@@ -1,7 +1,7 @@
-use emtrace::{Out, init, traceln};
+use emtrace::{Sink, init, traceln};
 
 fn main() {
-    init(&mut std::io::stdout().lock());
+    init(&mut std::io::stdout().lock()).unwrap();
     traceln!("Hello World!");
 
     let a = 1;
