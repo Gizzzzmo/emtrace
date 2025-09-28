@@ -8,8 +8,8 @@ channel is completely customizable.
 
 > [!Note]
 >
-> Does not currently work with binaries that run on Windows, or Mac OS. More generally it only
-> supports the ELF binary format.
+> I don't know if it works with binaries that run on Windows or Mac OS (although it might). More
+> generally it only explicitly supports the ELF binary format right now.
 
 ## Usage
 
