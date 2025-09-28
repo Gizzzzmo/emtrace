@@ -56,7 +56,7 @@ I've not yet published anything on crates.io. So you will need to clone this rep
 you want to use it.
 
 ```rust
-use emtrace::{Out, init, traceln};
+use emtrace::{init, traceln};
 
 fn main() {
     init(&mut std::io::stdout().lock());

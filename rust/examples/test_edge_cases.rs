@@ -1,4 +1,4 @@
-use emtrace::{C_STYLE_FORMAT, Sink, expect, init, trace, traceln};
+use emtrace::{C_STYLE_FORMAT, expect, init, trace, traceln};
 
 fn main() {
     expect!(

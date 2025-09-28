@@ -1,4 +1,4 @@
-use emtrace::{Sink, init, traceln};
+use emtrace::{init, traceln};
 
 fn main() {
     init(&mut std::io::stdout().lock()).unwrap();

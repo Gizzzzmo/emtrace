@@ -1,4 +1,4 @@
-use emtrace::{Sink, expect, init, trace, traceln};
+use emtrace::{expect, init, trace, traceln};
 
 fn main() {
     expect!(

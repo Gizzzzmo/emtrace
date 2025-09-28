@@ -1,4 +1,4 @@
-use emtrace::{C_STYLE_FORMAT, Sink, init, trace, traceln};
+use emtrace::{C_STYLE_FORMAT, init, trace, traceln};
 
 fn main() {
     init(&mut std::io::stdout().lock()).unwrap();

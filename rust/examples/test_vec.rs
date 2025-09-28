@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use emtrace::{Sink, expect, init, traceln};
+use emtrace::{expect, init, traceln};
 
 fn main() {
     expect!(

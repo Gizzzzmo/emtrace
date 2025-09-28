@@ -806,6 +806,7 @@ macro_rules! trace_impl {
                     total_size
                 };
 
+                use $crate::Sink;
                 #[allow(unused_mut)]
                 let mut sink = $crate::sink!(
                     $(.sink_guard=$sink_guard,)? $(.sink=$sink,)?
@@ -1030,7 +1031,7 @@ pub fn magic_address_bytes() -> [u8; size_of::<PointerT>()] {
 
 #[cfg(test)]
 mod tests {
-    use super::{Sink, SizeT, trace};
+    use super::{SizeT, trace};
     use std::str::FromStr;
 
     #[test]
