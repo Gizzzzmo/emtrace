@@ -11,11 +11,11 @@ int main(void) {
     EMT_TEST_TRACE_F(buffer, EMT_PY_FORMAT, "{}", int, 42);
 
     // The buffer should contain the pointer to the format info and the integer
-    assert(buffer.size == sizeof(void*) + sizeof(int));
+    assert(buffer.size == sizeof(emt_ptr_t) + sizeof(int));
 
     // Check the integer value
     int value;
-    memcpy(&value, buffer.data + sizeof(void*), sizeof(int));
+    memcpy(&value, buffer.data + sizeof(emt_ptr_t), sizeof(int));
     assert(value == 42);
 
     return 0;

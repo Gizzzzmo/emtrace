@@ -1,3 +1,4 @@
+#include "emtrace/emtrace.h"
 #include "test_utils.h"
 #include <assert.h>
 #include <stdint.h>
@@ -11,10 +12,10 @@ int main(void) {
     EMT_TEST_TRACE_S(buffer, "", test_string);
 
     // The buffer should contain the pointer to the format info and the string
-    assert(buffer.size == sizeof(void*) + strlen(test_string) + 1);
+    assert(buffer.size == sizeof(emt_ptr_t) + strlen(test_string) + 1);
 
     // Check the string value
-    assert(strcmp((const char*) (buffer.data + sizeof(void*)), test_string) == 0);
+    assert(strcmp((const char*) (buffer.data + sizeof(emt_ptr_t)), test_string) == 0);
 
     return 0;
 }

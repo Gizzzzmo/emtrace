@@ -10,14 +10,14 @@ int main(void) {
 
     EMT_TEST_TRACE_F(buffer, EMT_PY_FORMAT, "{} {} {}", int, 42, char, 'a', long, 123456L);
 
-    size_t expected_size = sizeof(void*) + sizeof(int) + sizeof(char) + sizeof(long);
+    size_t expected_size = sizeof(emt_ptr_t) + sizeof(int) + sizeof(char) + sizeof(long);
     assert(buffer.size == expected_size);
 
     int int_val;
     char char_val;
     long long_val;
 
-    size_t offset = sizeof(void*);
+    size_t offset = sizeof(emt_ptr_t);
     memcpy(&int_val, buffer.data + offset, sizeof(int));
     assert(int_val == 42);
     offset += sizeof(int);
