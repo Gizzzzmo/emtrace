@@ -1,3 +1,4 @@
+#![doc = include_str!("../../README.md")]
 use core::convert::Infallible;
 use core::mem::size_of;
 use core::ops::DerefMut;
@@ -508,24 +509,79 @@ macro_rules! sink {
     };
 }
 
-/// Emit a trace.
+/// The core macro for emitting a trace.
+///
+/// `trace_impl!` is the main macro that `trace!` and `traceln!` are built on.
+///
 /// The format string is the concatenation of all string literals before the first comma.
 /// After that come the values to be emitted, along with their types, e.g.:
-/// ```
-/// use emtrace::{trace_impl, Sink};
+///
+/// ```rust
+/// # use emtrace::{trace_impl, Sink, traceln};
+/// # fn main() {
 /// trace_impl!("{} + {}" " = {}", i32: 1, i32: 2, i32: 3);
-/// // 1 + 2 = 3
+/// # }
 /// ```
-/// A type can be made traceable by implementing the Trace trait for it.
 ///
-/// The format string along with other information on how many bytes are emitted by this trace
-/// will be in the executable's .emtrace section unless
-/// specified otherwise via `.section = "<section name>"` after the passed values.
+/// A type can be made traceable by implementing the `Trace` trait for it.
 ///
-/// The trace will be emitted sequentially, and uninterrupted by outputs from other threads on stdout
-/// unless otherwise specified via `.out = <expr>` after the passed values.
-/// TODO: explain out-channel
-/// ```
+/// ### Customization
+///
+/// `trace_impl!` supports several customization options, passed after the trace arguments:
+///
+/// - **`.sink = <variable>`**: Specifies a sink to write the trace output to. The macro will
+///   mutably borrow the value for the duration of the call. It must implement the
+///   [`Sink`] trait. For example one could capture trace output in a buffer like so:
+///   ```rust
+///   # use emtrace::{trace_impl, Sink};
+///   # fn main() {
+///   let mut buf = Vec::new();
+///   trace_impl!("Hello", .sink = buf);
+///   // `buf` is still owned and contains the trace output
+///   assert!(!buf.is_empty());
+///   # }
+///   ```
+///
+/// - **`.sink_guard = <expr>`**: Specifies a sink that will be consumed by the macro. Like with
+///   `.sink=` the expression has to  evaluate to a value that implements [`Sink`].
+///   This value is moved into the macro and dropped at the end of the scope.
+///   This is ideal for sinks that manage a resource, like a `MutexGuard`,
+///   as it ensures the resource is released correctly.
+///   ```rust
+///   # use emtrace::{trace_impl, Sink};
+///   # use std::sync::Mutex;
+///   # fn main() {
+///   let sink = Mutex::new(Vec::new());
+///   trace_impl!("Hello", .sink_guard = sink.lock().unwrap());
+///   // The mutex is unlocked here as the guard has been dropped.
+///   # }
+///   ```
+///   By default, if neither `.sink` nor `.sink_guard` is provided, the trace is written to
+///   `std::io::stdout().lock()`.
+///
+/// - **`.section = "<section_name>"`**: Specifies the ELF section where the format string and
+///   metadata are stored. Defaults to `.emtrace`.
+///
+/// - **`.formatter = <expr>`**: Specifies how the format string should be interpreted by the consumer
+///   of the trace data. It can be one of `PY_FORMAT`, `C_STYLE_FORMAT`, or `NO_FORMAT`.
+///
+/// - **`.error_handler = <closure>`**: Provides a closure to handle potential errors during tracing.
+///   The closure receives a `Result<(), Error<BeginError, OutError>>`. If not provided, the `Result`
+///   is returned from the macro expansion.
+///   ```rust
+///   # use emtrace::{trace_impl, Sink, Error};
+///   # fn main() {
+///   trace_impl!("Hello", .error_handler = |res: Result<(), Error<_, _>>| {
+///       if res.is_err() {
+///           // Handle error
+///       }
+///   });
+///   # }
+///   ```
+///
+/// The macro returns the output of the provided error handler.
+///
+/// [`Sink`]: trait.Sink.html
 #[macro_export]
 macro_rules! trace_impl {
     ($($fmt:literal)+ $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .sink_guard = $sink_guard:expr)? $(, .sink = $sink:expr)? $(, .error_handler = $error_handler:expr)? $(, .formatter=$formatter:expr)?)
@@ -760,7 +816,7 @@ macro_rules! trace_impl {
                     #[allow(unused_mut)]
                     let sink_ref = &mut $sink;
                 )?
-                    let addr = (FMT_INFO.bytes.as_ptr().addr() >> $crate::ALIGNMENT_POWER) as $crate::PointerT;
+                let addr = (FMT_INFO.bytes.as_ptr().addr() >> $crate::ALIGNMENT_POWER) as $crate::PointerT;
                 let result = sink_ref.begin(addr, TOTAL_SIZE as $crate::SizeT);
                 if let Err(err) = result {
                     break 'trace Err($crate::Error::Begin(err));
@@ -800,6 +856,39 @@ macro_rules! trace_impl {
     }
 }
 
+/// Emit a trace.
+///
+/// The first argument is a format string, the rest are pairs of the form `type:expression`.
+/// A trace is emitted - by default over stdout - containing the address of the format string, and
+/// the data inside the other parameters.
+///
+/// ```rust
+/// # use emtrace::trace;
+/// # fn main() {
+/// trace!("Hello, {}", str: "world");
+/// # }
+/// ```
+///
+/// ### Error Handling
+///
+/// By default, this macro will panic if an error occurs during tracing. To handle errors manually,
+/// use the `.handle_errors` option. This will cause the macro to return a `Result` instead of
+/// panicking, which you can then handle as needed.
+///
+/// ```rust
+/// # use emtrace::trace;
+/// # fn main() {
+/// let result = trace!("Hello", .handle_errors);
+/// if result.is_err() {
+///     // Handle the error
+/// }
+/// # }
+/// ```
+///
+/// For other customization options, see [`trace_impl!`] (this supports all the same options,
+/// except for `.error_handler=`).
+///
+/// [`trace_impl!`]: macro.trace_impl.html
 #[macro_export]
 macro_rules! trace{
     ($fmt:literal $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .sink_guard = $sink_guard:expr)? $(, .sink= $sink:expr)? $(, .formatter=$formatter:expr)?)
@@ -811,6 +900,39 @@ macro_rules! trace{
         $crate::trace_impl!($fmt $(, $($types: $args),+)? $(, .section = $section)? $(, .sink_guard = $sink_guard)? $(, .sink= $sink)? $(, .formatter=$formatter)?)
     };
 }
+
+/// Emit a trace with a trailing new line in the format string.
+///
+/// This macro is identical to [`trace!`], but it automatically appends a newline character (`\n`)
+/// to the format string.
+///
+/// ```rust
+/// # use emtrace::traceln;
+/// # fn main() {
+/// traceln!("This will be followed by a newline.");
+/// # }
+/// ```
+///
+/// ### Error Handling
+///
+/// Like `trace!`, this macro will panic on error by default. Use the `.handle_errors` option to
+/// receive a `Result` and handle errors manually.
+///
+/// ```rust
+/// # use emtrace::traceln;
+/// # fn main() {
+/// let result = traceln!("Hello", .handle_errors);
+/// if result.is_err() {
+///     // Handle the error
+/// }
+/// # }
+/// ```
+///
+/// For other customization options, see [`trace_impl!`] (this supports all the same options,
+/// except for `.error_handler=`).
+///
+/// [`trace!`]: macro.trace.html
+/// [`trace_impl!`]: macro.trace_impl.html
 #[macro_export]
 macro_rules! traceln {
     ($fmt:literal $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .sink_guard = $sink_guard:expr)? $(, .sink= $sink:expr)? $(, .formatter=$formatter:expr)?)
