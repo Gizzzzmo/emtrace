@@ -113,6 +113,7 @@ know, and have tried:
 - [x] add license
 - [ ] make rust's init function + magic_bytes variable into a macro to support different section
   names
+- [ ] in the rust version, clarify / rework the role of the `total_size` given to
 - [x] complete adding support for tracing nested types (lists, tuples, etc.) on post-processing side
 - [ ] switch C tests from using `assert` to something else and combine all tests into a single
   executable
