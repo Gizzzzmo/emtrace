@@ -785,27 +785,27 @@ EMT_STATIC_ASSERT(
  * their size.
  *
  * @param fmt_info_attributes - is prefixed to the definition of the `info` variable, which contains
- * all format info that is known at compile time. Can be any set of additional (possibly
- * compiler-specific) attributes to apply to said variable. E.g. `__attribute__((used))
- * __attribute__((section(".emtrace"))) static const` on gcc.
+ *     all format info that is known at compile time. Can be any set of additional (possibly
+ *     compiler-specific) attributes to apply to said variable. E.g. `__attribute__((used))
+ *     __attribute__((section(".emtrace"))) static const` on gcc.
  * @param out_fn - Should evaluate to a function, or function like macro that takes three arguments.
- * Is evaluated and called:
- *              - once in the beginning with the address of a pointer to the `info` variable, the
- * size of a pointer, and the passed-through `extra_arg` parameter
- *              - once more for every format argument with its address, its size,
- *              and the passed-through `extra_arg` parameter.
+ *     Is evaluated and called:
+ *         - once in the beginning with the address of a pointer to the `info` variable,
+ *           the size of a pointer, and the passed-through `extra_arg` parameter
+ *         - once more for every format argument with its address, its size,
+ *           and the passed-through `extra_arg` parameter.
  * @param lock - Should evaluate to a function or function like macro that takes three arguments. Is
- * evaluated once in the beginning just before any of the evaluations of `out_fn` with a pointer to
- * the `info` variable, the total size of all bytes that out_fn is about to be called with, and the
- * passed-through `extra_arg` parameter.
+ *     evaluated once in the beginning just before any of the evaluations of `out_fn` with a pointer
+ *     to the `info` variable, the total size of all bytes that out_fn is about to be called with,
+ *     and the passed-through `extra_arg` parameter.
  * @param unlock - Should evaluate to a function or function like macro that takes three arguments.
- * Is evaluated once in the end just after any of the evaluations of `out_fn` with a pointer to the
- * `info` variable, the total size of all bytes that out_fn is about to be called with, and the
- * passed-through `extra_arg` parameter.
+ *     Is evaluated once in the end just after any of the evaluations of `out_fn` with a pointer to
+ * the `info` variable, the total size of all bytes that out_fn is about to be called with, and the
+ *     passed-through `extra_arg` parameter.
  * @param extra_arg - An additional parameter that is passed through to all invocations of `out_fn`,
- * `lock`, and `unlock`
+ *     `lock`, and `unlock`. It is *reevaluated* every time!
  * @param postfix - An optional extra string literal that is appended to the format string in the
- * `info` variable
+ *     `info` variable
  */
 #define EMT_TRACE_F(fmt_info_attributes, formatter, out_fn, lock, unlock, extra_arg, postfix, ...) \
     do {                                                                                           \
