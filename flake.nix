@@ -33,6 +33,7 @@
           llvmPackages_20.clang-unwrapped
           llvmPackages_20.lldb
           neocmakelsp
+          conan
           basedpyright
           ruff
           rustup
