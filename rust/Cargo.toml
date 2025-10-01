@@ -33,36 +33,12 @@ size_u32 = []
 size_u16 = []
 size_u8 = []
 
-[[example]]
-name = "test_basic"
-
-[[example]]
-name = "test_bool"
-
-[[example]]
-name = "test_doubles"
-
-[[example]]
-name = "test_edge_cases"
-
-[[example]]
-name = "test_f32"
-
-[[example]]
-name = "test_integers"
-
-[[example]]
-name = "test_large_numbers"
-
-[[example]]
-name = "test_mixed"
-
-[[example]]
-name = "test_strings"
-
-[[example]]
-name = "demo_stdout"
-test = false
+[[bench]]
+name = "basic"
+harness = false
 
 [dependencies]
 cfg-if = "1.0.3"
+
+[dev-dependencies]
+criterion = "0.7.0"
