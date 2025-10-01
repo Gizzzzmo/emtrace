@@ -1,4 +1,4 @@
-#![doc = include_str!("../../README.md")]
+#![doc = include_str!("../README.md")]
 use core::convert::Infallible;
 use core::mem::size_of;
 use core::ops::DerefMut;
@@ -170,12 +170,13 @@ pub const C_STYLE_FORMAT: SizeT = 2;
 
 /// Trait for emtrace sinks.
 pub trait Sink {
-    /// The error that can happen when calling `out`
-    /// Set this to `Infallible` if your implementation can't produce an error
+    /// The error that can happen when calling `out`.
+    /// Set this to `Infallible` if your implementation can't produce an error.
     type OutError;
-    /// The error that can happen when calling `begin`
-    /// Set this to `Infallible` if your implementation can't produce an error
+    /// The error that can happen when calling `begin`.
+    /// Set this to `Infallible` if your implementation can't produce an error.
     type BeginError;
+    /// The bytes passed to this function are the contents of the emitted trace
     fn out(&mut self, b: &[u8]) -> Result<(), Self::OutError>;
     /// Begin emitting a trace.
     ///

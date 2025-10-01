@@ -22,7 +22,7 @@ a.out):
 ./a.out | python path/to/emtrace.py a.out
 ```
 
-The script is more efficient, when you have pyelftools installed, but it also works without it. It
+The script is more efficient when you have pyelftools installed, but it also works without it. It
 has a few extra options that you can checkout by running `python emtrace.py -h`
 
 ### In C
@@ -48,9 +48,8 @@ int main(void) {
 > [!Note]
 >
 > If you *only* need this to work in Rust, and aren't planning on incorporating any other language,
-> you should probably be using [demft](https://github.com/knurling-rs/defmt). It is much more
-> mature, featureful, and can also pack bytes more efficiently . For more details see
-> [below](#comparison).
+> you should probably be using [demft](https://github.com/knurling-rs/defmt). It is more mature, and
+> featureful. For more details see [below](#comparison).
 
 I've not yet published anything on crates.io. So you will need to clone this repository for now if
 you want to use it.
@@ -67,6 +66,12 @@ fn main() {
     traceln!("{} + {} = {}", i32: a, i32: b, i32: a + b);
 }
 ```
+
+## Format string syntax
+
+By default the format string syntax uses (and also extends in some ways) python's
+[`str.format`](https://docs.python.org/3/library/stdtypes.html#str.format) function which is similar
+to rust's `print` and `println` functions.
 
 ## How it works
 
@@ -93,7 +98,7 @@ know, and have tried:
 
 - [defmt](https://github.com/knurling-rs/defmt)
 
-  - \+ much more mature
+  - \+ more mature
   - \+ supports different kinds of encodings
   - \+ more efficient packing of format info into ELF (unfortunately I don't see how the mechanism
     they use could be workable in the C version)
@@ -113,7 +118,8 @@ know, and have tried:
 - [x] add license
 - [ ] make rust's init function + magic_bytes variable into a macro to support different section
   names
-- [ ] in the rust version, clarify / rework the role of the `total_size` given to
+- [ ] in the rust version, clarify / rework the role of the `total_size` given to the Sink's
+  `begin`-function
 - [x] complete adding support for tracing nested types (lists, tuples, etc.) on post-processing side
 - [ ] switch C tests from using `assert` to something else and combine all tests into a single
   executable

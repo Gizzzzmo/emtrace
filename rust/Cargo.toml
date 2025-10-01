@@ -4,7 +4,7 @@ description = "Minimal overhead tracing/logging library for embedded, and resour
 version = "0.1.0"
 edition = "2024"
 authors = ["Jonas Beyer"]
-readme = "../README.md"
+readme = "README.md"
 repository = "https://github.com/Gizzzzmo/emtrace"
 license = "Apache-2.0"
 
