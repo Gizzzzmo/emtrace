@@ -51,8 +51,7 @@ int main(void) {
 > you should probably be using [demft](https://github.com/knurling-rs/defmt). It is more mature, and
 > featureful. For more details see [below](#comparison).
 
-I've not yet published anything on crates.io. So you will need to clone this repository for now if
-you want to use it.
+Use `cargo add emtrace` in your project to get the latest version from [crates.io](crates.io).
 
 ```rust
 use emtrace::{init, traceln};
