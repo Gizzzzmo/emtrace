@@ -136,5 +136,6 @@ know, and have tried:
 - [ ] add versioning information
 - [ ] publish rust crate to crates.io
 - [ ] add nix build recipe and publish to nixpkgs
-- [ ] make CMake version installable, add conan recipe, and publish to conan center
+- [x] make CMake version installable
+- [ ] add conan recipe, and publish to conan center
 - [ ] add compatibility with other binary formats (mach-o and pe)

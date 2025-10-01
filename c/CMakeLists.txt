@@ -16,16 +16,32 @@ if(NOT EMTRACE_ENABLE_EXAMPLES AND NOT EMTRACE_ENABLE_TESTS)
     set(LANGUAGES "")
 endif()
 
-project(emtrace LANGUAGES ${LANGUAGES})
+project(emtrace LANGUAGES ${LANGUAGES} VERSION 0.1.0)
 
 if(EMTRACE_ENABLE_CXX OR EMTRACE_ENABLE_EXAMPLES)
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
-add_library(emtrace INTERFACE ./include/c/include/emtrace/emtrace.h)
-target_include_directories(emtrace INTERFACE ./include/c/include)
+add_library(emtrace INTERFACE)
+target_sources(
+    emtrace
+    PUBLIC
+        FILE_SET HEADERS BASE_DIRS ./include/c/include FILES ./include/c/include/emtrace/emtrace.h
+)
+target_include_directories(
+    emtrace
+    INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/c/include>
+        $<INSTALL_INTERFACE:include>
+)
 add_library(emtrace::emtrace ALIAS emtrace)
+
+install(
+    TARGETS emtrace
+    EXPORT emtrace_exports
+    FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
 # some of the examples are end-to-end tests that are consumed by ../tests/test_emtrace.py
 if(EMTRACE_ENABLE_EXAMPLES OR EMTRACE_ENABLE_TESTS)
@@ -51,3 +67,22 @@ if(
     )
     write_file(${CMAKE_SOURCE_DIR}/build/.build_dir ${CMAKE_BINARY_DIR})
 endif()
+
+include(CMakePackageConfigHelpers)
+install(
+    EXPORT emtrace_exports
+    FILE emtrace-config.cmake
+    DESTINATION ./${CMAKE_INSTALL_LIBDIR}/cmake/emtrace
+    NAMESPACE emtrace::
+)
+
+write_basic_package_version_file(
+    "emtrace-config-version.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/emtrace-config-version.cmake"
+    DESTINATION "./${CMAKE_INSTALL_LIBDIR}/cmake/emtrace"
+)
