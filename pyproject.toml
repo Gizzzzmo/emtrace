@@ -2,6 +2,10 @@
 name = "emtrace"
 version = "0.1.0"
 description = "A tool to parse and format emtrace data."
+readme = "README.md"
+authors = [{name = "Jonas Beyer", email = "reyeb.sanoj@googlemail.com"}]
+license = {file="LICENSE"}
+keywords = ["embedded", "logging", "tracing"]
 dependencies = [
     "pyelftools>=0.31",
 ]
