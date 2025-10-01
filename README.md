@@ -133,8 +133,8 @@ know, and have tried:
 - [ ] add CI pipeline (github actions?)
 - [ ] add dedicated C++ implementation
 - [x] add CMake profile-switching to justfile
-- [ ] add versioning information
-- [ ] publish rust crate to crates.io
+- [x] add versioning information
+- [x] publish rust crate to crates.io
 - [ ] add nix build recipe and publish to nixpkgs
 - [x] make CMake version installable
 - [ ] add conan recipe, and publish to conan center

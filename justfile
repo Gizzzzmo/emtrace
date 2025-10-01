@@ -101,4 +101,6 @@ switch PROFILE TYPE='':
 list:
     @{{SWITCH_PROFILE}}
 
+publish: (cargo "publish") 
+
 
