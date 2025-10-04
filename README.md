@@ -13,17 +13,24 @@ channel is completely customizable.
 
 ## Usage
 
-Choose the language you want to use below. Once you have a compiled binary (regardless of source
-language) you can run it, and pipe its output into [`emtrace.py`](./emtrace.py), to which you also
-have to supply the path to the same binary. E.g. something like this (assuming your executable is
-a.out):
+You will always need the emtrace python parser to process the output your binary produces. Either
+directly use [the script from this repository](./parser/emtrace.py) or install it from pypi:
 
 ```bash
-./a.out | python path/to/emtrace.py a.out
+pip install emtrace
+```
+
+Now you can choose the language you want to use below. Once you have a compiled binary (regardless
+of source language) you can run it, and pipe its output into [`emtrace.py`](./parser/emtrace.py), to
+which you also have to supply the path to the same binary. E.g. something like this (assuming your
+executable is a.out):
+
+```bash
+./a.out | emtrace a.out
 ```
 
 The script is more efficient when you have pyelftools installed, but it also works without it. It
-has a few extra options that you can checkout by running `python emtrace.py -h`
+has a few extra options that you can check out by running `emtrace -h`
 
 ### In C
 
@@ -81,8 +88,8 @@ pointer to associate it to the right piece of format information in this dedicat
 section can be completely removed (or made no-load) from the final binary (e.g. with objcopy), and
 the program will still run.
 
-The [post-processing script](./emtrace.py) takes the data output by the program while running and
-the data from the special `.emtrace` section, and produces the log.
+The [post-processing script](./parser/emtrace/__init__.py) takes the data output by the program
+while running and the data from the special `.emtrace` section, and produces the log.
 
 ## Development
 

@@ -1,6 +1,6 @@
 [project]
 name = "emtrace"
-version = "0.1.0"
+version = "0.1.3"
 description = "A tool to parse and format emtrace data."
 readme = "README.md"
 authors = [{name = "Jonas Beyer", email = "reyeb.sanoj@googlemail.com"}]
@@ -16,9 +16,15 @@ test = [
     "pytest-xdist>=3.6.1",
 ]
 
+[project.scripts]
+emtrace = "emtrace.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = ["emtrace/*.py"]
 
 [tool.pyright]
 reportAny = false

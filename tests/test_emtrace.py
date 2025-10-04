@@ -91,7 +91,7 @@ def test_emtrace_on_executable(executable_path_str: str):
     trace_output = process.stdout
 
     # 2. Run emtrace.py in test mode with the trace output as stdin.
-    emtrace_script = pytest_dir.parent / "emtrace.py"
+    emtrace_script = pytest_dir.parent / "parser/emtrace.py"
     try:
         emtrace_process = subprocess.run(
             [

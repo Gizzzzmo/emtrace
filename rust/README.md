@@ -23,8 +23,9 @@ fn main() {
 
 The byte stream, combined with the information in a special data section that is created in the
 compiled binary, can then be post-processed with a
-[python script](https://github.com/Gizzzzmo/emtrace/blob/main/emtrace.py) to obtain the intended
-log. For more details take a look at the [full project](https://github.com/Gizzzzmo/emtrace).
+[python script](https://github.com/Gizzzzmo/emtrace/blob/main/parser/emtrace.py) (install it from
+pypi with `pip install emtrace`) to obtain the intended log. For more details take a look at the
+[full project](https://github.com/Gizzzzmo/emtrace).
 
 ## Traceable Types
 

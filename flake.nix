@@ -21,7 +21,12 @@
           inherit system overlays;
         };
         rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-        nativeBuildInputs = with pkgs; [ninja cmake rustToolchain];
+        nativeBuildInputs = with pkgs; [
+          ninja
+          cmake
+          rustToolchain
+          python313Packages.build
+        ];
         buildInputs = with pkgs; [python313 python313Packages.pyelftools];
         packages = with pkgs; [
           alejandra
@@ -41,6 +46,7 @@
           just
           gersemi
           python313Packages.pytest
+          python313Packages.twine
           python313Packages.pytest-xdist
         ];
       in

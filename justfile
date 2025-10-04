@@ -25,6 +25,18 @@ current_build_dir := shell(CAT + ' c/build/.build_dir || ' + ECHO + ' build')
 
 _2 := shell(ECHO_NNN + ' ' + current_preset + ' > c/profiles/.current_preset')
 
+[no-cd]
+emtrace *ARGS:
+    python3 {{justfile_directory()}}/parser/emtrace.py {{ARGS}} 
+
+hatch_build:
+    cd parser && python -m build
+
+twine *ARGS:
+    cd parser && python -m twine {{ARGS}}
+
+alias run := emtrace
+
 alias c := cargo
 
 cargo *ARGS:
@@ -90,7 +102,7 @@ lint: (ruff "check") cargo-clippy (clang-tidy "--use-color") (clang-format "--dr
 conf_all: (configure "dbg") (configure "rel") (configure "opt-dbg")
 
 [parallel]
-build_all: (cargo "build" "--release" "--all-targets") (cargo "build" "--all-targets") (cbuild "dbg") (cbuild "rel") (cbuild "opt-dbg")
+build_all: (cargo "build" "--release" "--all-targets") (cargo "build" "--all-targets") (cbuild "dbg") (cbuild "rel") (cbuild "opt-dbg") hatch_build
 
 [parallel]
 build: (cargo "build" "--all-targets") cbuild
@@ -101,6 +113,11 @@ switch PROFILE TYPE='':
 list:
     @{{SWITCH_PROFILE}}
 
-publish: (cargo "publish") 
+publish_crates: (cargo "publish")
+
+publish_pypi: (twine "upload" "dist/*")
+
+[parallel]
+publish_all: publish_crates publish_pypi
 
 
