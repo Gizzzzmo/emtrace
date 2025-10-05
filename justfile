@@ -30,7 +30,7 @@ emtrace *ARGS:
     python3 {{justfile_directory()}}/parser/emtrace.py {{ARGS}} 
 
 hatch_build:
-    cd parser && python -m build
+    cd parser && hatchling build
 
 twine *ARGS:
     cd parser && python -m twine {{ARGS}}
