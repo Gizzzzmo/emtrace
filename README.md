@@ -21,16 +21,12 @@ pip install emtrace
 ```
 
 Now you can choose the language you want to use below. Once you have a compiled binary (regardless
-of source language) you can run it, and pipe its output into [`emtrace.py`](./parser/emtrace.py), to
-which you also have to supply the path to the same binary. E.g. something like this (assuming your
-executable is a.out):
+of source language) you can run it, and pipe its output into `emtrace`, to which you also have to
+supply the path to the same binary. E.g. something like this (assuming your executable is a.out):
 
 ```bash
 ./a.out | emtrace a.out
 ```
-
-The script is more efficient when you have pyelftools installed, but it also works without it. It
-has a few extra options that you can check out by running `emtrace -h`
 
 ### In C
 
@@ -141,7 +137,10 @@ know, and have tried:
 - [x] add CMake profile-switching to justfile
 - [x] add versioning information
 - [x] publish rust crate to crates.io
-- [ ] add nix build recipe and publish to nixpkgs
+- [x] add nix build recipe for parser
+- [x] add nix build recipe for c version
+- [ ] add nix build recipe for rust version
+- [ ] publish to nixpkgs
 - [x] make CMake version installable
 - [ ] add conan recipe, and publish to conan center
 - [ ] add compatibility with other binary formats (mach-o and pe)
