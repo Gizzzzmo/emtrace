@@ -1,48 +1,49 @@
 from conan import ConanFile
+from conan.tools.build import check_min_cstd
+from conan.tools.cmake import CMake, cmake_layout
 
 
-class BasicConanfile(ConanFile):
+class EmtraceConanfile(ConanFile):
     name: str = "emtrace"
-    version: str = "0.1"
-    description: str = "A basic recipe"
+    version: str = "0.1.0"
+    description: str = "Minimal overhead tracing/logging library for embedded, and resource constrained projects."
     license: str = "Apache-2.0"
     homepage: str = "https://github.com/Gizzzzmo/emtrace"
+    topics: tuple[str, ...] = ("tracing", "debugging", "header-only")
 
-    # Check the documentation for the rest of the available attributes
+    settings: tuple[str, ...] = "os", "arch", "compiler", "build_type"
+    exports_sources: tuple[str, ...] = (
+        "CMakeLists.txt",
+        "include/*",
+        "test/*",
+        "examples/*",
+    )
 
-    # The requirements method allows you to define the dependencies of your recipe
-    def requirements(self):
-        # Each call to self.requires() will add the corresponding requirement
-        # to the current list of requirements
-        # Uncommenting this line will add the zlib/1.2.13 dependency to your project
-        # self.requires("zlib/1.2.13")
-        pass
+    no_copy_source: bool = True
+    generators: tuple[str, ...] = "CMakeDeps", "CMakeToolchain"
+    package_type: str = "header-library"
 
-    # The build_requirements() method is functionally equivalent to the requirements() one,
-    # being executed just after it. It's a good place to define tool requirements,
-    # dependencies necessary at build time, not at application runtime
-    def build_requirements(self):
-        # Each call to self.tool_requires() will add the corresponding build requirement
-        # Uncommenting this line will add the cmake >=3.15 build dependency to your project
-        self.requires("cmake/[>=3.15]")
-        pass
+    def layout(self):
+        cmake_layout(self, src_folder=".")
 
-    # The purpose of generate() is to prepare the build, generating the necessary files, such as
-    # Files containing information to locate the dependencies, environment activation scripts,
-    # and specific build system files among others
-    def generate(self):
-        pass
-
-    # This method is used to build the source code of the recipe using the desired commands.
     def build(self):
-        # You can use your command line tools to invoke your build system
-        # or any of the build helpers provided with Conan in conan.tools
-        # self.run("g++ ...")
+        cmake = CMake(self)
+        cmake.configure()
+        cmake.build()
+        if not self.conf.get("tools.build:skip_test", default=False, check_type=bool):
+            _ = self.run("ctest --output-on-failure", env="conanbuild")
+
+    def package(self):
+        cmake = CMake(self)
+        cmake.install(self)
+
         pass
 
-    # The actual creation of the package, once it's built, is done in the package() method.
-    # Using the copy() method from tools.files, artifacts are copied
-    # from the build folder to the package folder
-    def package(self):
-        # copy(self, "*.h", self.source_folder, join(self.package_folder, "include"), keep_path=False)
-        pass
+    def package_id(self):
+        self.info.clear()
+
+    def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "emtrace")
+        self.cpp_info.set_property("cmake_target_name", "emtrace::emtrace")
+        self.cpp_info.bindirs = []
+        self.cpp_info.libdirs = []
