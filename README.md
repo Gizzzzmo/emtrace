@@ -123,7 +123,7 @@ know, and have tried:
 - [ ] in the rust version, clarify / rework the role of the `total_size` given to the Sink's
   `begin`-function
 - [x] complete adding support for tracing nested types (lists, tuples, etc.) on post-processing side
-- [ ] switch C tests from using `assert` to something else and combine all tests into a single
+- [x] switch C tests from using `assert` to something else and combine all tests into a single
   executable
 - [x] add usage examples to documentation
 - [x] add download / install instructions to documentation

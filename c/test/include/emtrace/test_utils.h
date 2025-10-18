@@ -1,5 +1,5 @@
-#ifndef TEST_UTILS_H
-#define TEST_UTILS_H
+#ifndef EMTRACE_TEST_UTILS_H
+#define EMTRACE_TEST_UTILS_H
 
 #include "emtrace/emtrace.h"
 #include <stddef.h>
@@ -8,7 +8,7 @@
 
 // A simple buffer to capture trace output
 typedef struct {
-    unsigned char* data;
+    uint8_t* data;
     size_t capacity;
     size_t size;
 } test_buffer_t;
@@ -38,11 +38,12 @@ static inline void emt_test_unlock(const void* a, size_t b, void* c) {
 }
 
 #define EMT_TEST_TRACE_F(buffer, formatter, ...)                                                   \
-    EMT_TRACE_F(/* attributes */ static const, formatter, to_buffer, emt_test_lock,                \
-                emt_test_unlock, (&buffer), "", __VA_ARGS__)
+    EMT_TRACE_F(                                                                                   \
+        static const, formatter, to_buffer, emt_test_lock, emt_test_unlock, (&buffer), "",         \
+        __VA_ARGS__                                                                                \
+    )
 
 #define EMT_TEST_TRACE_S(buffer, postfix, str)                                                     \
-    EMT_TRACE_S(/* attributes */ static const, to_buffer, emt_test_lock, emt_test_unlock,          \
-                &(buffer), postfix, str)
+    EMT_TRACE_S(static const, to_buffer, emt_test_lock, emt_test_unlock, &(buffer), postfix, str)
 
-#endif // TEST_UTILS_H
+#endif // EMTRACE_TEST_UTILS_H
