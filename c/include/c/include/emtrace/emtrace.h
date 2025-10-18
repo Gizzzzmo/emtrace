@@ -44,6 +44,7 @@ typedef uint32_t emt_size_t;
 #define EMT_ALIGNMENT_POWER 0
 #endif
 
+// from C23 and C++11 onwards we can use enum class with fixed underlying types instead of macros
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) ||                                  \
     (defined(__cplusplus) && __cplusplus >= 201103L)
 enum : emt_size_t {
@@ -779,9 +780,9 @@ EMT_STATIC_ASSERT(
  * @brief Emit a trace.
  *
  * Creates a variable `info`, with modifieable attributes (via `fmt_info_attributes`, should
- * probably always be at least const static). This variable contains the first of the variable
- * arguments (which has to be a string literal), and information about the sizes of the rest of the
- * variable arguments. Then calls `out_fn` for each of the other variable arguments, along with
+ * probably always be at least const static). This variable contains the first of the ... /
+ * __VA_ARGS__ (which has to be a string literal), and information about the sizes of the rest of
+ * the variable arguments. Then calls `out_fn` for each of the other variable arguments, along with
  * their size.
  *
  * @param fmt_info_attributes - is prefixed to the definition of the `info` variable, which contains
@@ -932,15 +933,32 @@ EMT_STATIC_ASSERT(
         out((const void*) &magic_ptr, sizeof(magic_ptr), extra_arg);                               \
     } while (0)
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 #define EMT_DEFAULT_SEC_ATTR                                                                       \
     __attribute__((used, aligned(EMT_ALIGNMENT), section(".emtrace"))) static const
+#elif defined(_MSC_VER)
+#define EMT_DEFAULT_SEC_ATTR                                                                       \
+    __declspec(align(EMT_ALIGNMENT)) __declspec(allocate(".emtrace")) static const
 #endif
+
+// for thread safety we want to lock stdout while writing a trace to it so that data from multiple
+// traces cannot interleave
+#if defined(unix) || defined(__unix) || defined(__unix__) ||                                       \
+    (defined(__APPLE__) && defined(__MACH__))
 
 #define EMT_FLOCK_FILE(x, y, file) flockfile(file)
 #define EMT_FUNLOCK_FILE(x, y, file) funlockfile(file)
 
-#ifdef EMT_DEFAULT_SEC_ATTR
+#elif defined(_WIN32)
+
+#include <windows.h>
+#define EMT_FLOCK_FILE(x, y, file) LockFileEx(file, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, NULL)
+#define EMT_FUNLOCK_FILE(x, y, file) UnlockFileEx(file, 0, 0xFFFFFFFF, 0xFFFFFFFF, NULL)
+
+#endif
+
+#if defined(EMT_DEFAULT_SEC_ATTR) && defined(EMT_FLOCK_FILE) && defined(EMT_FUNLOCK_FILE)
+
 #define EMTRACE_F(...)                                                                             \
     EMT_TRACE_F(                                                                                   \
         EMT_DEFAULT_SEC_ATTR, EMT_PY_FORMAT, emt_out_file, EMT_FLOCK_FILE, EMT_FUNLOCK_FILE,       \
@@ -967,7 +985,8 @@ EMT_STATIC_ASSERT(
         EMT_DEFAULT_SEC_ATTR, emt_out_file, EMT_FLOCK_FILE, EMT_FUNLOCK_FILE, stdout, "\n", str    \
     )
 #define EMTRACE_INIT() EMT_INIT(EMT_DEFAULT_SEC_ATTR, emt_out_file, stdout)
-#endif // EMT_DEFAULT_SEC_ATTR
+
+#endif // EMT_DEFAULT_SEC_ATTR && EMT_FLOCK_FILE && EMT_FUNLOCK_FILE
 
 // NOLINTEND(modernize-use-using,modernize-avoid-c-arrays)
 #ifdef __cplusplus

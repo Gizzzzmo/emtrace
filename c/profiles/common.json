@@ -3,6 +3,36 @@
     "version": 8,
     "configurePresets": [
         {
+            "name": "msvc-flags",
+            "displayName": "Msvc Flags Windows",
+            "description": "Default flags to compile with msvc or clang-cl on Windows",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_C_FLAGS_DEBUG": "/Od /Zi",
+                "CMAKE_CXX_FLAGS_DEBUG": "/Od /Zi",
+                "CMAKE_C_FLAGS_RELEASE": "/O2",
+                "CMAKE_CXX_FLAGS_RELEASE": "/O2",
+                "CMAKE_C_FLAGS_RELWITHDEBINFO": "/O2 /Zi",
+                "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "/O2 /Zi"
+            }
+        },
+        {
+            "name": "clang-flags-windows",
+            "displayName": "Clang Flags Windows",
+            "description": "Default flags to compile with clang (not clang-cl) on Windows",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_C_FLAGS_DEBUG": "-O0",
+                "CMAKE_CXX_FLAGS_DEBUG": "-ggdb -O0",
+                "CMAKE_C_FLAGS_RELEASE": "-ggdb -O3",
+                "CMAKE_CXX_FLAGS_RELEASE": "-ggdb -O3",
+                "CMAKE_C_FLAGS_RELWITHDEBINFO": "-ggdb -O3",
+                "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-ggdb -O3"
+            }
+        },
+        {
             "name": "gnu-flags",
             "displayName": "GNU Flags",
             "description": "Default flags to compile with gcc and clang",
