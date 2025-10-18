@@ -13,7 +13,9 @@
             "binaryDir": "build/clang/${presetName}",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++"
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_C_FLAGS": "-fdiagnostics-color=always",
+                "CMAKE_CXX_FLAGS": "-fdiagnostics-color=always"
             }
         }
     ]
