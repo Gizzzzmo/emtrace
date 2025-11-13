@@ -144,3 +144,8 @@ know, and have tried:
 - [x] make CMake version installable
 - [ ] add conan recipe, and publish to conan center
 - [ ] add compatibility with other binary formats (mach-o and pe)
+- [ ] add COBS encoding support
+- [ ] add interning support
+- [ ] add sinks for common embedded transports (ARM SWO, RTT, etc.)
+- [ ] add compound EMTRACE_F macros to C version where both object with known size, and
+  variable-size ones can be logged in a single call
