@@ -170,7 +170,7 @@ pub const C_STYLE_FORMAT: SizeT = 2;
 
 /// Trait for emtrace sinks.
 pub trait Sink {
-    /// The error that can happen when calling `out`.
+    /// The error that can happen when calling `out` and `finish`.
     /// Set this to `Infallible` if your implementation can't produce an error.
     type OutError;
     /// The error that can happen when calling `begin`.
@@ -188,6 +188,124 @@ pub trait Sink {
     /// the minimal number of bytes that will be sent, bitwise ored with either `emtrace::NULL_TERMINATED` or
     /// `emtrace::LENGTH_PREFIXED`, depending on the kind of dynamic data.
     fn begin(&mut self, info_addr: PointerT, total_size: SizeT) -> Result<(), Self::BeginError>;
+
+    fn finish(self) -> Result<(), Self::OutError>
+    where
+        Self: std::marker::Sized,
+    {
+        Ok(())
+    }
+}
+
+pub struct CobsEncoder {
+    buffer: [u8; 254],
+    pos: u8,
+}
+
+impl Default for CobsEncoder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl CobsEncoder {
+    pub fn new() -> Self {
+        Self {
+            buffer: [0; 254],
+            pos: 0,
+        }
+    }
+    pub fn encode<T: Sink>(&mut self, sink: &mut T, b: &[u8]) -> Result<(), T::OutError> {
+        for byte in b {
+            if *byte == 0 {
+                sink.out(core::slice::from_ref(&(self.pos + 1)))?;
+                sink.out(&self.buffer[..self.pos as usize])?;
+                self.pos = 0;
+
+                continue;
+            }
+            if self.pos == 254 {
+                sink.out(core::slice::from_ref(&255))?;
+                sink.out(&self.buffer)?;
+                self.pos = 0;
+            }
+            self.buffer[self.pos as usize] = *byte;
+            self.pos += 1;
+        }
+        Ok(())
+    }
+    pub fn finalize<T: Sink>(&mut self, sink: &mut T) -> Result<(), T::OutError> {
+        if self.pos > 0 {
+            sink.out(core::slice::from_ref(&(self.pos + 1)))?;
+            sink.out(&self.buffer[..self.pos as usize])?;
+        } else {
+            sink.out(core::slice::from_ref(&1u8))?;
+        }
+        sink.out(core::slice::from_ref(&0u8))
+    }
+}
+
+pub struct CobsConsumer<T: Sink> {
+    inner: T,
+    encoder: CobsEncoder,
+}
+
+impl<T: Sink> CobsConsumer<T> {
+    pub fn new(inner: T) -> Self {
+        Self {
+            inner,
+            encoder: CobsEncoder::new(),
+        }
+    }
+}
+
+impl<T: Sink> Sink for CobsConsumer<T> {
+    type OutError = T::OutError;
+    type BeginError = T::BeginError;
+
+    fn out(&mut self, b: &[u8]) -> Result<(), Self::OutError> {
+        self.encoder.encode(&mut self.inner, b)
+    }
+
+    fn begin(&mut self, info_addr: PointerT, total_size: SizeT) -> Result<(), Self::BeginError> {
+        self.inner.begin(info_addr, total_size)
+    }
+
+    fn finish(mut self) -> Result<(), Self::OutError> {
+        self.encoder.finalize(&mut self.inner)?;
+        self.inner.finish()
+    }
+}
+
+pub struct CobsAdapter<'a, T: Sink> {
+    inner: &'a mut T,
+    encoder: CobsEncoder,
+}
+
+impl<'a, T: Sink> CobsAdapter<'a, T> {
+    pub fn new(inner: &'a mut T) -> Self {
+        Self {
+            inner,
+            encoder: CobsEncoder::new(),
+        }
+    }
+}
+
+impl<T: Sink> Sink for CobsAdapter<'_, T> {
+    type OutError = T::OutError;
+    type BeginError = T::BeginError;
+
+    fn out(&mut self, b: &[u8]) -> Result<(), Self::OutError> {
+        self.encoder.encode(self.inner, b)
+    }
+
+    fn begin(&mut self, info_addr: PointerT, total_size: SizeT) -> Result<(), Self::BeginError> {
+        self.inner.begin(info_addr, total_size)
+    }
+
+    fn finish(mut self) -> Result<(), Self::OutError> {
+        self.encoder.finalize(self.inner)
+    }
 }
 
 /// Initialize the trace, by serializing the virtual memory address of the
@@ -972,7 +1090,7 @@ macro_rules! expect {
         expect!($expected, .section=".emtrace.test.expected")
     };
 }
-const MAGIC_SIZE: usize = 36 + 3 * size_of::<SizeT>();
+const MAGIC_SIZE: usize = 37 + 3 * size_of::<SizeT>();
 
 type Magic = FormatInfo<MAGIC_SIZE>;
 
@@ -995,8 +1113,9 @@ pub static EMTRACE_MAGIC: Magic = {
     magic[33] = size_of::<SizeT>() as u8;
     magic[34] = size_of::<PointerT>() as u8;
     magic[35] = ALIGNMENT_POWER;
+    magic[36] = 0; // reserved for encoder id
 
-    let mut idx = 36;
+    let mut idx = 37;
 
     #[allow(overflowing_literals)]
     let byte_order_id_arr = (0x0f0e0d0c0b0a09080706050403020100 as SizeT).to_ne_bytes();
@@ -1032,7 +1151,7 @@ pub fn magic_address_bytes() -> [u8; size_of::<PointerT>()] {
 
 #[cfg(test)]
 mod tests {
-    use super::{SizeT, trace};
+    use super::{CobsEncoder, SizeT, trace};
     use std::str::FromStr;
 
     #[test]
@@ -1153,7 +1272,7 @@ mod tests {
             .map(|s| String::from_str(s).unwrap())
             .collect();
 
-        let expected_len = 2 * size_of::<SizeT>() // for pointer, and length-prefix
+        let expected_len = 2 * size_of::<SizeT>() // for pointer-, and length-prefix
             + slices
                 .iter()
                 .map(|inner| inner.len() + size_of::<u8>()) // for content and null-terminator
@@ -1167,5 +1286,72 @@ mod tests {
             capture1[size_of::<SizeT>()..],
             capture2[size_of::<SizeT>()..]
         );
+    }
+
+    #[test]
+    fn cobs_encode_short() {
+        let mut capture = Vec::new();
+        let data: Vec<u8> = vec![1, 2, 3, 0, 4, 5, 0, 0, 6];
+        let mut cobs = CobsEncoder::new();
+        cobs.encode(&mut capture, &data).unwrap();
+        cobs.finalize(&mut capture).unwrap();
+
+        assert_eq!(capture, vec![4, 1, 2, 3, 3, 4, 5, 1, 2, 6, 0]);
+    }
+
+    #[test]
+    fn cobs_encode_long() {
+        let mut capture = Vec::new();
+        let data: Vec<u8> = vec![1; 256];
+
+        let mut cobs = CobsEncoder::new();
+        cobs.encode(&mut capture, &data).unwrap();
+        cobs.finalize(&mut capture).unwrap();
+
+        println!("{:x?}", capture);
+        assert_eq!(capture.len(), 259);
+        assert_eq!(capture[0], 0xFF);
+        assert_eq!(capture[1..255], vec![1; 254][..]);
+        assert_eq!(capture[255..], vec![3, 1, 1, 0][..]);
+    }
+
+    #[test]
+    fn cobs_encode_254() {
+        let mut capture = Vec::new();
+        let data: Vec<u8> = vec![1; 254];
+
+        let mut cobs = CobsEncoder::new();
+        cobs.encode(&mut capture, &data).unwrap();
+        cobs.finalize(&mut capture).unwrap();
+
+        println!("{:x?}", capture);
+        assert_eq!(capture.len(), 256);
+        assert_eq!(capture[0], 0xFF);
+        assert_eq!(capture[1..255], vec![1; 254]);
+        assert_eq!(capture[255], 0);
+    }
+
+    #[test]
+    fn cobs_encode_empty() {
+        let mut capture = Vec::new();
+        let data: Vec<u8> = vec![];
+        let mut cobs = CobsEncoder::new();
+        cobs.encode(&mut capture, &data).unwrap();
+        cobs.finalize(&mut capture).unwrap();
+
+        println!("{:x?}", capture);
+        assert_eq!(capture, vec![1, 0]);
+    }
+
+    #[test]
+    fn cobs_encode_only_zeros() {
+        let mut capture = Vec::new();
+        let data: Vec<u8> = vec![0; 4];
+        let mut cobs = CobsEncoder::new();
+        cobs.encode(&mut capture, &data).unwrap();
+        cobs.finalize(&mut capture).unwrap();
+
+        println!("{:x?}", capture);
+        assert_eq!(capture, vec![1, 1, 1, 1, 1, 0]);
     }
 }
