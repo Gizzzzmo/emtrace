@@ -64,6 +64,12 @@ enum : emt_size_t {
     EMT_C_STYLE_FORMAT = 2, ///< Use python's C-style formatter
 
     EMT_ALIGNMENT = 1 << (EMT_ALIGNMENT_POWER),
+
+    // In the magic header, signals what encoding is used (if any).
+    // This is just a signal for the parser to know how to decode the bytestream.
+    // You need to make sure that your output function actually encodes the data accordingly.
+    EMT_ENCODING_NONE = 0,
+    EMT_ENCODING_COBS = 1,
 };
 #else
 
@@ -79,22 +85,79 @@ enum : emt_size_t {
 /// Use python's C-style formatter
 #define EMT_C_STYLE_FORMAT ((emt_size_t) 2)
 
+/// Send raw bytestream without any formatting.
+#define EMT_ENCODING_NONE ((emt_size_t) 0)
+/// Use COBS encoding for the bytestream.
+#define EMT_ENCODING_COBS ((emt_size_t) 1)
+
 #define EMT_ALIGNMENT (1 << (EMT_ALIGNMENT_POWER))
 #endif
 
 typedef struct {
     uint8_t main[36]; ///< first 32 bytes are emtrace's magic constant.
                       ///< next byte contains the offset from start of member main to start of
-                      ///< member info. final three bytes contain sizeof(emt_size_t), sizeof(void*),
+                      ///< member info. final four bytes contain sizeof(emt_size_t), sizeof(void*),
                       ///< and the power of two to which all format info is aligned respectively
-    emt_size_t info[4];
+    emt_size_t info[5];
     // emt_size_t byteorder_id;
     // emt_size_t null_terminated;
     // emt_size_t length_prefixed;
     // emt_size_t no_format;
+    // emt_size_t encoding;
 } emt_magic_t;
 
 static inline void emt_out_file(const void* data, emt_size_t size, FILE* file) {
+    fwrite(data, 1, size, file);
+}
+
+typedef struct {
+    uint8_t buffer[254];
+    uint8_t pos;
+} emt_cobs_state_t;
+
+static inline void emt_cobs_init(emt_cobs_state_t* cobs_state) { cobs_state->pos = 0; }
+
+static inline void emt_cobs_encode(
+    const void* data, size_t size, emt_cobs_state_t* cobs_state,
+    void (*out_fn)(const void*, emt_size_t, void*), void* extra_arg
+) {
+    for (size_t i = 0; i < size; i++) {
+        uint8_t byte = ((const uint8_t*) data)[i];
+        if (byte == 0) {
+            uint8_t ptr = cobs_state->pos + 1;
+            out_fn(&ptr, 1, extra_arg);
+            out_fn(cobs_state->buffer, cobs_state->pos, extra_arg);
+            cobs_state->pos = 0;
+            continue;
+        }
+        if (cobs_state->pos == 254) {
+            uint8_t ptr = 0xff;
+            out_fn(&ptr, 1, extra_arg);
+            out_fn(cobs_state->buffer, 254, extra_arg);
+            cobs_state->pos = 0;
+        }
+        cobs_state->buffer[cobs_state->pos] = byte;
+        cobs_state->pos++;
+    }
+}
+
+static inline void emt_cobs_finalize(
+    emt_cobs_state_t* cobs_state, void (*out_fn)(const void*, emt_size_t, void*), void* extra_arg
+) {
+    if (cobs_state->pos > 0) {
+        uint8_t ptr = cobs_state->pos + 1;
+        out_fn(&ptr, 1, extra_arg);
+        out_fn(cobs_state->buffer, cobs_state->pos, extra_arg);
+    } else {
+        uint8_t ptr = 1;
+        out_fn(&ptr, 1, extra_arg);
+    }
+    uint8_t zero = 0;
+    out_fn(&zero, 1, extra_arg);
+}
+
+static inline void emt_out_file_wrapper(const void* data, emt_size_t size, void* extra_arg) {
+    FILE* file = (FILE*) extra_arg;
     fwrite(data, 1, size, file);
 }
 
@@ -380,7 +443,7 @@ EMT_STATIC_ASSERT(
 #define EMT_F_HELPER(x, ...) EMT_F_HELPER2(x, __VA_ARGS__)
 #define EMT_F_HELPER2(x, ...) EMT_F_##x(__VA_ARGS__)
 
-#define EMT_F_TOTAL_SIZE_0(a, dummy)
+#define EMT_F_TOTAL_SIZE_0(dummy)
 #define EMT_F_TOTAL_SIZE_2(type_x, x, dummy) sizeof(type_x)
 #define EMT_F_TOTAL_SIZE_4(type_a, a, type_x, x, dummy)                                            \
     EMT_F_TOTAL_SIZE_2(type_a, a, 0) + sizeof(type_x)
@@ -957,34 +1020,56 @@ EMT_STATIC_ASSERT(
 
 #endif
 
+#if defined(EMT_FLOCK_FILE) && defined(EMT_FUNLOCK_FILE)
+
+#define EMT_LOCK_FILE_COBS(x, y, file)                                                             \
+    emt_cobs_state_t state;                                                                        \
+    emt_cobs_init(&state);                                                                         \
+    EMT_FLOCK_FILE(x, y, file)
+
+#define EMT_UNLOCK_FILE_COBS(x, y, file)                                                           \
+    emt_cobs_finalize(&state, emt_out_file_wrapper, file);                                         \
+    EMT_FUNLOCK_FILE(x, y, file)
+
+#endif // EMT_FLOCK_FILE && EMT_FUNLOCK_FILE
+
+#define EMT_OUT_FILE_COBS(ptr, size, file)                                                         \
+    emt_cobs_encode((ptr), (size), &state, emt_out_file_wrapper, file)
+
 #if defined(EMT_DEFAULT_SEC_ATTR) && defined(EMT_FLOCK_FILE) && defined(EMT_FUNLOCK_FILE)
+
+#ifdef EMT_DEFAULT_ENCODE_COBS
+#define EMT_LOCK EMT_LOCK_FILE_COBS
+#define EMT_UNLOCK EMT_UNLOCK_FILE_COBS
+#define EMT_OUT_FN EMT_OUT_FILE_COBS
+#define EMT_ENCODING EMT_ENCODING_COBS
+#else
+#define EMT_LOCK EMT_FLOCK_FILE
+#define EMT_UNLOCK EMT_FUNLOCK_FILE
+#define EMT_OUT_FN emt_out_file
+#define EMT_ENCODING EMT_ENCODING_NONE
+#endif // EMT_DEFAULT_ENCODE_COBS
 
 #define EMTRACE_F(...)                                                                             \
     EMT_TRACE_F(                                                                                   \
-        EMT_DEFAULT_SEC_ATTR, EMT_PY_FORMAT, emt_out_file, EMT_FLOCK_FILE, EMT_FUNLOCK_FILE,       \
-        stdout, "", __VA_ARGS__                                                                    \
+        EMT_DEFAULT_SEC_ATTR, EMT_PY_FORMAT, EMT_OUT_FN, EMT_LOCK, EMT_UNLOCK, stdout, "",         \
+        __VA_ARGS__                                                                                \
     )
-#define EMTRACE(str)                                                                               \
-    EMT_TRACE(EMT_DEFAULT_SEC_ATTR, emt_out_file, EMT_FLOCK_FILE, EMT_FUNLOCK_FILE, stdout, str)
+#define EMTRACE(str) EMT_TRACE(EMT_DEFAULT_SEC_ATTR, EMT_OUT_FN, EMT_LOCK, EMT_UNLOCK, stdout, str)
 #define EMTRACE_S(str)                                                                             \
-    EMT_TRACE_S(                                                                                   \
-        EMT_DEFAULT_SEC_ATTR, emt_out_file, EMT_FLOCK_FILE, EMT_FUNLOCK_FILE, stdout, "", str      \
-    )
+    EMT_TRACE_S(EMT_DEFAULT_SEC_ATTR, EMT_OUT_FN, EMT_LOCK, EMT_UNLOCK, stdout, "", str)
 
 #define EMTRACELN_F(...)                                                                           \
     EMT_TRACE_F(                                                                                   \
-        EMT_DEFAULT_SEC_ATTR, EMT_PY_FORMAT, emt_out_file, EMT_FLOCK_FILE, EMT_FUNLOCK_FILE,       \
-        stdout, "\n", __VA_ARGS__                                                                  \
+        EMT_DEFAULT_SEC_ATTR, EMT_PY_FORMAT, EMT_OUT_FN, EMT_LOCK, EMT_UNLOCK, stdout, "\n",       \
+        __VA_ARGS__                                                                                \
     )
 #define EMTRACELN(str)                                                                             \
-    EMT_TRACE(                                                                                     \
-        EMT_DEFAULT_SEC_ATTR, emt_out_file, EMT_FLOCK_FILE, EMT_FUNLOCK_FILE, stdout, str "\n"     \
-    )
+    EMT_TRACE(EMT_DEFAULT_SEC_ATTR, EMT_OUT_FN, EMT_LOCK, EMT_UNLOCK, stdout, str "\n")
 #define EMTRACELN_S(str)                                                                           \
-    EMT_TRACE_S(                                                                                   \
-        EMT_DEFAULT_SEC_ATTR, emt_out_file, EMT_FLOCK_FILE, EMT_FUNLOCK_FILE, stdout, "\n", str    \
-    )
-#define EMTRACE_INIT() EMT_INIT(EMT_DEFAULT_SEC_ATTR, emt_out_file, stdout)
+    EMT_TRACE_S(EMT_DEFAULT_SEC_ATTR, EMT_OUT_FN, EMT_LOCK, EMT_UNLOCK, stdout, "\n", str)
+#define EMTRACE_INIT()                                                                             \
+    EMT_INIT(EMT_DEFAULT_SEC_ATTR, EMT_OUT_FN, EMT_ENCODING, EMT_LOCK, EMT_UNLOCK, stdout)
 
 #endif // EMT_DEFAULT_SEC_ATTR && EMT_FLOCK_FILE && EMT_FUNLOCK_FILE
 

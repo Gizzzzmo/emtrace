@@ -32,7 +32,7 @@ int main(void) {
     // Test multiple strings
     const char* long_string = "first second third";
 
-    EMTRACE_F("Long string: ");
+    EMTRACE("Long string: ");
     EMTRACELN_S(long_string);
 
     return 0;

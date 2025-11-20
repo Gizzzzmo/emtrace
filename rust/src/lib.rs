@@ -1090,7 +1090,7 @@ macro_rules! expect {
         expect!($expected, .section=".emtrace.test.expected")
     };
 }
-const MAGIC_SIZE: usize = 37 + 3 * size_of::<SizeT>();
+const MAGIC_SIZE: usize = 36 + 4 * size_of::<SizeT>();
 
 type Magic = FormatInfo<MAGIC_SIZE>;
 
@@ -1113,9 +1113,8 @@ pub static EMTRACE_MAGIC: Magic = {
     magic[33] = size_of::<SizeT>() as u8;
     magic[34] = size_of::<PointerT>() as u8;
     magic[35] = ALIGNMENT_POWER;
-    magic[36] = 0; // reserved for encoder id
 
-    let mut idx = 37;
+    let mut idx = 36;
 
     #[allow(overflowing_literals)]
     let byte_order_id_arr = (0x0f0e0d0c0b0a09080706050403020100 as SizeT).to_ne_bytes();

@@ -7,7 +7,6 @@ from dataclasses import dataclass
 import sys
 import re
 import os
-import socket
 import struct
 
 try:
@@ -18,10 +17,49 @@ except ImportError:
     ELFError: type[Exception] = ImportError
 
 
+def cobs_get_frame(istream: Callable[[int], bytes]) -> bytes | None:
+    """Adapts an input stream to decode COBS encoded data."""
+
+    buffer = bytearray()
+    data = istream(1)
+    if len(data) == 0:
+        return None
+    if data[0] == 0:
+        return bytes(buffer)
+
+    while True:
+        block_prefix = data[0]
+
+        if block_prefix == 0xFF:
+            block_size = 254
+        else:
+            block_size = block_prefix - 1
+
+        to_read = block_size
+        data = istream(to_read)
+        if 0 in data:
+            print(
+                f"COBS decoding error: zero byte in data block: {data}", file=sys.stderr
+            )
+        buffer.extend(data)
+        if len(data) < to_read:
+            if len(buffer) == 0:
+                return None
+            return bytes(buffer)
+        assert len(data) == to_read
+
+        data = istream(1)
+        if len(data) == 0 or data[0] == 0:
+            return bytes(buffer)
+        if block_prefix != 0xFF:
+            buffer.append(0)
+        block_prefix = -1
+
+
 def detect_byteorder(b: bytes) -> Literal["little", "big", "unknown"] | None:
     """Given a sequence of bytes, this function returns the byte order.
 
-    None is returned if the sequence is longer than 256, shorter than 2, or if there is a
+    None is returned if the sequence is longer than 256, shorter than 1, or if there is a
     duplicate byte in the sequence.
     "little" is returned if b[i] = b[i-1] + 1 and b[0] = 0.
     "big" is returned if b[i] = b[i+1] + 1 and b[0] = len(b) - 1.
@@ -184,7 +222,7 @@ class EndOfStreamException(Exception):
 
 class Parser:
     translation: dict[str, Callable[[Parser, TypeInfo], Any]]
-    _istream: Callable[[int], bytes]
+    istream: Callable[[int], bytes]
     debug_trace: Callable[[*tuple[Any, ...]], None] = lambda *args: None
     size_t_size: int
     ptr_size: int
@@ -202,7 +240,7 @@ class Parser:
         ptr_byteorder: Literal["big", "little"] = "little",
     ):
         self.translation = translation
-        self._istream = istream
+        self.istream = istream
         self.debug_trace = debug_trace
         self.size_t_size = size_t_size
         self.ptr_size = ptr_size
@@ -214,7 +252,7 @@ class Parser:
         return self.translation[id](self, info)
 
     def read(self, amount: int):
-        b = self._istream(amount)
+        b = self.istream(amount)
         if len(b) < amount:
             raise EndOfStreamException
 
@@ -656,10 +694,15 @@ def error(*args: Any, **kwargs: Any):
     )
 
 
+def default_ostream(b: bytes) -> None:
+    _ = sys.stdout.buffer.write(b)
+    return sys.stdout.buffer.flush()
+
+
 def emtrace(
     elf: Path,
     istream: Callable[[int], bytes] = sys.stdin.buffer.read,
-    ostream: Callable[[bytes], Any] = sys.stdin.buffer.write,
+    ostream: Callable[[bytes], Any] = default_ostream,
     section_name: str = ".emtrace",
     with_src_loc: Literal["none", "absolute", "relative"] = "none",
     src_hyperlinks: bool = False,
@@ -758,7 +801,16 @@ def emtrace(
         data[rest_info_loc + size_t_size * 2 : rest_info_loc + size_t_size * 3],
         byteorder=byteorder,
     )
-    trace(f"{hex(null_terminated)=} {hex(length_prefixed)=} ")
+    encoding_id: int = int.from_bytes(
+        data[rest_info_loc + size_t_size * 3 : rest_info_loc + size_t_size * 4],
+        byteorder=byteorder,
+    )
+    if encoding_id not in [0, 1]:
+        error(f"Unknown encoding: {encoding_id}")
+        sys.exit(1)
+
+    encoding = "none" if encoding_id == 0 else "cobs"
+    trace(f"{hex(null_terminated)=} {hex(length_prefixed)=} {encoding=}")
 
     emtrace = Emtrace(
         data,
@@ -768,8 +820,21 @@ def emtrace(
         length_prefixed,
         debug_trace=trace,
     )
-
-    magic_address = int.from_bytes(istream(ptr_size), byteorder=byteorder)
+    if encoding == "none":
+        magic_address = int.from_bytes(istream(ptr_size), byteorder=byteorder)
+    else:
+        frame = cobs_get_frame(istream)
+        if frame is None:
+            error("Stream ended before reading the first COBS frame.")
+            sys.exit(1)
+        trace(f"First COBS frame: {frame}")
+        if len(frame) < ptr_size:
+            error(
+                "Stream ended in the middle of reading the bytes for the magic address.",
+            )
+            error(f"Leftover bytes: {frame}")
+            sys.exit(1)
+        magic_address = int.from_bytes(frame[:ptr_size], byteorder=byteorder)
     trace(f"{hex(magic_address)=}")
     magic_address *= 2**alignment_power
     emtrace.set_offset(magic_offset - magic_address)
@@ -777,6 +842,18 @@ def emtrace(
     cache: dict[int, FmtInfo] = {}
     min_path_length: int = 0
     new_line_missing = True
+
+    original_istream = istream
+    frame_buffer: None | bytearray = None
+    if encoding == "cobs":
+        frame_buffer = bytearray()
+
+        def istream(n: int) -> bytes:
+            nonlocal frame_buffer
+            assert frame_buffer is not None
+            result = bytes(frame_buffer[:n])
+            frame_buffer = frame_buffer[n:]
+            return result
 
     parser = Parser(
         translation_le if byteorder == "little" else translation_be,
@@ -788,7 +865,20 @@ def emtrace(
         byteorder,
     )
     while True:
-        trace("")
+        if frame_buffer is not None:
+            if len(frame_buffer) != 0:
+                error(
+                    "Leftover bytes in COBS frame buffer before reading next frame.",
+                )
+                error(f"Leftover bytes: {frame_buffer}")
+                frame_buffer.clear()
+            frame = cobs_get_frame(original_istream)
+            if frame is None:
+                trace("End of stream reached.")
+                break
+            trace(f"Next COBS frame: {frame}")
+            frame_buffer.extend(frame)
+
         b = istream(ptr_size)
         if len(b) == 0:
             break
@@ -797,6 +887,8 @@ def emtrace(
                 "Stream ended in the middle of reading the bytes for the next format info location.",
             )
             error(f"Leftover bytes: {b}")
+            if encoding == "cobs":
+                continue
             sys.exit(1)
         trace(f"Next format info location bytes: {b}")
         address = int.from_bytes(b, byteorder="little")
@@ -821,6 +913,8 @@ def emtrace(
                 error(f"from {info.file}:{info.line}")
                 error("successfully parsed arguments: ", *formatted[0])
                 error(f"Leftover bytes: {formatted[1]}")
+                if encoding == "cobs":
+                    continue
                 sys.exit(1)
             case list():
                 error("Failed to format")

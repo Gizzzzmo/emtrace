@@ -46,4 +46,10 @@ static inline void emt_test_unlock(const void* a, size_t b, void* c) {
 #define EMT_TEST_TRACE_S(buffer, postfix, str)                                                     \
     EMT_TRACE_S(static const, to_buffer, emt_test_lock, emt_test_unlock, &(buffer), postfix, str)
 
+#define EMT_TEST_TRACE_A(buffer, formatter, ...)                                                   \
+    EMT_TRACE_A(                                                                                   \
+        static const, formatter, to_buffer, emt_test_lock, emt_test_unlock, (&buffer), "",         \
+        __VA_ARGS__                                                                                \
+    )
+
 #endif // EMTRACE_TEST_UTILS_H

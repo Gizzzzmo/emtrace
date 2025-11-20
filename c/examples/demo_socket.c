@@ -64,7 +64,7 @@ int main(void) {
             printf("server accept the client...\n");
         }
 
-        EMT_INIT(EMT_DEFAULT_SEC_ATTR, out, connfd);
+        EMT_INIT(EMT_DEFAULT_SEC_ATTR, out, EMT_ENCODING_COBS, DUMMY, DUMMY, connfd);
         int x = 1;
         int y = 2;
         for (int i = 0; i < 15; i++) {
