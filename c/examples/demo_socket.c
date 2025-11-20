@@ -64,16 +64,19 @@ int main(void) {
             printf("server accept the client...\n");
         }
 
-        EMT_INIT(EMT_DEFAULT_SEC_ATTR, out, EMT_ENCODING_COBS, DUMMY, DUMMY, connfd);
+        EMT_INIT(EMT_DEFAULT_SEC_ATTR, out, EMT_ENCODING_NONE, DUMMY, DUMMY, connfd);
         int x = 1;
         int y = 2;
         for (int i = 0; i < 15; i++) {
-            TRACEF(connfd, "Hello, World! {:d}", int, y);
+            TRACEF(connfd, "Hello, World! {:d}", VAL(int, y));
             TRACEF(connfd, "  test\n");
-            TRACEF(connfd, "Hello, World! 0x{0:x} {2:d} {1:d}\n", int, i, int, 'a', void*, &x);
-            TRACEF(connfd, "{:-^20d}\n", int, i);
+            TRACEF(
+                connfd, "Hello, World! 0x{0:x} {2:d} {1:d}\n", //
+                VAL(int, i), VAL(int, 'a'), VAL(void*, &x)
+            );
+            TRACEF(connfd, "{:-^20d}\n", VAL(int, i));
             for (int j = i; j > 3; j--) {
-                TRACEF(connfd, "|{:^18d}|\n", int, j);
+                TRACEF(connfd, "|{:^18d}|\n", VAL(int, j));
             }
             TRACEF(
                 connfd, "--------------------\n"

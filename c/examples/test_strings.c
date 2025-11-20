@@ -23,17 +23,13 @@ int main(void) {
     const char* emoji_check = "✅";
     const char* copyright = "©";
 
-    EMTRACE("Unicode: ");
-    EMTRACE_S(emoji_smile);
-    EMTRACE_S(emoji_check);
-    EMTRACE_S(copyright);
-    EMTRACELN("");
+    EMTRACE_F("Unicode: {}{}{}\n", STR(emoji_smile), STR(emoji_check), STR(copyright));
 
     // Test multiple strings
     const char* long_string = "first second third";
 
     EMTRACE("Long string: ");
-    EMTRACELN_S(long_string);
+    EMTRACE_F("{}\n", STR(long_string));
 
     return 0;
 }

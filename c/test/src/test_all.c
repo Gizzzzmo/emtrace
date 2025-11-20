@@ -1,5 +1,5 @@
-#include "emtrace/test_framework.h"
-#include "emtrace/test_suites.h"
+#include "test_framework.h"
+#include "test_suites.h"
 #include <stddef.h>
 #include <stdio.h>
 

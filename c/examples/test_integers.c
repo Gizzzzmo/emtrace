@@ -20,7 +20,8 @@ int main(void) {
     int64_t i64 = INT64_MIN; // -9223372036854775808
 
     EMTRACELN_F(
-        "Signed integers: {:d} {} {} {}", int8_t, i8, int16_t, i16, int32_t, i32, int64_t, i64
+        "Signed integers: {:d} {} {} {}", VAL(int8_t, i8), VAL(int16_t, i16), VAL(int32_t, i32),
+        VAL(int64_t, i64)
     );
 
     // Test various unsigned integer types (uint8_t displays as char)
@@ -30,14 +31,15 @@ int main(void) {
     uint64_t u64 = UINT64_MAX; // 18446744073709551615
 
     EMTRACELN_F(
-        "Unsigned integers: {:d} {} {} {}", uint8_t, u8, uint16_t, u16, uint32_t, u32, uint64_t, u64
+        "Unsigned integers: {:d} {} {} {}", VAL(uint8_t, u8), VAL(uint16_t, u16),
+        VAL(uint32_t, u32), VAL(uint64_t, u64)
     );
 
     // Test size types
     size_t sz = 42;
     ssize_t ssz = -42;
 
-    EMTRACELN_F("Size integers: {} {}", size_t, sz, ssize_t, ssz);
+    EMTRACELN_F("Size integers: {} {}", VAL(size_t, sz), VAL(ssize_t, ssz));
 
     return 0;
 }

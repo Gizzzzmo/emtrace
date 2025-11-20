@@ -17,15 +17,15 @@ int main(void) {
 
     // Test maximum 64-bit signed integer
     int64_t max_i64 = INT64_MAX; // 9223372036854775807
-    EMTRACELN_F("int64_t max: {}", int64_t, max_i64);
+    EMTRACELN_F("int64_t max: {}", VAL(int64_t, max_i64));
 
     // Test maximum 64-bit unsigned integer
     uint64_t max_u64 = UINT64_MAX; // 18446744073709551615
-    EMTRACELN_F("uint64_t max: {}", uint64_t, max_u64);
+    EMTRACELN_F("uint64_t max: {}", VAL(uint64_t, max_u64));
 
     // Test minimum 64-bit signed integer
     int64_t min_i64 = INT64_MIN; // -9223372036854775808
-    EMTRACELN_F("int64_t min: {}", int64_t, min_i64);
+    EMTRACELN_F("int64_t min: {}", VAL(int64_t, min_i64));
 
     return 0;
 }

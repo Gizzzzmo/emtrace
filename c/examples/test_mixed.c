@@ -17,7 +17,9 @@ int main(void) {
     float float_val = 3.140000104904175F; // Use exact expected value
     bool bool_val = true;
 
-    EMTRACELN_F("Mixed types: {} {} {}", int, int_val, float, float_val, bool, bool_val);
+    EMTRACELN_F(
+        "Mixed types: {} {} {}", VAL(int, int_val), VAL(float, float_val), VAL(bool, bool_val)
+    );
 
     // Test more complex formatting
     int complex_int = 100;
@@ -25,8 +27,8 @@ int main(void) {
     double complex_double = 0.5;
 
     EMTRACELN_F(
-        "Complex format: Value={}, Active={}, Ratio={}", int, complex_int, bool, complex_bool,
-        double, complex_double
+        "Complex format: Value={}, Active={}, Ratio={}", VAL(int, complex_int),
+        VAL(bool, complex_bool), VAL(double, complex_double)
     );
 
     // Test multiple same-type values (uint8_t shows as characters, not numbers)
@@ -37,7 +39,8 @@ int main(void) {
     uint8_t n5 = 5;
 
     EMTRACELN_F(
-        "Numbers: {} {} {} {} {}", uint8_t, n1, uint8_t, n2, uint8_t, n3, uint8_t, n4, uint8_t, n5
+        "Numbers: {} {} {} {} {}", VAL(uint8_t, n1), VAL(uint8_t, n2), VAL(uint8_t, n3),
+        VAL(uint8_t, n4), VAL(uint8_t, n5)
     );
 
     return 0;

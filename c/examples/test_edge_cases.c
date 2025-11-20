@@ -21,7 +21,9 @@ int main(void) {
     float zero_float = 0.0F;
     bool zero_bool = false;
 
-    EMTRACELN_F("Zero values: {} {} {}", int, zero_int, float, zero_float, bool, zero_bool);
+    EMTRACELN_F(
+        "Zero values: {} {} {}", VAL(int, zero_int), VAL(float, zero_float), VAL(bool, zero_bool)
+    );
 
     // Test extreme values (uint8_t displays as character)
     uint8_t max_u8 = UINT8_MAX;    // 255 (ÿ)
@@ -30,8 +32,8 @@ int main(void) {
     int32_t min_i32 = INT32_MIN;   // -2147483648
 
     EMTRACELN_F(
-        "Extremes: {:d} {:d} {} {}", uint8_t, max_u8, int8_t, min_i8, uint32_t, max_u32, int32_t,
-        min_i32
+        "Extremes: {:d} {:d} {} {}", VAL(uint8_t, max_u8), VAL(int8_t, min_i8),
+        VAL(uint32_t, max_u32), VAL(int32_t, min_i32)
     );
 
     // Test trace without format arguments (NO_FORMAT)

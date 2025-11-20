@@ -2,18 +2,22 @@
 
 ## Build/Test Commands
 
-- **Run commands in dev environment**: `nix develop --command <command>`
-- **CMake build**: `just conf <preset>`
+- **CMake configure**: `just conf <preset>`
+- **CMake configure all**: `just conf_all`
 - **CMake build**: `just cb <preset>`
 - **Rust build**: `just cargo build`
-- **Build all**: `just build`
+- **Build all**: `just build_all`
+- **CMake run tests**: `just ctest --preset <preset>`
 - **Rust run tests**: `just cargo test`
+- **End-to-end tests**: `just eetest`
+- **All tests**: `just test`
 - **Rust run binary**: `just cargo run --bin <binary>`
-- **Lint C code**: `just tidy`
+- **Lint C/C++ code**: `just tidy`
 - **Lint Rust code**: `just clippy`
 - **Lint Python code**: `just ruff check`
 - **Lint all**: `just lint`
-- **Format C code**: `just clang-format`
+- **Run C Preprocessor**: `just pp <source-file>`
+- **Format C/C++ code**: `just clang-format`
 - **Format Rust code**: `just cargo fmt`
 - **Format Python code**: `just ruff format`
 - **Format Nix code**: `just alejandra`

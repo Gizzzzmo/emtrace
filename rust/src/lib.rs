@@ -167,6 +167,8 @@ pub const LENGTH_PREFIXED: SizeT = 1 << (SizeT::BITS - 2);
 pub const PY_FORMAT: SizeT = 0;
 pub const NO_FORMAT: SizeT = 1;
 pub const C_STYLE_FORMAT: SizeT = 2;
+pub const RAW_ENCODING: SizeT = 0;
+pub const COBS_ENCCODING: SizeT = 1;
 
 /// Trait for emtrace sinks.
 pub trait Sink {
@@ -306,12 +308,6 @@ impl<T: Sink> Sink for CobsAdapter<'_, T> {
     fn finish(mut self) -> Result<(), Self::OutError> {
         self.encoder.finalize(self.inner)
     }
-}
-
-/// Initialize the trace, by serializing the virtual memory address of the
-/// magic constant into the given sink.
-pub fn init<T: Sink>(sink: &mut T) -> Result<(), T::OutError> {
-    magic_address_bytes().serialize(sink)
 }
 
 impl<T: Sink> Sink for MutexGuard<'_, T> {
@@ -992,13 +988,13 @@ macro_rules! trace_impl {
 /// ### Error Handling
 ///
 /// By default, this macro will panic if an error occurs during tracing. To handle errors manually,
-/// use the `.handle_errors` option. This will cause the macro to return a `Result` instead of
+/// use the `.no_panic` option. This will cause the macro to return a `Result` instead of
 /// panicking, which you can then handle as needed.
 ///
 /// ```rust
 /// # use emtrace::trace;
 /// # fn main() {
-/// let result = trace!("Hello", .handle_errors);
+/// let result = trace!("Hello", .no_panic);
 /// if result.is_err() {
 ///     // Handle the error
 /// }
@@ -1015,7 +1011,7 @@ macro_rules! trace{
      => {
         $crate::trace_impl!($fmt $(, $($types: $args),+)? $(, .section = $section)? $(, .sink_guard = $sink_guard)? $(, .sink= $sink)?, .error_handler=core::result::Result::unwrap $(, .formatter=$formatter)?)
     };
-    ($fmt:literal $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .sink_guard = $sink_guard:expr)? $(, .sink= $sink:expr)?, .handle_errors $(, .formatter=$formatter:expr)?)
+    ($fmt:literal $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .sink_guard = $sink_guard:expr)? $(, .sink= $sink:expr)?, .no_panic $(, .formatter=$formatter:expr)?)
      => {
         $crate::trace_impl!($fmt $(, $($types: $args),+)? $(, .section = $section)? $(, .sink_guard = $sink_guard)? $(, .sink= $sink)? $(, .formatter=$formatter)?)
     };
@@ -1035,13 +1031,13 @@ macro_rules! trace{
 ///
 /// ### Error Handling
 ///
-/// Like `trace!`, this macro will panic on error by default. Use the `.handle_errors` option to
+/// Like `trace!`, this macro will panic on error by default. Use the `.no_panic` option to
 /// receive a `Result` and handle errors manually.
 ///
 /// ```rust
 /// # use emtrace::traceln;
 /// # fn main() {
-/// let result = traceln!("Hello", .handle_errors);
+/// let result = traceln!("Hello", .no_panic);
 /// if result.is_err() {
 ///     // Handle the error
 /// }
@@ -1059,7 +1055,7 @@ macro_rules! traceln {
      => {
         $crate::trace_impl!($fmt "\n" $(, $($types: $args),+)? $(, .section = $section)? $(, .sink_guard = $sink_guard)? $(, .sink= $sink)?, .error_handler=core::result::Result::unwrap $(, .formatter=$formatter)?)
     };
-    ($fmt:literal $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .sink_guard = $sink_guard:expr)? $(, .sink= $sink:expr)?, .handle_errors $(, .formatter=$formatter:expr)?)
+    ($fmt:literal $(, $($types:ty : $args:expr),+)? $(, .section = $section:literal)? $(, .sink_guard = $sink_guard:expr)? $(, .sink= $sink:expr)?, .no_panic $(, .formatter=$formatter:expr)?)
      => {
         $crate::trace_impl!($fmt "\n" $(, $($types: $args),+)? $(, .section = $section)? $(, .sink_guard = $sink_guard)? $(, .sink= $sink)? $(, .formatter=$formatter)?)
     };
@@ -1094,58 +1090,75 @@ const MAGIC_SIZE: usize = 36 + 4 * size_of::<SizeT>();
 
 type Magic = FormatInfo<MAGIC_SIZE>;
 
-#[unsafe(link_section = ".emtrace")]
-#[used]
-pub static EMTRACE_MAGIC: Magic = {
-    let id = [
-        0xd1, 0x97, 0xf5, 0x22, 0xd9, 0x26, 0x9f, 0xd1, 0xad, 0x70, 0x33, 0x92, 0xf6, 0x59, 0xdf,
-        0xd0, 0xfb, 0xec, 0xbd, 0x60, 0x97, 0x13, 0x25, 0xe8, 0x92, 0x01, 0xb2, 0x5a, 0x38, 0x5d,
-        0x9e, 0xc7,
-    ];
+/// Initialize the trace, by serializing the virtual memory address of the
+/// magic constant into the given sink.
+pub fn init<T: Sink>(sink: &mut T) -> Result<(), T::OutError> {
+    magic_address_bytes().serialize(sink)
+}
 
-    let mut magic = [0; MAGIC_SIZE];
-    let mut i = 0;
-    while i < 32 {
-        magic[i] = id[i];
-        i += 1;
+#[macro_export]
+macro_rules! make_tracer {
+    (.magic_var=$magic_var:ident, .cobs=$cobs:literal, .sink=$sink:expr, .trace_macro=$trace_macro:ident, .section_name=$section_name:literal) => {
+        #[unsafe(link_section = $section_name)]
+        #[used]
+        static $magic_var: $crate::Magic = {
+            let id = [
+                0xd1, 0x97, 0xf5, 0x22, 0xd9, 0x26, 0x9f, 0xd1, 0xad, 0x70, 0x33, 0x92, 0xf6, 0x59, 0xdf,
+                0xd0, 0xfb, 0xec, 0xbd, 0x60, 0x97, 0x13, 0x25, 0xe8, 0x92, 0x01, 0xb2, 0x5a, 0x38, 0x5d,
+                0x9e, 0xc7,
+            ];
+
+            let mut magic = [0; $crate::MAGIC_SIZE];
+            let mut i = 0;
+            while i < 32 {
+                magic[i] = id[i];
+                i += 1;
+            }
+            magic[32] = 36;
+            magic[33] = size_of::<$crate::SizeT>() as u8;
+            magic[34] = size_of::<$crate::PointerT>() as u8;
+            magic[35] = $crate::ALIGNMENT_POWER;
+
+            let mut idx = 36;
+
+            #[allow(overflowing_literals)]
+            let byte_order_id_arr = (0x0f0e0d0c0b0a09080706050403020100 as $crate::SizeT).to_ne_bytes();
+            let mut i = 0;
+            while i < size_of::<$crate::SizeT>() {
+                magic[idx] = byte_order_id_arr[i];
+                idx += 1;
+                i += 1;
+            }
+
+            let null_terminated_arr = $crate::NULL_TERMINATED.to_ne_bytes();
+            let mut i = 0;
+            while i < size_of::<$crate::SizeT>() {
+                magic[idx] = null_terminated_arr[i];
+                idx += 1;
+                i += 1;
+            }
+
+            let length_prefixed_arr = $crate::LENGTH_PREFIXED.to_ne_bytes();
+            let mut i = 0;
+            while i < size_of::<$crate::SizeT>() {
+                magic[idx] = length_prefixed_arr[i];
+                idx += 1;
+                i += 1;
+            }
+
+            let encoding = if $cobs { $crate::COBS_ENCCODING } else { $crate::RAW_ENCODING };
+            let encoding_arr = encoding.to_ne_bytes();
+
+            let mut i = 0;
+            while i < size_of::<$crate::SizeT>() {
+                magic[idx] = encoding_arr[i];
+                idx += 1;
+                i += 1;
+            }
+
+            $crate::Magic { bytes: magic }
+        }
     }
-    magic[32] = 36;
-    magic[33] = size_of::<SizeT>() as u8;
-    magic[34] = size_of::<PointerT>() as u8;
-    magic[35] = ALIGNMENT_POWER;
-
-    let mut idx = 36;
-
-    #[allow(overflowing_literals)]
-    let byte_order_id_arr = (0x0f0e0d0c0b0a09080706050403020100 as SizeT).to_ne_bytes();
-    let mut i = 0;
-    while i < size_of::<SizeT>() {
-        magic[idx] = byte_order_id_arr[i];
-        idx += 1;
-        i += 1;
-    }
-
-    let null_terminated_arr = NULL_TERMINATED.to_ne_bytes();
-    let mut i = 0;
-    while i < size_of::<SizeT>() {
-        magic[idx] = null_terminated_arr[i];
-        idx += 1;
-        i += 1;
-    }
-
-    let length_prefixed_arr = LENGTH_PREFIXED.to_ne_bytes();
-    let mut i = 0;
-    while i < size_of::<SizeT>() {
-        magic[idx] = length_prefixed_arr[i];
-        idx += 1;
-        i += 1;
-    }
-    Magic { bytes: magic }
-};
-
-pub fn magic_address_bytes() -> [u8; size_of::<PointerT>()] {
-    let raw_address = (&EMTRACE_MAGIC as *const Magic).addr();
-    ((raw_address >> ALIGNMENT_POWER) as PointerT).to_ne_bytes()
 }
 
 #[cfg(test)]

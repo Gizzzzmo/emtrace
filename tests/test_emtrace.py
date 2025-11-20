@@ -10,12 +10,21 @@ from pathlib import Path
 # `just build_all` should build all binaries.
 C_TEST_EXECUTABLES = [
     "examples/test_basic",
+    "examples/test_basic_cobs",
     "examples/test_integers",
+    "examples/test_integers_cobs",
     "examples/test_strings",
+    "examples/test_strings_cobs",
     "examples/test_doubles",
+    "examples/test_doubles_cobs",
     "examples/test_mixed",
+    "examples/test_mixed_cobs",
     "examples/test_edge_cases",
+    "examples/test_edge_cases_cobs",
     "examples/test_large_numbers",
+    "examples/test_large_numbers_cobs",
+    "examples/test_arr",
+    "examples/test_arr_cobs",
 ]
 
 C_BUILD_DIRS = [

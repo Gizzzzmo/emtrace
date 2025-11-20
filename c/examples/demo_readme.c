@@ -6,5 +6,5 @@ int main(void) {
 
     int a = 1;
     int b = 2;
-    EMTRACELN_F("{} + {} = {}", int, a, int, b, int, a + b);
+    EMTRACELN_F("{} + {} = {}", VAL(int, a), VAL(int, b), VAL(int, a + b));
 }

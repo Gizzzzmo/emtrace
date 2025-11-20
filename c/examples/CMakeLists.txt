@@ -17,35 +17,27 @@ endif()
 
 # End-to-end tests are part of examples,
 # because the ctest configuration doesn't actually test anything about them.
-# They merely have embedded in them a string containing the expected output
-# *after* they are processed by emtrace.py,
+# They are executable that simply have embedded in them a string containing the expected result
+# *after* their output has been processed by emtrace.py,
 # which is checked by the top-level testrunner (../../tests/test_emtrace.py).
 if(EMTRACE_ENABLE_TESTS)
-    add_executable(test_basic test_basic.c)
-    target_link_libraries(test_basic PRIVATE emtrace::emtrace)
-    target_include_directories(test_basic PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-    add_executable(test_integers test_integers.c)
-    target_link_libraries(test_integers PRIVATE emtrace::emtrace)
-    target_include_directories(test_integers PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-    add_executable(test_strings test_strings.c)
-    target_link_libraries(test_strings PRIVATE emtrace::emtrace)
-    target_include_directories(test_strings PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-    add_executable(test_doubles test_doubles.c)
-    target_link_libraries(test_doubles PRIVATE emtrace::emtrace)
-    target_include_directories(test_doubles PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-    add_executable(test_mixed test_mixed.c)
-    target_link_libraries(test_mixed PRIVATE emtrace::emtrace)
-    target_include_directories(test_mixed PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-    add_executable(test_edge_cases test_edge_cases.c)
-    target_link_libraries(test_edge_cases PRIVATE emtrace::emtrace)
-    target_include_directories(test_edge_cases PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-    add_executable(test_large_numbers test_large_numbers.c)
-    target_link_libraries(test_large_numbers PRIVATE emtrace::emtrace)
-    target_include_directories(test_large_numbers PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    set(eetests
+        test_basic
+        test_integers
+        test_strings
+        test_doubles
+        test_mixed
+        test_edge_cases
+        test_large_numbers
+        test_arr
+    )
+    foreach(testname ${eetests})
+        add_executable(${testname} ${testname}.c)
+        target_link_libraries(${testname} PRIVATE emtrace::emtrace)
+    endforeach()
+    foreach(testname ${eetests})
+        add_executable(${testname}_cobs ${testname}.c)
+        target_link_libraries(${testname}_cobs PRIVATE emtrace::emtrace)
+        target_compile_definitions(${testname}_cobs PRIVATE EMT_DEFAULT_ENCODE_COBS)
+    endforeach()
 endif()

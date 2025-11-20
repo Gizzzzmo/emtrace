@@ -36,6 +36,7 @@
         ];
 
         packages = with pkgs; [
+          bat
           alejandra
           mdformat
           python313Packages.mdformat-gfm

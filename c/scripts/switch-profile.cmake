@@ -2,14 +2,15 @@
 
 cmake_minimum_required(VERSION 3.25.0)
 
-file(GLOB profiles 
-    RELATIVE ${CMAKE_CURRENT_LIST_DIR}/../profiles 
+file(
+    GLOB profiles
+    RELATIVE ${CMAKE_CURRENT_LIST_DIR}/../profiles
     "${CMAKE_CURRENT_LIST_DIR}/../profiles/*.*.json"
 )
 
 set(types "")
 foreach(profile ${profiles})
-    if (profile MATCHES "^([^.]*)\\.([^.]*)\\.json$")
+    if(profile MATCHES "^([^.]*)\\.([^.]*)\\.json$")
         if(NOT CMAKE_MATCH_2 IN_LIST types)
             list(APPEND types ${CMAKE_MATCH_2})
         endif()
@@ -26,7 +27,10 @@ endforeach()
 if(NOT DEFINED CMAKE_ARGV3)
     foreach(type ${types})
         if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/../profiles/.current_profile_${type})
-            file(READ ${CMAKE_CURRENT_LIST_DIR}/../profiles/.current_profile_${type} current_profile)
+            file(
+                READ ${CMAKE_CURRENT_LIST_DIR}/../profiles/.current_profile_${type}
+                current_profile
+            )
             if(current_profile IN_LIST ${type}_profiles)
                 message("${type} profiles:")
             else()
@@ -81,11 +85,7 @@ if(result)
 endif()
 string(REPLACE "\n" "" BRANCH_NAME ${BRANCH_NAME})
 
-execute_process(
-    COMMAND git rev-parse HEAD
-    OUTPUT_VARIABLE COMMIT_HASH
-    RESULT_VARIABLE result
-)
+execute_process(COMMAND git rev-parse HEAD OUTPUT_VARIABLE COMMIT_HASH RESULT_VARIABLE result)
 
 if(result)
     message(FATAL_ERROR ${commit_hash})
@@ -100,5 +100,9 @@ endif()
 
 message("Switching ${TYPE} to profile ${PROFILE}")
 
-configure_file(${CMAKE_CURRENT_LIST_DIR}/../profiles/${PROFILE}.${TYPE}.json ${CMAKE_CURRENT_LIST_DIR}/../profiles/${TYPE}.json @ONLY)
+configure_file(
+    ${CMAKE_CURRENT_LIST_DIR}/../profiles/${PROFILE}.${TYPE}.json
+    ${CMAKE_CURRENT_LIST_DIR}/../profiles/${TYPE}.json
+    @ONLY
+)
 file(WRITE ${CMAKE_CURRENT_LIST_DIR}/../profiles/.current_profile_${TYPE} ${PROFILE})

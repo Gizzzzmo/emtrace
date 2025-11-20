@@ -21,6 +21,17 @@ _2 := shell(ECHO_NNL + ' ' + current_preset + ' > c/profiles/.current_preset')
 emtrace *ARGS:
     python3 {{justfile_directory()}}/parser/emtrace.py {{ARGS}} 
 
+gen-header *ARGS:
+    python3 ./c/header-generator/build_macro.py {{ARGS}}
+
+alias genh := gen-header
+
+check-header:
+    python3 ./c/header-generator/build_macro.py ./c/build/emtrace.h
+    diff ./c/include/c/include/emtrace/emtrace.h ./c/build/emtrace.h
+
+alias checkh := check-header
+
 hatch_build:
     cd parser && hatchling build
 
@@ -78,6 +89,11 @@ mdformat *ARGS:
 gersemi *ARGS:
     gersemi $(git ls-files | grep "\(\\.cmake\|CMakeLists.txt\)$") {{ARGS}}
 
+[no-cd]
+preproc FILE:
+    gcc -E -P -I {{justfile_directory()}}/c/include/c/include {{FILE}} | clang-format | bat --language=c
+
+alias pp := preproc
 
 [parallel]
 test: (cargo "test" "--" "--nocapture") (ctest "--preset" "dbg") (ctest "--preset" "rel") (ctest "--preset" "opt-dbg") eetest

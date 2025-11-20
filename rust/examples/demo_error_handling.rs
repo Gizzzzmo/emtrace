@@ -66,12 +66,12 @@ fn main() {
     // this static vector only has space for 32 bytes
     let mut vec = StaticVec::new();
 
-    // Specifying `.handle_errors` means the macro invocation returns a
+    // Specifying `.no_panic` means the macro invocation returns a
     // `Result<(), Result<Sink::OutError, Sink::BeginError>>`
     let result = trace!(
         "Just a static string. This call produces a single pointer, which will fit into our empty static vector.",
         .sink=vec,
-        .handle_errors
+        .no_panic
     );
     show_result(result);
     println!("Vector size: {}", vec.len());
@@ -80,7 +80,7 @@ fn main() {
         "Lots of data, where we can tell that it won't fit before starting to serialize: {}.",
         [u8; CAPACITY]: [0; CAPACITY],
         .sink=vec,
-        .handle_errors
+        .no_panic
     );
     show_result(result);
     println!("Vector size: {}", vec.len());
@@ -89,11 +89,12 @@ fn main() {
         "{}",
         str: "A dynamic string that is too long to be stored in our static vector.",
         .sink=vec,
-        .handle_errors
+        .no_panic
     );
     show_result(result);
     println!("Vector size: {}", vec.len());
 
-    // The vector is full now, so this will still fail, and panic because we didn't specify `.handle_errors`
+    // The vector is full now, so this will still fail, and panic because we didn't specify
+    // `.no_panic`
     trace!("Panic!", .sink=vec);
 }

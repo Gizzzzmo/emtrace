@@ -1,6 +1,9 @@
 #ifndef EMTRACE_TEST_SUITES_H
 #define EMTRACE_TEST_SUITES_H
 
+#include "test_framework.h"
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

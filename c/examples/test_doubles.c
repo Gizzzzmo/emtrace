@@ -20,12 +20,12 @@ int main(void) {
     double neg_inf = -INFINITY;
 
     EMTRACELN_F(
-        "Doubles: {} {} {} {} {}", double, pi, double, e, double, nan_val, double, inf_val, double,
-        neg_inf
+        "Doubles: {} {} {} {} {}", VAL(double, pi), VAL(double, e), VAL(double, nan_val),
+        VAL(double, inf_val), VAL(double, neg_inf)
     );
 
     // TODO: // Test C-style formatting
-    // EMTRACELN_F(
+    // EMTRACELN_V(
     //     "%f %f %f %f %f", double, pi, double, e, double, nan_val, double, inf_val, double,
     //     neg_inf
     // );
@@ -34,7 +34,7 @@ int main(void) {
     double max_val = DBL_MAX; // 1.7976931348623157e+308
     double min_val = DBL_MIN; // 2.2250738585072014e-308
 
-    EMTRACELN_F("Extreme values: {} {}", double, max_val, double, min_val);
+    EMTRACELN_F("Extreme values: {} {}", VAL(double, max_val), VAL(double, min_val));
 
     return 0;
 }

@@ -2,5 +2,5 @@
 
 auto main() -> int {
     EMTRACELN("kjalsdjla");
-    EMTRACELN_F("Here we go again {}", int, 8);
+    EMTRACELN_F("Here we go again {}", VAL(int, 8));
 }
