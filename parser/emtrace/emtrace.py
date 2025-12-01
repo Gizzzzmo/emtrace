@@ -17,8 +17,16 @@ except ImportError:
     ELFError: type[Exception] = ImportError
 
 
-def cobs_get_frame(istream: Callable[[int], bytes]) -> bytes | None:
+def cobs_get_frame(
+    istream: Callable[[int], bytes], passthrough: Callable[[bytes], Any] | None = None
+) -> bytes | None:
     """Adapts an input stream to decode COBS encoded data."""
+
+    if passthrough is not None:
+        data = istream(1)
+        while data != b"\0" and len(data) != 0:
+            passthrough(data)
+            data = istream(1)
 
     buffer = bytearray()
     data = istream(1)
@@ -805,12 +813,24 @@ def emtrace(
         data[rest_info_loc + size_t_size * 3 : rest_info_loc + size_t_size * 4],
         byteorder=byteorder,
     )
-    if encoding_id not in [0, 1]:
-        error(f"Unknown encoding: {encoding_id}")
-        sys.exit(1)
+
+    cobs_passthrough = None
+    match encoding_id:
+        case 0:
+            encoding = "none"
+        case 1:
+            encoding = "cobs"
+        case 2:
+            encoding = "cobs"
+            cobs_passthrough = ostream
+        case _:
+            error(f"Unknown encoding: {encoding_id}")
+            sys.exit(1)
 
     encoding = "none" if encoding_id == 0 else "cobs"
-    trace(f"{hex(null_terminated)=} {hex(length_prefixed)=} {encoding=}")
+    trace(
+        f"{hex(null_terminated)=} {hex(length_prefixed)=} {encoding=} passthrough={cobs_passthrough is not None}"
+    )
 
     emtrace = Emtrace(
         data,
@@ -823,7 +843,7 @@ def emtrace(
     if encoding == "none":
         magic_address = int.from_bytes(istream(ptr_size), byteorder=byteorder)
     else:
-        frame = cobs_get_frame(istream)
+        frame = cobs_get_frame(istream, cobs_passthrough)
         if frame is None:
             error("Stream ended before reading the first COBS frame.")
             sys.exit(1)
@@ -872,7 +892,7 @@ def emtrace(
                 )
                 error(f"Leftover bytes: {frame_buffer}")
                 frame_buffer.clear()
-            frame = cobs_get_frame(original_istream)
+            frame = cobs_get_frame(original_istream, cobs_passthrough)
             if frame is None:
                 trace("End of stream reached.")
                 break

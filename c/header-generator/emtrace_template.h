@@ -26,13 +26,13 @@ extern "C" {
 #endif
 
 #ifdef EMT_PTR_T
-typedef EMTRACE_PTR_T emt_ptr_t;
+typedef EMT_PTR_T emt_ptr_t;
 #else
 typedef uint32_t emt_ptr_t;
 #endif
 
 #ifdef EMT_SIZE_T
-typedef EMTRACE_SIZE_T emt_size_t;
+typedef EMT_SIZE_T emt_size_t;
 #else
 typedef uint32_t emt_size_t;
 #endif
@@ -238,7 +238,7 @@ static inline void emt_cobs_finalize(
             EMT_F_INFO(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)) __FILE__,    \
         };                                                                                         \
         emt_ptr_t emt_info_ptr_unlikely_to_shadow =                                                \
-            (emt_ptr_t) (uintptr_t) &emt_info_unlikely_to_shadow;                                  \
+            (emt_ptr_t) ((uintptr_t) &emt_info_unlikely_to_shadow >> EMT_ALIGNMENT_POWER);         \
         lock(                                                                                      \
             (const void*) &emt_info_unlikely_to_shadow,                                            \
             EMT_F_TOTAL_SIZE(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)),       \
