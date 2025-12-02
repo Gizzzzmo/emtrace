@@ -67,6 +67,7 @@ enum : emt_size_t {
     // You need to make sure that your output function actually encodes the data accordingly.
     EMT_ENCODING_NONE = 0,
     EMT_ENCODING_COBS = 1,
+    EMT_ENCODING_COBS_PASSTHROUGH = 2,
 };
 #else
 
@@ -86,6 +87,7 @@ enum : emt_size_t {
 #define EMT_ENCODING_NONE ((emt_size_t) 0)
 /// Use COBS encoding for the bytestream.
 #define EMT_ENCODING_COBS ((emt_size_t) 1)
+#define EMT_ENCODING_COBS_PASSTHROUGH ((emt_size_t) 2)
 
 #define EMT_ALIGNMENT (1 << (EMT_ALIGNMENT_POWER))
 #endif
