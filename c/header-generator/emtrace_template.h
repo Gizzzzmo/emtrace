@@ -341,6 +341,10 @@ static inline void emt_cobs_finalize(
     emt_cobs_init(&state);                                                                         \
     EMT_FLOCK_FILE(x, y, file)
 
+#define EMT_LOCK_FILE_COBS_PASSTHROUGH(x, y, file)                                                 \
+    fwrite("", 1, 1, file);                                                                        \
+    EMT_LOCK_FILE_COBS(x, y, file);
+
 #define EMT_UNLOCK_FILE_COBS(x, y, file)                                                           \
     emt_cobs_finalize(&state, emt_out_file_wrapper, file);                                         \
     EMT_FUNLOCK_FILE(x, y, file)
