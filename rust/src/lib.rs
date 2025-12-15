@@ -1093,7 +1093,8 @@ type Magic = FormatInfo<MAGIC_SIZE>;
 /// Initialize the trace, by serializing the virtual memory address of the
 /// magic constant into the given sink.
 pub fn init<T: Sink>(sink: &mut T) -> Result<(), T::OutError> {
-    magic_address_bytes().serialize(sink)
+    // magic_address_bytes().serialize(sink)
+    Ok(())
 }
 
 #[macro_export]
