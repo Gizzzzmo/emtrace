@@ -4,6 +4,9 @@ target_link_libraries(demo_readme PRIVATE emtrace::emtrace)
 add_executable(demo demo.c)
 target_link_libraries(demo PRIVATE emtrace::emtrace)
 
+add_executable(demo_passthrough demo_passthrough.c)
+target_link_libraries(demo_passthrough PRIVATE emtrace::emtrace)
+
 add_executable(demo_c_socket demo_socket.c)
 target_link_libraries(demo_c_socket PRIVATE emtrace::emtrace)
 
