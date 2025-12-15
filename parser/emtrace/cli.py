@@ -3,10 +3,12 @@ from argparse import ArgumentParser, ArgumentTypeError
 from typing import Callable, Any
 import sys
 import socket
+import shutil
 from pathlib import Path
+from subprocess import Popen, PIPE
 
 
-def get_input_stream(x: str) -> Callable[[int], bytes]:
+def get_input_stream(x: str, run_args: list[str]) -> Callable[[int], bytes]:
     """Get a function that reads bytes from an input stream."""
     parts = x.split("://", 1)
     if not parts:
@@ -18,6 +20,14 @@ def get_input_stream(x: str) -> Callable[[int], bytes]:
         match stream_id.split(":"):
             case ["stdin"]:
                 return sys.stdin.buffer.read
+            case ["run"]:
+                p = Popen(run_args, stdout=PIPE)
+                if p.stdout is None:
+                    raise ArgumentTypeError(
+                        "Failed to start the provided binary for reading its output."
+                    )
+
+                return p.stdout.read
             case parts if len(parts) in [2, 9]:
                 stream_type = "tcp"
             case _:
@@ -78,9 +88,13 @@ def main():
         "--input",
         "-i",
         nargs="?",
-        default=get_input_stream("stdin"),
-        type=get_input_stream,
-        help="Where to get the bytes from that the traced binary produced. If not supplied it reads from stdin, otherwise it defaults to interpreting the argument as a file path from which the data will be read. It can also read from either an IP- or a unix-socket by specifying either tcp://<ip>:<port> or unix://path/to/unix/socket",
+        default="run",
+        help="Where to get the bytes from that the traced binary produced. If not supplied it executes the provided binary file, and processes its output. This can also be made explicit by setting it to 'run'. If set to 'stdin' it reads from stdin. Otherwise, if the argument looks like an IP address and port, it is interpreted as such, and an attempt is made to open a tcp connection to that socket and read the input from there. In all other cases it defaults to interpreting the argument as a file path from which the data will be read. To read from a file named 'run' or 'stdin' or one that looks like an IP address you can specify files with a prefix file://path/to/file. Tcp-, and also unix-, sockets can also be forced with either tcp://<ip>:<port> or unix://path/to/unix/socket",
+    )
+    _ = parser.add_argument(
+        "--search-in-path",
+        action="store_true",
+        help="First check if there is a program in the PATH with the supplied name, and if there is, resolve its location and use that file to search for emtrace trace data (and also run that file if -i is set to run).",
     )
     _ = parser.add_argument(
         "--dump-input",
@@ -122,7 +136,24 @@ def main():
         help="Run emtrace in test mode. This will read the expected output from the ELF section specified (default: .emtrace.test.expected), and will compare it against the actual output. A non-zero exit code is returned, and a diff is written to stdout in case of failure.",
     )
 
-    args = parser.parse_args()
+    argv = sys.argv
+    parser_args = []
+    for a in argv[1:]:
+        if a == "--":
+            break
+        parser_args.append(a)
+
+    run_args = argv[1 + len(parser_args) + 1 :]
+
+    args = parser.parse_args(parser_args)
+
+    if args.search_in_path:
+        path = shutil.which(args.elf)
+        if path is not None:
+            args.elf = path
+
+    args.elf = str(Path(args.elf).resolve())
+    args.input = get_input_stream(args.input, [args.elf] + run_args)
 
     # lazy evaluate the default option ('emtrace_input.bin') of the argument
     if type(args.dump_input) is str:
@@ -133,10 +164,15 @@ def main():
         args.dump_input[0](b)
         return b
 
+    def ostream(b: bytes):
+        _ = sys.stdout.buffer.write(b)
+        if b"\n" in b:
+            _ = sys.stdout.buffer.flush()
+
     emtrace(
         Path(args.elf),
         patched_input,
-        sys.stdout.buffer.write,
+        ostream,
         args.section_name,
         args.with_src_loc,
         args.src_hyperlinks,
