@@ -1,6 +1,7 @@
 from . import emtrace
 from argparse import ArgumentParser, ArgumentTypeError
 from typing import Callable, Any
+from signal import signal, SIGPIPE, SIG_DFL
 import sys
 import socket
 import shutil
@@ -135,6 +136,11 @@ def main():
         default=None,
         help="Run emtrace in test mode. This will read the expected output from the ELF section specified (default: .emtrace.test.expected), and will compare it against the actual output. A non-zero exit code is returned, and a diff is written to stdout in case of failure.",
     )
+    _ = parser.add_argument(
+        "--check-available",
+        action="store_true",
+        help="Exit with exit code zero and don't do anything else.",
+    )
 
     argv = sys.argv
     parser_args = []
@@ -146,6 +152,9 @@ def main():
     run_args = argv[1 + len(parser_args) + 1 :]
 
     args = parser.parse_args(parser_args)
+
+    if args.check_available:
+        return 0
 
     if args.search_in_path:
         path = shutil.which(args.elf)
@@ -169,6 +178,8 @@ def main():
         if b"\n" in b:
             _ = sys.stdout.buffer.flush()
 
+    _ = signal(SIGPIPE, SIG_DFL)
+
     emtrace(
         Path(args.elf),
         patched_input,
@@ -184,4 +195,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
