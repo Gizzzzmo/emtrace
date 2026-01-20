@@ -228,6 +228,7 @@ static inline void emt_cobs_finalize(
     do {                                                                                           \
                                                                                                    \
         struct emt_info_unlikely_to_shadow_t {                                                     \
+            unsigned char magic[6];                                                                \
             emt_size_t layout                                                                      \
                 [5 + EMT_F_LAYOUT_SIZE(                                                            \
                          EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)             \
@@ -237,6 +238,7 @@ static inline void emt_cobs_finalize(
             char file[sizeof(__FILE__)];                                                           \
         };                                                                                         \
         fmt_info_attributes struct emt_info_unlikely_to_shadow_t emt_info_unlikely_to_shadow = {   \
+            {'T', 'R', 'A', 'C', 'E', offsetof(struct emt_info_unlikely_to_shadow_t, layout)},     \
             {EMT_NUM_ARGS_REST(__VA_ARGS__) / 4,                                                   \
              offsetof(struct emt_info_unlikely_to_shadow_t, fmt),                                  \
              EMT_F_LAYOUT(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))           \

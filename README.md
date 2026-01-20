@@ -25,7 +25,7 @@ of source language) you can run it, and pipe its output into `emtrace`, to which
 supply the path to the same binary. E.g. something like this (assuming your executable is a.out):
 
 ```bash
-./a.out | emtrace a.out
+emtrace a.out
 ```
 
 ### In C
@@ -84,8 +84,8 @@ pointer to associate it to the right piece of format information in this dedicat
 section can be completely removed (or made no-load) from the final binary (e.g. with objcopy), and
 the program will still run.
 
-The [post-processing script](./parser/emtrace/__init__.py) takes the data output by the program
-while running and the data from the special `.emtrace` section, and produces the log.
+The [parser](./emtrace) takes the data output by the program while running and the data from the
+special `.emtrace` section, and produces the log.
 
 ## Development
 

@@ -82,8 +82,15 @@ def main():
     parser = ArgumentParser("emtrace")
 
     _ = parser.add_argument(
-        "elf",
-        help="Path to either an elf executable, or a raw binary that contains the .emtrace section bytes of the program whose output to process.",
+        "trace_info",
+        help="Path to either an executable, an emtrace json file, or a raw binary that contains the .emtrace section bytes of the program whose output to process.",
+    )
+    _ = parser.add_argument(
+        "--format",
+        nargs="?",
+        default="auto",
+        choices=["auto", "exe", "elf", "pe", "macho", "json", "binary"],
+        help="Format that the main trace is in. By default (or when explicitly set to 'auto') try to auto-detect, which means first try to parse it as an executable file (meaning either ELF, PE, or MachO based on the magic bytes). If that is unsuccessful then try to parse it as json (with schema validation). If none of that worked the file is interpreted as raw binary.",
     )
     _ = parser.add_argument(
         "--input",
@@ -95,7 +102,7 @@ def main():
     _ = parser.add_argument(
         "--search-in-path",
         action="store_true",
-        help="First check if there is a program in the PATH with the supplied name, and if there is, resolve its location and use that file to search for emtrace trace data (and also run that file if -i is set to run).",
+        help="First check if there is a program in the PATH with the supplied name, and if there is, resolve its location and use that file to get the emtrace trace data (and also run that file if -i is set to run).",
     )
     _ = parser.add_argument(
         "--dump-input",
@@ -159,10 +166,10 @@ def main():
     if args.search_in_path:
         path = shutil.which(args.elf)
         if path is not None:
-            args.elf = path
+            args.trace_info = path
 
-    args.elf = str(Path(args.elf).resolve())
-    args.input = get_input_stream(args.input, [args.elf] + run_args)
+    args.trace_info = str(Path(args.trace_info).resolve())
+    args.input = get_input_stream(args.input, [args.trace_info] + run_args)
 
     # lazy evaluate the default option ('emtrace_input.bin') of the argument
     if type(args.dump_input) is str:
@@ -181,7 +188,8 @@ def main():
     _ = signal(SIGPIPE, SIG_DFL)
 
     emtrace(
-        Path(args.elf),
+        Path(args.trace_info),
+        args.format,
         patched_input,
         ostream,
         args.section_name,

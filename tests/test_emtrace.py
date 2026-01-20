@@ -28,12 +28,12 @@ C_TEST_EXECUTABLES = [
 ]
 
 C_BUILD_DIRS = [
-    "../c/build/main/gcc/rel",
-    "../c/build/main/gcc/dbg",
-    "../c/build/main/gcc/opt-dbg",
-    "../c/build/main/clang/rel",
-    "../c/build/main/clang/dbg",
-    "../c/build/main/clang/opt-dbg",
+    "../c/build/HEAD/gcc/rel",
+    "../c/build/HEAD/gcc/dbg",
+    "../c/build/HEAD/gcc/opt-dbg",
+    "../c/build/HEAD/clang/rel",
+    "../c/build/HEAD/clang/dbg",
+    "../c/build/HEAD/clang/opt-dbg",
 ]
 
 RUST_TEST_EXECUTABLES = [
