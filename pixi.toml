@@ -1,0 +1,13 @@
+[workspace]
+channels = ["conda-forge"]
+name = "emtrace"
+platforms = ["win-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+cmake = ">=4.2.1,<5"
+just = ">=1.46.0,<2"
+ninja = ">=1.13.2,<2"
+clang-tools = ">=20.1.8,<21"

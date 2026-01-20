@@ -2,3 +2,8 @@
 .cache
 __pycache__
 target
+.envrc
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
