@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Create a temporary batch file
+temp_bat=$(mktemp --suffix=.bat)
+echo 'call "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Auxiliary\Build\vcvars64.bat" > NUL' > "$temp_bat"
+echo 'bash -c env' >> "$temp_bat"
+
+# Execute it
+temp_sh=$(mktemp --suffix=.sh)
+cmd.exe //c "$(cygpath -w "$temp_bat")" | sed 's/^\([^=]*\)=\(.*\)$/export '\''\1=\2\'\'' 2>\/dev\/null/' | grep "^export" > "$temp_sh"
+
+source "$temp_sh"
+
+# Clean up
+
+/usr/bin/rm "$temp_sh"
+/usr/bin/rm "$temp_bat"
