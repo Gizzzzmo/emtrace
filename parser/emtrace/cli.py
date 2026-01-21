@@ -1,8 +1,8 @@
 from . import emtrace
 from argparse import ArgumentParser, ArgumentTypeError
 from typing import Callable, Any
-from signal import signal, SIGPIPE, SIG_DFL
 import sys
+import os
 import socket
 import shutil
 from pathlib import Path
@@ -139,7 +139,7 @@ def main():
     _ = parser.add_argument(
         "--test",
         nargs="?",
-        const=".emtrace.test.expected",
+        const=".emt_exp",
         default=None,
         help="Run emtrace in test mode. This will read the expected output from the ELF section specified (default: .emtrace.test.expected), and will compare it against the actual output. A non-zero exit code is returned, and a diff is written to stdout in case of failure.",
     )
@@ -185,7 +185,9 @@ def main():
         if b"\n" in b:
             _ = sys.stdout.buffer.flush()
 
-    _ = signal(SIGPIPE, SIG_DFL)
+    if os.name == 'posix':
+        from signal import signal, SIGPIPE, SIG_DFL
+        _ = signal(SIGPIPE, SIG_DFL)
 
     emtrace(
         Path(args.trace_info),

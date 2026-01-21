@@ -17,17 +17,19 @@ current_build_dir := shell(CAT + ' c/build/.build_dir || ' + ECHO + ' build')
 
 _2 := shell(ECHO_NNL + ' ' + current_preset + ' > c/profiles/.current_preset')
 
+justfile_dir := if os() == "windows" { shell("cygpath -u '" + justfile_directory() + "'") } else { justfile_directory() }
+
 [no-cd]
 emtrace *ARGS:
-    python3 {{justfile_directory()}}/parser/emtrace.py {{ARGS}} 
+    python {{justfile_dir}}/parser/emtrace.py {{ARGS}} 
 
 gen-header *ARGS:
-    python3 ./c/header-generator/build_macro.py {{ARGS}}
+    python ./c/header-generator/build_macro.py {{ARGS}}
 
 alias genh := gen-header
 
 check-header:
-    python3 ./c/header-generator/build_macro.py ./c/build/emtrace.h
+    python ./c/header-generator/build_macro.py ./c/build/emtrace.h
     diff ./c/include/c/include/emtrace/emtrace.h ./c/build/emtrace.h
 
 alias checkh := check-header
@@ -91,7 +93,7 @@ gersemi *ARGS:
 
 [no-cd]
 preproc FILE:
-    gcc -E -P -I {{justfile_directory()}}/c/include/c/include {{FILE}} | clang-format | bat --language=c
+    clang -E -P -I {{justfile_dir}}/c/include/c/include {{FILE}} | clang-format | bat --language=c
 
 alias pp := preproc
 
