@@ -44,7 +44,7 @@ def build_recursive_macro(
     def append_wrapped(s: str):
         nonlocal total_n_args
         nonlocal generated
-        generated += f"#if EMT_MACRO_CAP >= {total_n_args}\n"
+        generated += f"#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= {total_n_args}\n"
         generated += f"{s}\n"
         generated += "#endif\n\n"
 
@@ -52,8 +52,10 @@ def build_recursive_macro(
 
     total_n_args += len(args)
     arg_string = ", ".join(args)
-    
-    append_wrapped(f"#define {name}_{len(args)}({global_arg_string}{arg_string}, _dummy) {body}")
+
+    append_wrapped(
+        f"#define {name}_{len(args)}({global_arg_string}{arg_string}, _dummy) {body}"
+    )
 
     for i in range(2, depth + 1):
         postfix: int = i * len(args)

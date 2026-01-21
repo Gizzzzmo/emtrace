@@ -396,7 +396,5 @@ static inline void emt_cobs_finalize(
 #endif // EMT_DEFAULT_SEC_ATTR && EMT_FLOCK_FILE && EMT_FUNLOCK_FILE
 
 #ifdef _MSC_VER
-#define EMT_MACRO_CAP 127
-#else
-#define EMT_MACRO_CAP 1023
+#define EMT_MACRO_ARGS_CAP 127
 #endif

@@ -1,5 +1,5 @@
-// DO NOT MODIFY DIRECTLY! Header is auto-generated from c\header-generator\emtrace_template.h using
-// this python script: c\header-generator\build_macro.py Script arguments were: --max-args=32
+// DO NOT MODIFY DIRECTLY! Header is auto-generated from c/header-generator/emtrace_template.h using
+// this python script: c/header-generator/build_macro.py Script arguments were: --max-args=32
 #ifndef EMTRACE_EMTRACE_H
 #define EMTRACE_EMTRACE_H
 // NOLINTBEGIN(modernize-avoid-c-arrays)
@@ -402,7 +402,7 @@ static inline void emt_cobs_finalize(
 #endif // EMT_DEFAULT_SEC_ATTR && EMT_FLOCK_FILE && EMT_FUNLOCK_FILE
 
 #ifdef _MSC_VER
-#define EMT_MACRO_CAP 127
+#define EMT_MACRO_ARGS_CAP 127
 #endif
 #define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_VAL() 3
 
@@ -418,25 +418,25 @@ static inline void emt_cobs_finalize(
 
 #define EMT_F_LAYOUT_SIZE_DISPATCH(_tag) EMT_F_LAYOUT_SIZE_DISPATCH_HELPER(_tag)
 
-#if EMT_MACRO_CAP >= 1
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 1
 #define EMT_F_LAYOUT_SIZE_0(_dummy) 0
 #endif
 
-#if EMT_MACRO_CAP >= 5
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 5
 #define EMT_F_LAYOUT_SIZE_4(type, x, len, tag, _dummy) EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 9
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 9
 #define EMT_F_LAYOUT_SIZE_8(_0, _1, _2, _3, type, x, len, tag, _dummy)                             \
     EMT_F_LAYOUT_SIZE_4(_0, _1, _2, _3, 0) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 13
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 13
 #define EMT_F_LAYOUT_SIZE_12(_0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)            \
     EMT_F_LAYOUT_SIZE_8(_0, _1, _2, _3, _4, _5, _6, _7, 0) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 17
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 17
 #define EMT_F_LAYOUT_SIZE_16(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy                      \
 )                                                                                                  \
@@ -444,7 +444,7 @@ static inline void emt_cobs_finalize(
         EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 21
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 21
 #define EMT_F_LAYOUT_SIZE_20(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x, len, tag, _dummy      \
 )                                                                                                  \
@@ -452,7 +452,7 @@ static inline void emt_cobs_finalize(
         EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 25
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 25
 #define EMT_F_LAYOUT_SIZE_24(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, type, x,   \
     len, tag, _dummy                                                                               \
@@ -462,7 +462,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 29
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 29
 #define EMT_F_LAYOUT_SIZE_28(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, type, x, len, tag, _dummy                                                            \
@@ -473,7 +473,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 33
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 33
 #define EMT_F_LAYOUT_SIZE_32(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                                        \
@@ -484,7 +484,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 37
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 37
 #define EMT_F_LAYOUT_SIZE_36(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag, _dummy                    \
@@ -495,7 +495,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 41
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 41
 #define EMT_F_LAYOUT_SIZE_40(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, type, x, len, tag,       \
@@ -507,7 +507,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 45
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 45
 #define EMT_F_LAYOUT_SIZE_44(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27,      \
@@ -520,7 +520,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 49
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 49
 #define EMT_F_LAYOUT_SIZE_48(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -533,7 +533,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 53
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 53
 #define EMT_F_LAYOUT_SIZE_52(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -546,7 +546,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 57
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 57
 #define EMT_F_LAYOUT_SIZE_56(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -559,7 +559,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 61
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 61
 #define EMT_F_LAYOUT_SIZE_60(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -573,7 +573,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 65
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 65
 #define EMT_F_LAYOUT_SIZE_64(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -588,7 +588,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 69
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 69
 #define EMT_F_LAYOUT_SIZE_68(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -603,7 +603,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 73
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 73
 #define EMT_F_LAYOUT_SIZE_72(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -618,7 +618,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 77
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 77
 #define EMT_F_LAYOUT_SIZE_76(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -633,7 +633,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 81
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 81
 #define EMT_F_LAYOUT_SIZE_80(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -650,7 +650,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 85
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 85
 #define EMT_F_LAYOUT_SIZE_84(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -667,7 +667,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 89
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 89
 #define EMT_F_LAYOUT_SIZE_88(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -684,7 +684,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 93
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 93
 #define EMT_F_LAYOUT_SIZE_92(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -701,7 +701,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 97
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 97
 #define EMT_F_LAYOUT_SIZE_96(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -718,7 +718,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 101
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 101
 #define EMT_F_LAYOUT_SIZE_100(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -737,7 +737,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 105
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 105
 #define EMT_F_LAYOUT_SIZE_104(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -756,7 +756,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 109
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 109
 #define EMT_F_LAYOUT_SIZE_108(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -775,7 +775,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 113
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 113
 #define EMT_F_LAYOUT_SIZE_112(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -794,7 +794,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 117
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 117
 #define EMT_F_LAYOUT_SIZE_116(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -815,7 +815,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 121
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 121
 #define EMT_F_LAYOUT_SIZE_120(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -836,7 +836,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 125
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 125
 #define EMT_F_LAYOUT_SIZE_124(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -857,7 +857,7 @@ static inline void emt_cobs_finalize(
     ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
 #endif
 
-#if EMT_MACRO_CAP >= 129
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 129
 #define EMT_F_LAYOUT_SIZE_128(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -905,26 +905,26 @@ static inline void emt_cobs_finalize(
 #define EMT_F_INFO_MEMBER_DISPATCH(type, name, _tag)                                               \
     EMT_F_INFO_MEMBER_DISPATCH_HELPER(type, name, _tag)
 
-#if EMT_MACRO_CAP >= 1
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 1
 #define EMT_F_INFO_MEMBER_0(_dummy)
 #endif
 
-#if EMT_MACRO_CAP >= 5
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 5
 #define EMT_F_INFO_MEMBER_4(type, x, len, tag, _dummy) EMT_F_INFO_MEMBER_DISPATCH(type, type0, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 9
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 9
 #define EMT_F_INFO_MEMBER_8(_0, _1, _2, _3, type, x, len, tag, _dummy)                             \
     EMT_F_INFO_MEMBER_4(_0, _1, _2, _3, 0) EMT_F_INFO_MEMBER_DISPATCH(type, type1, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 13
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 13
 #define EMT_F_INFO_MEMBER_12(_0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)            \
     EMT_F_INFO_MEMBER_8(_0, _1, _2, _3, _4, _5, _6, _7, 0)                                         \
     EMT_F_INFO_MEMBER_DISPATCH(type, type2, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 17
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 17
 #define EMT_F_INFO_MEMBER_16(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy                      \
 )                                                                                                  \
@@ -932,7 +932,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type3, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 21
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 21
 #define EMT_F_INFO_MEMBER_20(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x, len, tag, _dummy      \
 )                                                                                                  \
@@ -940,7 +940,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type4, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 25
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 25
 #define EMT_F_INFO_MEMBER_24(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, type, x,   \
     len, tag, _dummy                                                                               \
@@ -951,7 +951,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type5, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 29
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 29
 #define EMT_F_INFO_MEMBER_28(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, type, x, len, tag, _dummy                                                            \
@@ -963,7 +963,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type6, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 33
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 33
 #define EMT_F_INFO_MEMBER_32(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                                        \
@@ -975,7 +975,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type7, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 37
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 37
 #define EMT_F_INFO_MEMBER_36(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag, _dummy                    \
@@ -987,7 +987,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type8, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 41
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 41
 #define EMT_F_INFO_MEMBER_40(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, type, x, len, tag,       \
@@ -1000,7 +1000,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type9, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 45
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 45
 #define EMT_F_INFO_MEMBER_44(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27,      \
@@ -1014,7 +1014,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type10, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 49
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 49
 #define EMT_F_INFO_MEMBER_48(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1028,7 +1028,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type11, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 53
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 53
 #define EMT_F_INFO_MEMBER_52(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1042,7 +1042,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type12, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 57
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 57
 #define EMT_F_INFO_MEMBER_56(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1056,7 +1056,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type13, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 61
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 61
 #define EMT_F_INFO_MEMBER_60(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1071,7 +1071,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type14, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 65
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 65
 #define EMT_F_INFO_MEMBER_64(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1087,7 +1087,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type15, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 69
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 69
 #define EMT_F_INFO_MEMBER_68(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1103,7 +1103,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type16, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 73
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 73
 #define EMT_F_INFO_MEMBER_72(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1119,7 +1119,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type17, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 77
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 77
 #define EMT_F_INFO_MEMBER_76(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1135,7 +1135,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type18, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 81
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 81
 #define EMT_F_INFO_MEMBER_80(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1153,7 +1153,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type19, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 85
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 85
 #define EMT_F_INFO_MEMBER_84(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1171,7 +1171,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type20, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 89
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 89
 #define EMT_F_INFO_MEMBER_88(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1189,7 +1189,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type21, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 93
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 93
 #define EMT_F_INFO_MEMBER_92(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1207,7 +1207,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type22, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 97
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 97
 #define EMT_F_INFO_MEMBER_96(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1225,7 +1225,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type23, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 101
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 101
 #define EMT_F_INFO_MEMBER_100(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1245,7 +1245,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type24, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 105
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 105
 #define EMT_F_INFO_MEMBER_104(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1265,7 +1265,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type25, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 109
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 109
 #define EMT_F_INFO_MEMBER_108(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1285,7 +1285,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type26, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 113
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 113
 #define EMT_F_INFO_MEMBER_112(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1305,7 +1305,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type27, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 117
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 117
 #define EMT_F_INFO_MEMBER_116(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1327,7 +1327,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type28, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 121
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 121
 #define EMT_F_INFO_MEMBER_120(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1349,7 +1349,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type29, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 125
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 125
 #define EMT_F_INFO_MEMBER_124(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1371,7 +1371,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_MEMBER_DISPATCH(type, type30, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 129
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 129
 #define EMT_F_INFO_MEMBER_128(                                                                     \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1422,31 +1422,31 @@ static inline void emt_cobs_finalize(
 #define EMT_F_LAYOUT_DISPATCH(name, len, type, _tag)                                               \
     EMT_F_LAYOUT_DISPATCH_HELPER(name, len, type, _tag)
 
-#if EMT_MACRO_CAP >= 1
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 1
 #define EMT_F_LAYOUT_0(_dummy)
 #endif
 
-#if EMT_MACRO_CAP >= 5
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 5
 #define EMT_F_LAYOUT_4(type, x, len, tag, _dummy) EMT_F_LAYOUT_DISPATCH(type0, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 9
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 9
 #define EMT_F_LAYOUT_8(_0, _1, _2, _3, type, x, len, tag, _dummy)                                  \
     EMT_F_LAYOUT_4(_0, _1, _2, _3, 0) EMT_F_LAYOUT_DISPATCH(type1, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 13
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 13
 #define EMT_F_LAYOUT_12(_0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)                 \
     EMT_F_LAYOUT_8(_0, _1, _2, _3, _4, _5, _6, _7, 0) EMT_F_LAYOUT_DISPATCH(type2, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 17
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 17
 #define EMT_F_LAYOUT_16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy) \
     EMT_F_LAYOUT_12(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, 0)                             \
     EMT_F_LAYOUT_DISPATCH(type3, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 21
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 21
 #define EMT_F_LAYOUT_20(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x, len, tag, _dummy      \
 )                                                                                                  \
@@ -1454,7 +1454,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type4, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 25
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 25
 #define EMT_F_LAYOUT_24(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, type, x,   \
     len, tag, _dummy                                                                               \
@@ -1465,7 +1465,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type5, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 29
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 29
 #define EMT_F_LAYOUT_28(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, type, x, len, tag, _dummy                                                            \
@@ -1477,7 +1477,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type6, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 33
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 33
 #define EMT_F_LAYOUT_32(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                                        \
@@ -1489,7 +1489,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type7, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 37
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 37
 #define EMT_F_LAYOUT_36(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag, _dummy                    \
@@ -1501,7 +1501,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type8, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 41
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 41
 #define EMT_F_LAYOUT_40(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, type, x, len, tag,       \
@@ -1514,7 +1514,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type9, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 45
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 45
 #define EMT_F_LAYOUT_44(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27,      \
@@ -1528,7 +1528,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type10, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 49
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 49
 #define EMT_F_LAYOUT_48(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1542,7 +1542,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type11, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 53
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 53
 #define EMT_F_LAYOUT_52(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1556,7 +1556,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type12, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 57
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 57
 #define EMT_F_LAYOUT_56(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1570,7 +1570,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type13, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 61
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 61
 #define EMT_F_LAYOUT_60(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1585,7 +1585,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type14, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 65
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 65
 #define EMT_F_LAYOUT_64(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1601,7 +1601,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type15, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 69
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 69
 #define EMT_F_LAYOUT_68(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1617,7 +1617,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type16, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 73
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 73
 #define EMT_F_LAYOUT_72(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1633,7 +1633,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type17, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 77
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 77
 #define EMT_F_LAYOUT_76(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1649,7 +1649,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type18, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 81
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 81
 #define EMT_F_LAYOUT_80(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1667,7 +1667,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type19, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 85
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 85
 #define EMT_F_LAYOUT_84(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1685,7 +1685,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type20, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 89
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 89
 #define EMT_F_LAYOUT_88(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1703,7 +1703,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type21, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 93
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 93
 #define EMT_F_LAYOUT_92(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1721,7 +1721,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type22, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 97
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 97
 #define EMT_F_LAYOUT_96(                                                                           \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1739,7 +1739,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type23, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 101
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 101
 #define EMT_F_LAYOUT_100(                                                                          \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1759,7 +1759,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type24, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 105
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 105
 #define EMT_F_LAYOUT_104(                                                                          \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1779,7 +1779,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type25, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 109
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 109
 #define EMT_F_LAYOUT_108(                                                                          \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1799,7 +1799,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type26, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 113
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 113
 #define EMT_F_LAYOUT_112(                                                                          \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1819,7 +1819,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type27, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 117
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 117
 #define EMT_F_LAYOUT_116(                                                                          \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1841,7 +1841,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type28, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 121
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 121
 #define EMT_F_LAYOUT_120(                                                                          \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1863,7 +1863,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type29, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 125
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 125
 #define EMT_F_LAYOUT_124(                                                                          \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1885,7 +1885,7 @@ static inline void emt_cobs_finalize(
     EMT_F_LAYOUT_DISPATCH(type30, len, type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 129
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 129
 #define EMT_F_LAYOUT_128(                                                                          \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -1923,30 +1923,30 @@ static inline void emt_cobs_finalize(
 
 #define EMT_F_INFO_DISPATCH(type, _tag) EMT_F_INFO_DISPATCH_HELPER(type, _tag)
 
-#if EMT_MACRO_CAP >= 1
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 1
 #define EMT_F_INFO_0(_dummy)
 #endif
 
-#if EMT_MACRO_CAP >= 5
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 5
 #define EMT_F_INFO_4(type, x, len, tag, _dummy) EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 9
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 9
 #define EMT_F_INFO_8(_0, _1, _2, _3, type, x, len, tag, _dummy)                                    \
     EMT_F_INFO_4(_0, _1, _2, _3, 0) EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 13
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 13
 #define EMT_F_INFO_12(_0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)                   \
     EMT_F_INFO_8(_0, _1, _2, _3, _4, _5, _6, _7, 0) EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 17
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 17
 #define EMT_F_INFO_16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy)   \
     EMT_F_INFO_12(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, 0) EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 21
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 21
 #define EMT_F_INFO_20(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x, len, tag, _dummy      \
 )                                                                                                  \
@@ -1954,7 +1954,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 25
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 25
 #define EMT_F_INFO_24(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, type, x,   \
     len, tag, _dummy                                                                               \
@@ -1965,7 +1965,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 29
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 29
 #define EMT_F_INFO_28(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, type, x, len, tag, _dummy                                                            \
@@ -1977,7 +1977,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 33
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 33
 #define EMT_F_INFO_32(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                                        \
@@ -1989,7 +1989,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 37
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 37
 #define EMT_F_INFO_36(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag, _dummy                    \
@@ -2001,7 +2001,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 41
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 41
 #define EMT_F_INFO_40(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, type, x, len, tag,       \
@@ -2014,7 +2014,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 45
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 45
 #define EMT_F_INFO_44(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27,      \
@@ -2028,7 +2028,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 49
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 49
 #define EMT_F_INFO_48(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2042,7 +2042,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 53
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 53
 #define EMT_F_INFO_52(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2056,7 +2056,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 57
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 57
 #define EMT_F_INFO_56(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2070,7 +2070,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 61
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 61
 #define EMT_F_INFO_60(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2085,7 +2085,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 65
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 65
 #define EMT_F_INFO_64(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2101,7 +2101,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 69
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 69
 #define EMT_F_INFO_68(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2117,7 +2117,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 73
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 73
 #define EMT_F_INFO_72(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2133,7 +2133,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 77
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 77
 #define EMT_F_INFO_76(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2149,7 +2149,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 81
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 81
 #define EMT_F_INFO_80(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2167,7 +2167,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 85
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 85
 #define EMT_F_INFO_84(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2185,7 +2185,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 89
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 89
 #define EMT_F_INFO_88(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2203,7 +2203,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 93
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 93
 #define EMT_F_INFO_92(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2221,7 +2221,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 97
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 97
 #define EMT_F_INFO_96(                                                                             \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2239,7 +2239,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 101
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 101
 #define EMT_F_INFO_100(                                                                            \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2259,7 +2259,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 105
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 105
 #define EMT_F_INFO_104(                                                                            \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2279,7 +2279,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 109
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 109
 #define EMT_F_INFO_108(                                                                            \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2299,7 +2299,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 113
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 113
 #define EMT_F_INFO_112(                                                                            \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2319,7 +2319,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 117
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 117
 #define EMT_F_INFO_116(                                                                            \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2341,7 +2341,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 121
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 121
 #define EMT_F_INFO_120(                                                                            \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2363,7 +2363,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 125
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 125
 #define EMT_F_INFO_124(                                                                            \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2385,7 +2385,7 @@ static inline void emt_cobs_finalize(
     EMT_F_INFO_DISPATCH(type, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 129
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 129
 #define EMT_F_INFO_128(                                                                            \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2409,39 +2409,39 @@ static inline void emt_cobs_finalize(
 
 #define EMT_F_INFO(x, ...) EMT_F_INFO_HELPER(x, __VA_ARGS__)
 #define EMT_F_INFO_HELPER(x, ...) EMT_F_INFO_##x(__VA_ARGS__)
-#if EMT_MACRO_CAP >= 1
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 1
 #define EMT_F_TOTAL_SIZE_0(_dummy) sizeof(emt_ptr_t)
 #endif
 
-#if EMT_MACRO_CAP >= 5
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 5
 #define EMT_F_TOTAL_SIZE_4(type, x, len, tag, _dummy) (sizeof(emt_ptr_t) + (len))
 #endif
 
-#if EMT_MACRO_CAP >= 9
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 9
 #define EMT_F_TOTAL_SIZE_8(_0, _1, _2, _3, type, x, len, tag, _dummy)                              \
     EMT_F_TOTAL_SIZE_4(_0, _1, _2, _3, 0) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 13
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 13
 #define EMT_F_TOTAL_SIZE_12(_0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)             \
     EMT_F_TOTAL_SIZE_8(_0, _1, _2, _3, _4, _5, _6, _7, 0) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 17
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 17
 #define EMT_F_TOTAL_SIZE_16(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy                      \
 )                                                                                                  \
     EMT_F_TOTAL_SIZE_12(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, 0) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 21
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 21
 #define EMT_F_TOTAL_SIZE_20(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x, len, tag, _dummy      \
 )                                                                                                  \
     EMT_F_TOTAL_SIZE_16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, 0) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 25
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 25
 #define EMT_F_TOTAL_SIZE_24(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, type, x,   \
     len, tag, _dummy                                                                               \
@@ -2451,7 +2451,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 29
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 29
 #define EMT_F_TOTAL_SIZE_28(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, type, x, len, tag, _dummy                                                            \
@@ -2462,7 +2462,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 33
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 33
 #define EMT_F_TOTAL_SIZE_32(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                                        \
@@ -2473,7 +2473,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 37
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 37
 #define EMT_F_TOTAL_SIZE_36(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag, _dummy                    \
@@ -2484,7 +2484,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 41
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 41
 #define EMT_F_TOTAL_SIZE_40(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, type, x, len, tag,       \
@@ -2496,7 +2496,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 45
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 45
 #define EMT_F_TOTAL_SIZE_44(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27,      \
@@ -2509,7 +2509,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 49
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 49
 #define EMT_F_TOTAL_SIZE_48(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2522,7 +2522,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 53
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 53
 #define EMT_F_TOTAL_SIZE_52(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2535,7 +2535,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 57
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 57
 #define EMT_F_TOTAL_SIZE_56(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2548,7 +2548,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 61
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 61
 #define EMT_F_TOTAL_SIZE_60(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2562,7 +2562,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 65
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 65
 #define EMT_F_TOTAL_SIZE_64(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2577,7 +2577,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 69
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 69
 #define EMT_F_TOTAL_SIZE_68(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2592,7 +2592,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 73
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 73
 #define EMT_F_TOTAL_SIZE_72(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2607,7 +2607,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 77
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 77
 #define EMT_F_TOTAL_SIZE_76(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2622,7 +2622,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 81
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 81
 #define EMT_F_TOTAL_SIZE_80(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2639,7 +2639,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 85
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 85
 #define EMT_F_TOTAL_SIZE_84(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2656,7 +2656,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 89
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 89
 #define EMT_F_TOTAL_SIZE_88(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2673,7 +2673,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 93
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 93
 #define EMT_F_TOTAL_SIZE_92(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2690,7 +2690,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 97
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 97
 #define EMT_F_TOTAL_SIZE_96(                                                                       \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2707,7 +2707,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 101
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 101
 #define EMT_F_TOTAL_SIZE_100(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2726,7 +2726,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 105
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 105
 #define EMT_F_TOTAL_SIZE_104(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2745,7 +2745,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 109
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 109
 #define EMT_F_TOTAL_SIZE_108(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2764,7 +2764,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 113
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 113
 #define EMT_F_TOTAL_SIZE_112(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2783,7 +2783,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 117
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 117
 #define EMT_F_TOTAL_SIZE_116(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2804,7 +2804,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 121
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 121
 #define EMT_F_TOTAL_SIZE_120(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2825,7 +2825,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 125
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 125
 #define EMT_F_TOTAL_SIZE_124(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2846,7 +2846,7 @@ static inline void emt_cobs_finalize(
     ) + (len)
 #endif
 
-#if EMT_MACRO_CAP >= 129
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 129
 #define EMT_F_TOTAL_SIZE_128(                                                                      \
     _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
     _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
@@ -2907,28 +2907,28 @@ static inline void emt_cobs_finalize(
 #define EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, _tag)                                      \
     EMT_F_DISPATCH_HELPER(type, x, len, out_fn, extra_arg, _tag)
 
-#if EMT_MACRO_CAP >= 3
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 3
 #define EMT_F_0(out_fn, extra_arg, _dummy)
 #endif
 
-#if EMT_MACRO_CAP >= 7
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 7
 #define EMT_F_4(out_fn, extra_arg, type, x, len, tag, _dummy)                                      \
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 11
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 11
 #define EMT_F_8(out_fn, extra_arg, _0, _1, _2, _3, type, x, len, tag, _dummy)                      \
     EMT_F_4(out_fn, extra_arg, _0, _1, _2, _3, 0)                                                  \
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 15
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 15
 #define EMT_F_12(out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)     \
     EMT_F_8(out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, 0)                                  \
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 19
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 19
 #define EMT_F_16(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy   \
 )                                                                                                  \
@@ -2936,7 +2936,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 23
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 23
 #define EMT_F_20(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x,    \
     len, tag, _dummy                                                                               \
@@ -2945,7 +2945,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 27
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 27
 #define EMT_F_24(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, type, x, len, tag, _dummy                                                            \
@@ -2957,7 +2957,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 31
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 31
 #define EMT_F_28(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, type, x, len, tag, _dummy                                        \
@@ -2969,7 +2969,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 35
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 35
 #define EMT_F_32(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                    \
@@ -2981,7 +2981,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 39
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 39
 #define EMT_F_36(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag,       \
@@ -2994,7 +2994,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 43
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 43
 #define EMT_F_40(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23,      \
@@ -3008,7 +3008,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 47
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 47
 #define EMT_F_44(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3022,7 +3022,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 51
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 51
 #define EMT_F_48(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3036,7 +3036,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 55
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 55
 #define EMT_F_52(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3050,7 +3050,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 59
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 59
 #define EMT_F_56(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3065,7 +3065,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 63
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 63
 #define EMT_F_60(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3081,7 +3081,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 67
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 67
 #define EMT_F_64(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3097,7 +3097,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 71
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 71
 #define EMT_F_68(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3113,7 +3113,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 75
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 75
 #define EMT_F_72(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3129,7 +3129,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 79
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 79
 #define EMT_F_76(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3147,7 +3147,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 83
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 83
 #define EMT_F_80(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3165,7 +3165,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 87
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 87
 #define EMT_F_84(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3183,7 +3183,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 91
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 91
 #define EMT_F_88(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3201,7 +3201,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 95
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 95
 #define EMT_F_92(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3219,7 +3219,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 99
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 99
 #define EMT_F_96(                                                                                  \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3239,7 +3239,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 103
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 103
 #define EMT_F_100(                                                                                 \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3259,7 +3259,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 107
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 107
 #define EMT_F_104(                                                                                 \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3279,7 +3279,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 111
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 111
 #define EMT_F_108(                                                                                 \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3299,7 +3299,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 115
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 115
 #define EMT_F_112(                                                                                 \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3321,7 +3321,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 119
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 119
 #define EMT_F_116(                                                                                 \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3343,7 +3343,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 123
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 123
 #define EMT_F_120(                                                                                 \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3365,7 +3365,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 127
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 127
 #define EMT_F_124(                                                                                 \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
@@ -3387,7 +3387,7 @@ static inline void emt_cobs_finalize(
     EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
 #endif
 
-#if EMT_MACRO_CAP >= 131
+#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 131
 #define EMT_F_128(                                                                                 \
     out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
     _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
