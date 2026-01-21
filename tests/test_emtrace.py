@@ -1,6 +1,8 @@
 import pytest
 import subprocess
 import sys
+import json
+import os
 from pathlib import Path
 
 # Add paths to test executables here.
@@ -28,13 +30,18 @@ C_TEST_EXECUTABLES = [
 ]
 
 C_BUILD_DIRS = [
-    "../c/build/HEAD/gcc/rel",
-    "../c/build/HEAD/gcc/dbg",
-    "../c/build/HEAD/gcc/opt-dbg",
-    "../c/build/HEAD/clang/rel",
-    "../c/build/HEAD/clang/dbg",
-    "../c/build/HEAD/clang/opt-dbg",
+    "../c/build/clang/rel",
+    "../c/build/clang/dbg",
+    "../c/build/clang/opt-dbg",
 ]
+
+build_dir_file = Path(__file__).parent / "build_dirs.json"
+if build_dir_file.is_file():
+    with open(build_dir_file, "r") as fp:
+        try:
+            C_BUILD_DIRS = json.load(fp)
+        except:
+            pass
 
 RUST_TEST_EXECUTABLES = [
     "test_basic",
@@ -58,11 +65,19 @@ TEST_EXECUTABLES: list[Path] = []
 
 for build_dir in RUST_BUILD_DIRS:
     for test_exe in RUST_TEST_EXECUTABLES:
-        TEST_EXECUTABLES.append(Path(__file__).parent.resolve() / build_dir / test_exe)
+        file: Path = Path(__file__).parent.resolve() / build_dir / test_exe
+        if os.name == "nt":
+            file = file.with_suffix(".exe")
+            
+        TEST_EXECUTABLES.append(file)
 
 for build_dir in C_BUILD_DIRS:
     for test_exe in C_TEST_EXECUTABLES:
-        TEST_EXECUTABLES.append(Path(__file__).parent.resolve() / build_dir / test_exe)
+        file: Path = Path(__file__).parent.resolve() / build_dir / test_exe
+        if os.name == "nt":
+            file = file.with_suffix(".exe")
+            
+        TEST_EXECUTABLES.append(file)
 
 print(TEST_EXECUTABLES)
 
@@ -82,35 +97,16 @@ def test_emtrace_on_executable(executable_path_str: str):
             f"Executable {executable_path_str} not found. Make sure it is built."
         )
 
-    # 1. Run the executable and capture its output (the raw trace).
-    try:
-        process = subprocess.run(
-            [str(executable)],
-            capture_output=True,
-            check=True,
-            timeout=5,
-        )
-    except subprocess.CalledProcessError as e:
-        pytest.fail(
-            f"Failed to run executable {executable_path_str}: {e.stderr.decode()}"
-        )
-    except subprocess.TimeoutExpired:
-        pytest.fail(f"Timeout running executable {executable_path_str}")
-
-    trace_output = process.stdout
-
-    # 2. Run emtrace.py in test mode with the trace output as stdin.
     emtrace_script = pytest_dir.parent / "parser/emtrace.py"
     try:
         emtrace_process = subprocess.run(
             [
-                "python3",
+                sys.executable,
                 str(emtrace_script),
                 str(executable),
                 "--test",
                 "--debug-script",
             ],
-            input=trace_output,
             capture_output=True,
             check=True,
             timeout=5,

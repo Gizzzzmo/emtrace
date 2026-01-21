@@ -331,8 +331,8 @@ static inline void emt_cobs_finalize(
 #elif defined(_WIN32)
 
 #include <windows.h>
-#define EMT_FLOCK_FILE(x, y, file) LockFileEx(file, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, NULL)
-#define EMT_FUNLOCK_FILE(x, y, file) UnlockFileEx(file, 0, 0xFFFFFFFF, 0xFFFFFFFF, NULL)
+#define EMT_FLOCK_FILE(x, y, file) LockFile(file, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF)
+#define EMT_FUNLOCK_FILE(x, y, file) UnlockFile(file, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF)
 
 #endif
 
@@ -394,3 +394,9 @@ static inline void emt_cobs_finalize(
     EMT_INIT(EMT_DEFAULT_SEC_ATTR, EMT_OUT_FN, EMT_ENCODING, EMT_LOCK, EMT_UNLOCK, stdout)
 
 #endif // EMT_DEFAULT_SEC_ATTR && EMT_FLOCK_FILE && EMT_FUNLOCK_FILE
+
+#ifdef _MSC_VER
+#define EMT_MACRO_CAP 127
+#else
+#define EMT_MACRO_CAP 1023
+#endif

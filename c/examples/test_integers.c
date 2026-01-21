@@ -37,6 +37,10 @@ int main(void) {
 
     // Test size types
     size_t sz = 42;
+#if !defined(__unix__) && !defined(__unix) && \
+        !(defined(__APPLE__) || defined(__MACH__))
+    typedef int ssize_t;
+#endif
     ssize_t ssz = -42;
 
     EMTRACELN_F("Size integers: {} {}", VAL(size_t, sz), VAL(ssize_t, ssz));

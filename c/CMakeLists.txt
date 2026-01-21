@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 4.0)
 
 set(EMTRACE_ENABLE_EXAMPLES ON CACHE BOOL "Build examples")
 set(EMTRACE_ENABLE_TESTS ON CACHE BOOL "Build tests")

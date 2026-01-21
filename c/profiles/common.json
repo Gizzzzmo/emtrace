@@ -24,12 +24,12 @@
             "hidden": true,
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "CMAKE_C_FLAGS_DEBUG": "-O0",
-                "CMAKE_CXX_FLAGS_DEBUG": "-ggdb -O0",
-                "CMAKE_C_FLAGS_RELEASE": "-ggdb -O3",
-                "CMAKE_CXX_FLAGS_RELEASE": "-ggdb -O3",
-                "CMAKE_C_FLAGS_RELWITHDEBINFO": "-ggdb -O3",
-                "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-ggdb -O3"
+                "CMAKE_C_FLAGS_DEBUG": "-gdwarf -O0",
+                "CMAKE_CXX_FLAGS_DEBUG": "-gdwarf -O0",
+                "CMAKE_C_FLAGS_RELEASE": "-gdwarf -O3",
+                "CMAKE_CXX_FLAGS_RELEASE": "-gdwarf -O3",
+                "CMAKE_C_FLAGS_RELWITHDEBINFO": "-gdwarf -O3",
+                "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-gdwarf -O3"
             }
         },
         {

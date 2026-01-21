@@ -7,8 +7,10 @@ target_link_libraries(demo PRIVATE emtrace::emtrace)
 add_executable(demo_passthrough demo_passthrough.c)
 target_link_libraries(demo_passthrough PRIVATE emtrace::emtrace)
 
-add_executable(demo_c_socket demo_socket.c)
-target_link_libraries(demo_c_socket PRIVATE emtrace::emtrace)
+if(UNIX)
+    add_executable(demo_c_socket demo_socket.c)
+    target_link_libraries(demo_c_socket PRIVATE emtrace::emtrace)
+endif()
 
 if(EMTRACE_ENABLE_CXX)
     add_executable(demo_cpp demo.cpp)

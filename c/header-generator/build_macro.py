@@ -31,12 +31,29 @@ def build_recursive_macro(
     body_empty = body_empty.replace("\n", " ")
 
     global_arg_string = ", ".join(global_args)
-    if len(global_args) > 0:
+    total_n_args = len(global_args)
+
+    if total_n_args > 0:
         global_arg_string += ", "
 
-    generated: str = f"#define {name}_0({global_arg_string}_dummy) {body_empty}\n\n"
+    # to account for _dummy
+    total_n_args += 1
+
+    generated: str = ""
+
+    def append_wrapped(s: str):
+        nonlocal total_n_args
+        nonlocal generated
+        generated += f"#if EMT_MACRO_CAP >= {total_n_args}\n"
+        generated += f"{s}\n"
+        generated += "#endif\n\n"
+
+    append_wrapped(f"#define {name}_0({global_arg_string}_dummy) {body_empty}")
+
+    total_n_args += len(args)
     arg_string = ", ".join(args)
-    generated += f"#define {name}_{len(args)}({global_arg_string}{arg_string}, _dummy) {body}\n\n"
+    
+    append_wrapped(f"#define {name}_{len(args)}({global_arg_string}{arg_string}, _dummy) {body}")
 
     for i in range(2, depth + 1):
         postfix: int = i * len(args)
@@ -51,7 +68,8 @@ def build_recursive_macro(
 
         macro: str = f"#define {name}_{postfix}({global_arg_string}{passthrough_string}, {arg_string}, _dummy) {expanded_body}"
 
-        generated += macro + "\n\n"
+        total_n_args += len(args)
+        append_wrapped(macro)
 
     generated += f"#define {name}({global_arg_string}x, ...) {name}_HELPER({global_arg_string}x, __VA_ARGS__)\n"
     generated += f"#define {name}_HELPER({global_arg_string}x, ...) {name}_##x({global_arg_string}__VA_ARGS__)\n"
