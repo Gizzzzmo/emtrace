@@ -1,8 +1,12 @@
 #!/bin/bash
 
+if [ -z "$VCVARS_PATH" ]; then
+    VCVARS_PATH='C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Auxiliary\Build\vcvars64.bat'
+fi
+
 # Create a temporary batch file
 temp_bat=$(mktemp --suffix=.bat)
-echo 'call "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Auxiliary\Build\vcvars64.bat" > NUL' > "$temp_bat"
+echo "call \"$VCVARS_PATH\" > NUL" > "$temp_bat"
 echo 'bash -c env' >> "$temp_bat"
 
 # Execute it
