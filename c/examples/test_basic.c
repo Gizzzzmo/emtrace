@@ -7,8 +7,14 @@ EXPECT_OUTPUT(
     "A string: a string\n"
 );
 
+#ifdef TEST_COBS
+EMTRACE_MAGIC_COBS(size_t)
+#else
+EMTRACE_MAGIC(size_t)
+#endif
+
 int main(void) {
-    EMTRACE_INIT();
+    emtrace_init();
     EMTRACELN("Hello from the basic test!");
     int x = 42;
     EMTRACELN_F("An integer: {}", VAL(int, x));

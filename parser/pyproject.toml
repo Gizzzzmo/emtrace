@@ -7,7 +7,6 @@ authors = [{name = "Jonas Beyer", email = "reyeb.sanoj@googlemail.com"}]
 license = {file="LICENSE"}
 keywords = ["embedded", "logging", "tracing"]
 dependencies = [
-    "pyelftools>=0.31",
     "lief>=0.17",
 ]
 
@@ -19,6 +18,7 @@ test = [
 
 [project.scripts]
 emtrace = "emtrace.cli:main"
+emctl = "emtrace.emctl:main"
 
 [build-system]
 requires = ["hatchling"]

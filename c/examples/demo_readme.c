@@ -1,7 +1,9 @@
 #include <emtrace/emtrace.h>
 
+EMTRACE_MAGIC(uintptr_t)
+
 int main(void) {
-    EMTRACE_INIT();
+    emtrace_init();
     EMTRACELN("Hello World!");
 
     int a = 1;

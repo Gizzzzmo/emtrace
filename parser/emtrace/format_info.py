@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 from dataclasses import dataclass
 
 
 @dataclass
 class Size:
-    min_size: int
-    length_prefixed: bool
-    null_terminated: bool
+    kind: Literal["fixed", "length_prefixed", "null_terminated"]
+    # when kind == "fixed", the fixed size in bytes
+    # when kind == "length_prefixed", the size of the length prefix in bytes (e.g. 4 for uint32_t)
+    # when kind == "null_terminated", the number of expected null bytes to terminate the sequence
+    size: int
 
 
 class TypeInfo:
@@ -18,9 +20,8 @@ class TypeInfo:
     def to_dict(self) -> dict[str, Any]:
         return {
             "size": {
-                "min_size": self.size.min_size,
-                "length_prefixed": self.size.length_prefixed,
-                "null_terminated": self.size.null_terminated,
+                "kind": self.size.kind,
+                "size": self.size.size,
             },
             "children": {
                 k: {"id": v[0], "type_info": v[1].to_dict()}
@@ -32,9 +33,8 @@ class TypeInfo:
     def from_dict(data: dict[str, Any]) -> TypeInfo:
         size_data = data["size"]
         size = Size(
-            size_data["min_size"],
-            size_data["length_prefixed"],
-            size_data["null_terminated"],
+            size_data["kind"],
+            size_data["size"],
         )
         children_data = data["children"]
         children = {

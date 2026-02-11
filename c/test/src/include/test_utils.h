@@ -24,12 +24,22 @@ static inline void to_buffer(const void* data, size_t size, void* extra_arg) {
     buffer->size += size;
 }
 
-#define EMT_TEST_LOCK_DUMMY(a, b, c)
+typedef uintptr_t emt_ptr_t;
+
+static inline void begin(const void* info, size_t total_size, void* extra_arg) {
+    emt_ptr_t ptr = (emt_ptr_t) (uintptr_t) info;
+    to_buffer(&ptr, sizeof(ptr), extra_arg);
+    (void) info;
+    (void) total_size;
+    (void) extra_arg;
+}
+
+#define EMT_TEST_FINISH_DUMMY(a, b, c)
 
 #define EMT_TEST_TRACE_F(buffer, formatter, ...)                                                   \
     EMT_TRACE_F(                                                                                   \
-        static const, formatter, to_buffer, EMT_TEST_LOCK_DUMMY, EMT_TEST_LOCK_DUMMY, (&buffer),   \
-        "", __VA_ARGS__                                                                            \
+        const, formatter, uint16_t, to_buffer, begin, EMT_TEST_FINISH_DUMMY, (&buffer), "",        \
+        __VA_ARGS__                                                                                \
     )
 
 #endif // EMTRACE_TEST_UTILS_H

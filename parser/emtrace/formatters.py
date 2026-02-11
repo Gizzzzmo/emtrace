@@ -16,6 +16,6 @@ def raw_formatter(fmt: str, args: list[Any]) -> str:
 
 FORMATTERS: dict[int, Callable[[str, list[Any]], str]] = {
     0: py_formatter,
-    1: c_formatter,
-    2: raw_formatter,
+    1: raw_formatter,
+    2: c_formatter,
 }

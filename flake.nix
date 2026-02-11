@@ -32,7 +32,6 @@
 
         # propagated build inputs
         parser-propagatedbuildInputs = with pkgs; [
-          python313Packages.pyelftools
           python313Packages.lief
         ];
 

@@ -8,8 +8,14 @@ EXPECT_OUTPUT(
     "Long string: first second third\n"
 );
 
+#ifdef TEST_COBS
+EMTRACE_MAGIC_COBS(size_t)
+#else
+EMTRACE_MAGIC(size_t)
+#endif
+
 int main(void) {
-    EMTRACE_INIT();
+    emtrace_init();
 
     // Test basic string
     EMTRACELN("Hello, World!");

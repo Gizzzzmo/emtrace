@@ -1,15 +1,14 @@
 #include "emtrace/emtrace.h"
-#include "test_utils.h"
 #include <stdint.h>
 
 static void bar(void) { EMTRACE("YAY\n"); }
 
+EMTRACE_MAGIC(size_t)
+
 int main(void) {
-    EMTRACE_INIT();
-    int8_t x = 1;
+    emtrace_init();
     int8_t y = 2;
     bar();
-    // TRACE("Hello, World!");
     for (uint8_t k = 0; k < 1; k++) {
         EMTRACE_F("Hello, World! {:d} {{}}", VAL(int8_t, y));
         EMTRACE("  test {} {}\n");

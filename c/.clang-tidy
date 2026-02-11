@@ -1,7 +1,7 @@
 Checks: >
   -clang-analyzer-*,
   clang-diagnostic-*,
-  bugprone-*,
+  bugprone-*,-bugprone-easily-swappable-parameters,
   misc-include-cleaner,
   modernize-*,-modernize-macro-to-enum,
   readability-*,-readability-identifier-length,-readability-magic-numbers,

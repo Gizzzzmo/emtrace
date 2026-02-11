@@ -9,8 +9,14 @@ EXPECT_OUTPUT(
     "Numbers: \x01 \x02 \x03 \x04 \x05\n"
 );
 
+#ifdef TEST_COBS
+EMTRACE_MAGIC_COBS(size_t)
+#else
+EMTRACE_MAGIC(size_t)
+#endif
+
 int main(void) {
-    EMTRACE_INIT();
+    emtrace_init();
 
     // Test mixing different types in one trace
     int int_val = 42;

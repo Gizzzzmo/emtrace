@@ -9,8 +9,14 @@ EXPECT_OUTPUT(
     "Extreme values: 1.7976931348623157e+308 2.2250738585072014e-308\n"
 );
 
+#ifdef TEST_COBS
+EMTRACE_MAGIC_COBS(size_t)
+#else
+EMTRACE_MAGIC(size_t)
+#endif
+
 int main(void) {
-    EMTRACE_INIT();
+    emtrace_init();
 
     // Test basic double values
     double pi = 3.14159;

@@ -10,8 +10,14 @@ EXPECT_OUTPUT(
     "int64_t min: -9223372036854775808\n"
 );
 
+#ifdef TEST_COBS
+EMTRACE_MAGIC_COBS(size_t)
+#else
+EMTRACE_MAGIC(size_t)
+#endif
+
 int main(void) {
-    EMTRACE_INIT();
+    emtrace_init();
 
     EMTRACELN("Large integers:");
 

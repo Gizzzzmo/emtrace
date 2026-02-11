@@ -1,6 +1,8 @@
 #include "emtrace/emtrace.h"
 #include <thread>
 
+EMTRACE_MAGIC(size_t)
+
 auto main() -> int {
     auto work = []() {
         for (int i = 0; i < 1000000; i++) {
@@ -11,7 +13,7 @@ auto main() -> int {
             );
         }
     };
-    EMTRACE_INIT();
+    emtrace_init();
     auto t1 = std::thread(work);
     auto t2 = std::thread(work);
     t1.join();

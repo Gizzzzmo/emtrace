@@ -10,8 +10,14 @@ EXPECT_OUTPUT(
     "Size integers: 42 -42\n"
 );
 
+#ifdef TEST_COBS
+EMTRACE_MAGIC_COBS(size_t)
+#else
+EMTRACE_MAGIC(size_t)
+#endif
+
 int main(void) {
-    EMTRACE_INIT();
+    emtrace_init();
 
     // Test various signed integer types
     int8_t i8 = INT8_MIN;    // -128
@@ -37,8 +43,7 @@ int main(void) {
 
     // Test size types
     size_t sz = 42;
-#if !defined(__unix__) && !defined(__unix) && \
-        !(defined(__APPLE__) || defined(__MACH__))
+#if !defined(__unix__) && !defined(__unix) && !(defined(__APPLE__) || defined(__MACH__))
     typedef int ssize_t;
 #endif
     ssize_t ssz = -42;

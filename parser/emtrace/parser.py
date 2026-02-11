@@ -15,7 +15,6 @@ class Parser:
     translation: dict[str, Callable[[Parser, TypeInfo], Any]]
     istream: Callable[[int], bytes]
     debug_trace: Callable[[*tuple[Any, ...]], None] = lambda *args: None
-    size_t_size: int
     ptr_size: int
     size_t_byteorder: Literal["big", "little"]
     ptr_byteorder: Literal["big", "little"]
@@ -25,7 +24,6 @@ class Parser:
         translation: dict[str, Callable[[Parser, TypeInfo], Any]],
         istream: Callable[[int], bytes],
         debug_trace: Callable[[*tuple[Any, ...]], None] = lambda *args: None,
-        size_t_size: int = 8,
         ptr_size: int = 8,
         size_t_byteorder: Literal["big", "little"] = "little",
         ptr_byteorder: Literal["big", "little"] = "little",
@@ -33,7 +31,6 @@ class Parser:
         self.translation = translation
         self.istream = istream
         self.debug_trace = debug_trace
-        self.size_t_size = size_t_size
         self.ptr_size = ptr_size
         self.size_t_byteorder = size_t_byteorder
         self.ptr_byteorder = ptr_byteorder
@@ -54,9 +51,9 @@ class Parser:
             self.read(self.ptr_size), byteorder=self.ptr_byteorder, signed=False
         )
 
-    def read_size_t(self):
+    def read_length_prefix(self, size: int):
         return int.from_bytes(
-            self.read(self.size_t_size), byteorder=self.size_t_byteorder, signed=False
+            self.read(size), byteorder=self.size_t_byteorder, signed=False
         )
 
     def read_until(self, b: bytes = b"\x00") -> bytes:
@@ -84,12 +81,12 @@ class Parser:
 
 def signed_le(parser: Parser, info: TypeInfo) -> int:
     """Interpret bytes as a little-endian signed integer."""
-    assert not info.size.null_terminated
+    assert not info.size.kind == "null_terminated"
 
-    if info.size.length_prefixed:
-        size = parser.read_size_t()
+    if info.size.kind == "length_prefixed":
+        size = parser.read_length_prefix(info.size.size)
     else:
-        size = info.size.min_size
+        size = info.size.size
 
     b = parser.read(size)
     return int.from_bytes(b, byteorder="little", signed=True)
@@ -97,12 +94,12 @@ def signed_le(parser: Parser, info: TypeInfo) -> int:
 
 def signed_be(parser: Parser, info: TypeInfo) -> int:
     """Interpret bytes as a big-endian signed integer."""
-    assert not info.size.null_terminated
+    assert not info.size.kind == "null_terminated"
 
-    if info.size.length_prefixed:
-        size = parser.read_size_t()
+    if info.size.kind == "length_prefixed":
+        size = parser.read_length_prefix(info.size.size)
     else:
-        size = info.size.min_size
+        size = info.size.size
 
     b = parser.read(size)
     return int.from_bytes(b, byteorder="big", signed=True)
@@ -110,12 +107,12 @@ def signed_be(parser: Parser, info: TypeInfo) -> int:
 
 def unsigned_le(parser: Parser, info: TypeInfo) -> int:
     """Interpret bytes as a little-endian unsigned integer."""
-    assert not info.size.null_terminated
+    assert not info.size.kind == "null_terminated"
 
-    if info.size.length_prefixed:
-        size = parser.read_size_t()
+    if info.size.kind == "length_prefixed":
+        size = parser.read_length_prefix(info.size.size)
     else:
-        size = info.size.min_size
+        size = info.size.size
 
     b = parser.read(size)
     return int.from_bytes(b, byteorder="little", signed=False)
@@ -123,28 +120,27 @@ def unsigned_le(parser: Parser, info: TypeInfo) -> int:
 
 def unsigned_be(parser: Parser, info: TypeInfo) -> int:
     """Interpret bytes as a big-endian unsigned integer."""
-    assert not info.size.null_terminated
+    assert not info.size.kind == "null_terminated"
 
-    if info.size.length_prefixed:
-        size = parser.read_size_t()
+    if info.size.kind == "length_prefixed":
+        size = parser.read_length_prefix(info.size.size)
     else:
-        size = info.size.min_size
+        size = info.size.size
 
     b = parser.read(size)
     return int.from_bytes(b, byteorder="little", signed=True)
 
 
 def string(parser: Parser, info: TypeInfo) -> str:
-    if info.size.null_terminated:
-        assert not info.size.length_prefixed
-        b = parser.read_until()
+    if info.size.kind == "null_terminated":
+        b = parser.read_until(b"\x00" * info.size.size)
         parser.debug_trace(b)
         return b.decode("utf-8")
 
-    if info.size.length_prefixed:
-        size = parser.read_size_t()
+    if info.size.kind == "length_prefixed":
+        size = parser.read_length_prefix(info.size.size)
     else:
-        size = info.size.min_size
+        size = info.size.size
 
     return parser.read(size).decode("utf-8")
 
@@ -156,12 +152,12 @@ def to_bool(parser: Parser, info: TypeInfo):
 
 def float_le(parser: Parser, info: TypeInfo) -> float:
     """Interpret bytes as a little-endian float."""
-    assert not info.size.null_terminated
+    assert info.size.kind != "null_terminated"
 
-    if info.size.length_prefixed:
-        size = parser.read_size_t()
+    if info.size.kind == "length_prefixed":
+        size = parser.read_length_prefix(info.size.size)
     else:
-        size = info.size.min_size
+        size = info.size.size
 
     assert size in [2, 4, 8]
     b = parser.read(size)
@@ -178,12 +174,12 @@ def float_le(parser: Parser, info: TypeInfo) -> float:
 
 def float_be(parser: Parser, info: TypeInfo) -> float:
     """Interpret bytes as a big-endian float."""
-    assert not info.size.null_terminated
+    assert info.size.kind != "null_terminated"
 
-    if info.size.length_prefixed:
-        size = parser.read_size_t()
+    if info.size.kind == "length_prefixed":
+        size = parser.read_length_prefix(info.size.size)
     else:
-        size = info.size.min_size
+        size = info.size.size
 
     assert size in [2, 4, 8]
     b = parser.read(size)
@@ -199,27 +195,27 @@ def float_be(parser: Parser, info: TypeInfo) -> float:
 
 
 def signed_char(parser: Parser, info: TypeInfo):
-    assert not info.size.null_terminated
-    assert not info.size.length_prefixed
-    assert info.size.min_size == 1
+    assert info.size.kind != "null_terminated"
+    assert info.size.kind != "length_prefixed"
+    assert info.size.size == 1
 
-    return SChar(parser.read(info.size.min_size))
+    return SChar(parser.read(info.size.size))
 
 
 def char(parser: Parser, info: TypeInfo):
-    assert not info.size.null_terminated
-    assert not info.size.length_prefixed
-    assert info.size.min_size == 1
+    assert info.size.kind != "null_terminated"
+    assert info.size.kind != "length_prefixed"
+    assert info.size.size == 1
 
-    return Char(parser.read(info.size.min_size))
+    return Char(parser.read(info.size.size))
 
 
 def to_list(parser: Parser, info: TypeInfo) -> MyList[Any]:
     parser.debug_trace(info.size)
-    if info.size.length_prefixed:
-        size = parser.read_size_t()
+    if info.size.kind == "length_prefixed":
+        size = parser.read_length_prefix(info.size.size)
     else:
-        size = info.size.min_size
+        size = info.size.size
 
     parser.debug_trace(f"{size=}")
 

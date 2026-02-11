@@ -11,8 +11,14 @@ EXPECT_OUTPUT(
 );
 // "C format: test\n";
 
+#ifdef TEST_COBS
+EMTRACE_MAGIC_COBS(size_t)
+#else
+EMTRACE_MAGIC(size_t)
+#endif
+
 int main(void) {
-    EMTRACE_INIT();
+    emtrace_init();
 
     EMTRACELN("Edge cases:");
 

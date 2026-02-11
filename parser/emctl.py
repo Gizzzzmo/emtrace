@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from emtrace.cli import main
+from emtrace.emctl import main
 import sys
 
 if __name__ == "__main__":

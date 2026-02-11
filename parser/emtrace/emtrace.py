@@ -16,7 +16,7 @@ from .parser import (
     translation_be,
 )
 from .formatters import FORMATTERS
-from .format_parser import FormatParser
+from .record_parser import RecordParser, detect_byteorder as detect_byteorder
 
 try:
     import lief
@@ -25,14 +25,15 @@ try:
 
     def parse_exe(
         trace_info_file: Path, section_name: str, parse: Callable[[Path], Binary | None]
-    ) -> memoryview | None:
+    ) -> bytes | None:
         exe = parse(trace_info_file)
         if exe is None:
             return None
         section = exe.get_section(section_name)
+
         if section is None:
             return None
-        return section.content
+        return bytes(section.content)
 
     def parse_macho(x: Path):
         exe = lief.parse(x) if lief.is_macho(x) else None
@@ -52,47 +53,7 @@ except ImportError:
         return None
 
 
-try:
-    from elftools.elf.elffile import ELFFile
-    from elftools.common.exceptions import ELFError
-except ImportError:
-    ELFFile: None | type = None
-    ELFError: type[Exception] = ImportError
 
-
-def detect_byteorder(b: bytes) -> Literal["little", "big", "unknown"] | None:
-    """Given a sequence of bytes, this function returns the byte order.
-
-    None is returned if the sequence is longer than 256, shorter than 1, or if there is a
-    duplicate byte in the sequence.
-    "little" is returned if b[i] = b[i-1] + 1 and b[0] = 0.
-    "big" is returned if b[i] = b[i+1] + 1 and b[0] = len(b) - 1.
-    "unknown" is returned otherwise.
-    """
-    if len(b) > 256 or len(b) < 1:
-        return None
-    found = [False for _ in range(len(b))]
-    if int(b[0]) == 0:
-        byteorder = "little"
-    elif int(b[0]) == len(b) - 1:
-        byteorder = "big"
-    else:
-        byteorder = "unknown"
-    for i, byte in enumerate(b):
-        if int(byte) >= len(b):
-            return None
-        if found[int(byte)]:
-            return None
-        found[int(byte)] = True
-        if byteorder == "unknown":
-            continue
-
-        if byteorder == "little" and i != int(byte):
-            byteorder = "unknown"
-        elif byteorder == "big" and len(b) - i - 1 != int(byte):
-            byteorder = "unknown"
-
-    return byteorder
 
 
 def error(*args: Any, **kwargs: Any):
@@ -108,6 +69,25 @@ def error(*args: Any, **kwargs: Any):
     )
 
 
+def _run_test_comparison(captured_output: bytearray, expected_output: bytes) -> None:
+    """Compare captured output against expected output, print diff on mismatch, exit 1 on failure."""
+    actual_output = bytes(captured_output)
+    if actual_output == expected_output:
+        print("Test passed!")
+    else:
+        import difflib
+
+        print("Test failed!", file=sys.stderr)
+        diff = difflib.unified_diff(
+            expected_output.decode("utf-8").splitlines(keepends=True),
+            actual_output.decode("utf-8").splitlines(keepends=True),
+            fromfile="expected",
+            tofile="actual",
+        )
+        _ = sys.stdout.writelines(diff)
+        sys.exit(1)
+
+
 def default_ostream(b: bytes) -> None:
     _ = sys.stdout.buffer.write(b)
     return sys.stdout.buffer.flush()
@@ -117,7 +97,7 @@ def get_format_info(
     trace_info_file: Path,
     file_format: Literal["auto", "exe", "elf", "pe", "macho", "oat", "json", "binary"],
     section_name: str,
-) -> dict[str, Any] | memoryview | None:
+) -> dict[str, Any] | bytes | None:
     if file_format == "auto":
         try:
             with open(trace_info_file, "r") as f:
@@ -133,7 +113,7 @@ def get_format_info(
             return section_bytes
         else:
             try:
-                return memoryview(open(trace_info_file, "rb").read())
+                return open(trace_info_file, "rb").read()
             except FileNotFoundError:
                 return None
 
@@ -157,7 +137,7 @@ def get_format_info(
                 return None
         case "binary":
             try:
-                return memoryview(open(trace_info_file, "rb").read())
+                return open(trace_info_file, "rb").read()
             except FileNotFoundError:
                 return None
 
@@ -186,6 +166,10 @@ def emtrace(
 
         ostream = test_ostream
 
+    expected_output_from_file: bytes | None = None
+    if test_section_name is not None and Path(test_section_name).is_file():
+        expected_output_from_file = Path(test_section_name).read_bytes().rstrip(b"\x00")
+
     def trace(*args: Any, **kwargs: Any):
         if debug_script:
             print(
@@ -211,80 +195,58 @@ def emtrace(
         )
         sys.exit(1)
 
-    if isinstance(format_info, dict):
-        error(f"Dict parsing not yet implemented\nFormat info: {format_info}")
-        sys.exit(1)
-
     expected_output: bytes | None = None
-    test_section = None
-    with trace_info_file.open("rb") as fd:
-        try:
-            if ELFFile is None:
-                trace("pyelftools was not found")
-                raise ELFError()
-            elffile = ELFFile(fd)
+    if test_section_name is not None:
+        if expected_output_from_file is not None:
+            expected_output = expected_output_from_file
+        else:
+            section_bytes = parse_exe(trace_info_file, test_section_name, lief.parse)
+            if section_bytes is not None:
+                expected_output = section_bytes.rstrip(b"\x00")
+        trace(f"Expected test output: {expected_output}")
 
-            if test_section_name is not None:
-                test_section = elffile.get_section_by_name(test_section_name)
-                expected_output = test_section.data().rstrip(b"\x00")
-                trace(f"Expected test output: {expected_output}")
-
-        except ELFError:
-            trace("Could not interpret file as ELF, reading raw binary...")
-            _ = fd.seek(0)
-            data = fd.read()
-
-    data = bytes(format_info)
-
-    if test_section_name is not None and test_section is None:
+    if test_section_name is not None and expected_output is None:
         error(f"Section '{test_section_name}' not found in {trace_info_file}")
         sys.exit(1)
 
-    magic_constant = bytes.fromhex(
-        "d197f522d9269fd1ad703392f659dfd0fbecbd60971325e89201b25a385d9ec7"
-    )
-    magic_offset = data.find(magic_constant)
-    trace(f"{magic_offset=}")
-    if magic_offset == -1:
+    if isinstance(format_info, dict):
+        j = format_info
+        size_t_size: int = j["size_t_size"]
+        ptr_size: int = j["ptr_size"]
+        alignment_power: int = j["alignment_power"]
+        byteorder = j["byteorder"]
+        encoding_id: int = j["encoding_id"]
+        record_start: int = j["mgic_record_start"]
+
+        record_parser = None
+        record_cache: dict[int, FmtInfo] = {
+            int(i): FmtInfo.from_dict(fmt_info)
+            for i, fmt_info in j["trace_points"].items()
+        }
+    else:
+        data = bytes(format_info)
+        record_parser = RecordParser(memoryview(data), debug_trace=trace)
+        mgic = record_parser.find_and_parse_mgic()
+        if mgic is None:
+            error("Failed to find or parse MGIC record in section data.")
+            sys.exit(1)
+
+        size_t_size: int = mgic.size_t_size
+        ptr_size: int = mgic.ptr_size
+        alignment_power: int = mgic.alignment_power
+        byteorder = mgic.byteorder
+        encoding_id: int = mgic.encoding_id
+        record_start: int = mgic.record_start
         trace(
-            "emtrac magic constant not found. Assuming info lies at beginning of section / data."
+            f"version={mgic.version} {size_t_size=} {ptr_size=} {alignment_power=} "
+            f"byteorder={byteorder} {encoding_id=} {record_start=}"
         )
-    info_location: int = magic_offset + 32
-    rest_info_loc = int(data[info_location]) + magic_offset
-    trace(f"{info_location=} {rest_info_loc=}")
-
-    size_t_size = int(data[info_location + 1])
-    ptr_size = int(data[info_location + 2])
-    alignment_power = int(data[info_location + 3])
-    trace(f"{size_t_size=} {ptr_size=} {alignment_power=}")
-
-    byteorder_id: bytes = data[rest_info_loc : rest_info_loc + size_t_size]
-    trace(f"{byteorder_id=}")
-    byteorder = detect_byteorder(byteorder_id)
-    trace(f"detected byteorder: {byteorder}")
-    if byteorder is None or byteorder == "unknown":
-        error(
-            f"Unable to detect byteorder based on byteorder-id: {byteorder_id} ({size_t_size=})."
-        )
-        sys.exit(1)
-
-    null_terminated: int = int.from_bytes(
-        data[rest_info_loc + size_t_size : rest_info_loc + size_t_size * 2],
-        byteorder=byteorder,
-    )
-    length_prefixed: int = int.from_bytes(
-        data[rest_info_loc + size_t_size * 2 : rest_info_loc + size_t_size * 3],
-        byteorder=byteorder,
-    )
-    encoding_id: int = int.from_bytes(
-        data[rest_info_loc + size_t_size * 3 : rest_info_loc + size_t_size * 4],
-        byteorder=byteorder,
-    )
+        record_cache = {}
 
     cobs_passthrough = None
     match encoding_id:
         case 0:
-            encoding = "none"
+            encoding = "raw"
         case 1:
             encoding = "cobs"
         case 2:
@@ -294,25 +256,13 @@ def emtrace(
             error(f"Unknown encoding: {encoding_id}")
             sys.exit(1)
 
-    encoding = "none" if encoding_id == 0 else "cobs"
-    trace(
-        f"{hex(null_terminated)=} {hex(length_prefixed)=} {encoding=} passthrough={cobs_passthrough is not None}"
-    )
+    encoding = "raw" if encoding_id == 0 else "cobs"
+    trace(f"{encoding=} passthrough={cobs_passthrough is not None}")
+    # all_format_info = record_parser.parse_all_fmt_infos()
+    # with open("test.json", "w") as test_out:
+    #     json.dump(all_format_info, test_out, default=lambda x: x.to_dict())
 
-    format_parser = FormatParser(
-        memoryview(data),
-        ptr_size,
-        size_t_size,
-        null_terminated,
-        length_prefixed,
-        debug_trace=trace,
-    )
-
-    all_format_info = format_parser.parse_all_fmt_infos()
-    with open("test.json", "w") as test_out:
-        json.dump(all_format_info, test_out, default=lambda x: x.to_dict())
-
-    if encoding == "none":
+    if encoding == "raw":
         magic_address = int.from_bytes(istream(ptr_size), byteorder=byteorder)
     else:
         frame = cobs_get_frame(istream, cobs_passthrough)
@@ -329,29 +279,31 @@ def emtrace(
         magic_address = int.from_bytes(frame[:ptr_size], byteorder=byteorder)
     trace(f"{hex(magic_address)=}")
     magic_address *= 2**alignment_power
-    aslr_offset = magic_offset - magic_address
+    # magic_address is the runtime address of the MGIC record start (record_start in section data).
+    aslr_offset = record_start - magic_address
 
-    cache: dict[int, FmtInfo] = {}
     min_path_length: int = 0
     new_line_missing = True
 
     original_istream = istream
     frame_buffer: None | bytearray = None
+
     if encoding == "cobs":
         frame_buffer = bytearray()
 
-        def istream(n: int) -> bytes:
+        def _istream(n: int) -> bytes:
             nonlocal frame_buffer
             assert frame_buffer is not None
             result = bytes(frame_buffer[:n])
             frame_buffer = frame_buffer[n:]
             return result
 
+        istream = _istream
+
     parser = Parser(
         translation_le if byteorder == "little" else translation_be,
         istream,
         trace,
-        size_t_size,
         ptr_size,
         byteorder,
         byteorder,
@@ -387,13 +339,27 @@ def emtrace(
         trace(f"as address: {hex(address)}")
         address *= 2**alignment_power
         trace(f"adjusted address: {hex(address)}")
-        if address in cache:
+        section_offset = address + aslr_offset
+        if section_offset in record_cache:
             trace("Associated format info already parsed into cache.")
-            info = cache[address]
+            info = record_cache[section_offset]
         else:
             trace("Not cached yet.")
-            info, _ = format_parser.parse_fmt_info(address + aslr_offset)
-            cache[address] = info
+            if record_parser is None:
+                error(
+                    f"Record parser not initialized and record not in cache / json at section_offset={section_offset:#x}."
+                )
+                sys.exit(1)
+
+            info, _ = record_parser.parse_trace_record(section_offset)
+            if info is None:
+                error(
+                    f"No trace point found for address={address:#x} (section_offset={section_offset})."
+                )
+                if encoding != "cobs":
+                    sys.exit(1)
+                continue
+            record_cache[section_offset] = info
 
         trace(hex(address))
         formatted = parser.format(info, FORMATTERS)
@@ -466,18 +432,4 @@ def emtrace(
     if test_section_name is not None:
         assert expected_output is not None
         assert captured_output is not None
-        actual_output = bytes(captured_output)
-        if actual_output == expected_output:
-            print("Test passed!")
-        else:
-            import difflib
-
-            print("Test failed!", file=sys.stderr)
-            diff = difflib.unified_diff(
-                expected_output.decode("utf-8").splitlines(keepends=True),
-                actual_output.decode("utf-8").splitlines(keepends=True),
-                fromfile="expected",
-                tofile="actual",
-            )
-            _ = sys.stdout.writelines(diff)
-            sys.exit(1)
+        _run_test_comparison(captured_output, expected_output)

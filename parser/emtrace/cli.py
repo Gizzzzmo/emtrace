@@ -43,8 +43,7 @@ def get_input_stream(x: str, run_args: list[str]) -> Callable[[int], bytes]:
 
     match stream_type:
         case "file":
-            with Path(stream_id).open("rb") as f:
-                return f.read
+            return Path(stream_id).open("rb").read
         case "unix":
             family = socket.AF_UNIX
             address = stream_id
@@ -141,7 +140,7 @@ def main():
         nargs="?",
         const=".emt_exp",
         default=None,
-        help="Run emtrace in test mode. This will read the expected output from the ELF section specified (default: .emtrace.test.expected), and will compare it against the actual output. A non-zero exit code is returned, and a diff is written to stdout in case of failure.",
+        help="Run emtrace in test mode. This will read the expected output from the ELF section specified (default: .emt_exp), and will compare it against the actual output. A non-zero exit code is returned, and a diff is written to stdout in case of failure.",
     )
     _ = parser.add_argument(
         "--check-available",
@@ -185,8 +184,9 @@ def main():
         if b"\n" in b:
             _ = sys.stdout.buffer.flush()
 
-    if os.name == 'posix':
+    if os.name == "posix":
         from signal import signal, SIGPIPE, SIG_DFL
+
         _ = signal(SIGPIPE, SIG_DFL)
 
     emtrace(

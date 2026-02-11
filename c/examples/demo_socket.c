@@ -11,13 +11,18 @@
 #define SA struct sockaddr
 
 static void out(const void* data, size_t size, int connfd) { (void) write(connfd, data, size); }
+static void begin(const void* info, size_t total_size, int connfd) {
+    (void) total_size;
+    uintptr_t ptr = (uintptr_t) info;
+    out(&ptr, sizeof(ptr), connfd);
+}
 
 #define DUMMY(x, y, z) ((void) 0)
 
 #define TRACEF(connfd, ...)                                                                        \
     EMT_TRACE_F(                                                                                   \
-        __attribute__((used)) __attribute__((section(".emtrace"))) static const, EMT_PY_FORMAT,    \
-        out, DUMMY, DUMMY, connfd, "", __VA_ARGS__                                                 \
+        __attribute__((used)) __attribute__((section(".emtrace"))) const, EMT_PY_FORMAT, uint16_t, \
+        out, begin, DUMMY, connfd, "", __VA_ARGS__                                                 \
     )
 
 int main(void) {
@@ -64,7 +69,10 @@ int main(void) {
             printf("server accept the client...\n");
         }
 
-        EMT_INIT(EMT_DEFAULT_SEC_ATTR, out, EMT_ENCODING_NONE, DUMMY, DUMMY, connfd);
+        static emt_magic_t magic =
+            EMT_MAGIC(EMT_ENCODING_NONE, size_t, EMT_DEFAULT_ALIGNMENT_POWER);
+
+        EMT_INIT(&magic, begin, DUMMY, connfd);
         int x = 1;
         int y = 2;
         for (int i = 0; i < 15; i++) {

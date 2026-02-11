@@ -6,4 +6,5 @@ CheckOptions:
   readability-identifier-naming.StructPrefix: emt_
   readability-identifier-naming.MacroDefinitionPrefix: EMT_
   readability-identifier-naming.EnumConstantPrefix: EMT_
-  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "(EMTRACE_F|EMTRACE|EMTRACELN|EMTRACELN_F|EMTRACE_INIT|EMTRACE_.*_H)"
+  readability-identifier-naming.FunctionIgnoredRegexp: emtrace_init
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "(EMTRACE_F|EMTRACE_MAGIC|EMTRACE_MAGIC_COBS|EMTRACE_MAGIC_COBS_PASSTHROUGH|EMTRACE|EMTRACELN|EMTRACELN_F|EMTRACE_INIT|EMTRACE_.*_H)"

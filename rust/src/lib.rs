@@ -1083,7 +1083,7 @@ macro_rules! expect {
         }
     };
     ($expected:literal) => {
-        expect!($expected, .section=".emtrace.test.expected")
+        expect!($expected, .section=".emt_exp")
     };
 }
 const MAGIC_SIZE: usize = 36 + 4 * size_of::<SizeT>();
