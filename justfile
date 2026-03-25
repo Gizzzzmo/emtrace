@@ -57,7 +57,11 @@ ruff *ARGS:
 pytest *ARGS:
     pytest {{ARGS}}
 
+test_parser *ARGS:
+    cd parser && pytest {{ARGS}}
+
 eetest: (pytest "-rs" "-n" "auto")
+
 cmake *ARGS:
     cd c && cmake {{ARGS}}
 
@@ -102,7 +106,7 @@ preproc FILE:
 alias pp := preproc
 
 [parallel]
-test: (cargo "test" "--" "--nocapture") (ctest "--preset" "dbg") (ctest "--preset" "rel") (ctest "--preset" "opt-dbg") eetest
+test: (cargo "test" "--" "--nocapture") (ctest "--preset" "dbg") (ctest "--preset" "rel") (ctest "--preset" "opt-dbg") eetest test_parser
 
 [parallel]
 format: (ruff "format" ".") (cargo "fmt") (clang-format "-i") alejandra mdformat (gersemi "-i")
