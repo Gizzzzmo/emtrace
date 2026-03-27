@@ -57,10 +57,10 @@ int main(void) {
 Use `cargo add emtrace` in your project to get the latest version from [crates.io](crates.io).
 
 ```rust
-use emtrace::{init, traceln};
+use emtrace::{emtrace_init, traceln};
 
 fn main() {
-    init(&mut std::io::stdout().lock());
+    emtrace_init!().unwrap();
     traceln!("Hello World!");
 
     let a = 1;
