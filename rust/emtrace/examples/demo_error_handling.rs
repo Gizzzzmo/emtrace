@@ -35,8 +35,8 @@ impl Sink for StaticVec {
     }
     fn begin(
         &mut self,
-        _info_addr: emtrace::PointerT,
-        total_size: emtrace::SizeT,
+        _info_addr: usize,
+        total_size: usize,
     ) -> core::result::Result<(), Self::BeginError> {
         if total_size as usize > CAPACITY - self.size {
             return Err(OverflowError {});

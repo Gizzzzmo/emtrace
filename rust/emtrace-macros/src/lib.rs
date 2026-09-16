@@ -2,10 +2,9 @@ use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{format_ident, quote};
 use syn::{
-    Expr, LitStr, Token, Type,
     parse::discouraged::Speculative,
     parse::{Parse, ParseStream},
-    parse_macro_input,
+    parse_macro_input, Expr, LitStr, Token, Type,
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -237,7 +236,7 @@ fn trace_impl(input: TraceInput, newline: bool) -> TokenStream2 {
 
     // ── static format info generation ────────────────────────────────────
     // We generate a unique static holding the C-compatible TRCE record.
-    // The static has type `FormatInfo<N>` where N is computed from a
+    // The static has type `TrceRecord<N>` where N is computed from a
     // `const {}` block calling `trce_record_size`.
 
     // Generate unique static name to avoid collisions
@@ -308,7 +307,7 @@ fn trace_impl(input: TraceInput, newline: bool) -> TokenStream2 {
 
             #[unsafe(link_section = #section_lit)]
             #[used]
-            static #static_ident: ::emtrace::FormatInfo<__N> = {
+            static #static_ident: ::emtrace::TrceRecord<__N> = {
                 ::emtrace::__private::build_trce_record::<__N>(
                     __ARGS,
                     __FMT,
@@ -337,6 +336,8 @@ fn trace_impl(input: TraceInput, newline: bool) -> TokenStream2 {
             ::emtrace::__private::emit(__sink, __addr, __total, |__sink| {
                 #(#serialize_args)*
                 Ok(())
+            }, |__sink, __ptr| {
+                ::emtrace::Trace::serialize(&__ptr, __sink).expect("failed to serialize pointer");
             })
         }
     };
@@ -522,7 +523,7 @@ impl Parse for InitInput {
 
 /// Initialize the emtrace output by writing the MGIC pointer to the sink.
 ///
-/// Generates a `static MgicInfo<N>` in the `.emtrace` ELF section containing
+/// Generates a `static MgicRecord<N>` in the `.emtrace` ELF section containing
 /// the C-compatible MGIC record, then writes a `PointerT` (the shifted runtime
 /// address of that static) to the sink.  The Python parser reads the pointer
 /// from the stream and resolves the MGIC record via ASLR offset — exactly the
@@ -578,8 +579,8 @@ pub fn emtrace_init(input: TokenStream) -> TokenStream {
             // The parser scans this section to locate the MGIC record.
             #[unsafe(link_section = ".emtrace")]
             #[used]
-            static __EMTRACE_MGIC: ::emtrace::MgicInfo<__MGIC_N> =
-                ::emtrace::__private::build_mgic_record::<__MGIC_N>(__ENCODING);
+            static __EMTRACE_MGIC: ::emtrace::MgicRecord<__MGIC_N> =
+                ::emtrace::__private::build_mgic_record::<__MGIC_N, ::emtrace::PointerT>(__ENCODING);
 
             #sink_setup
             let __sink = #sink_ref_expr;

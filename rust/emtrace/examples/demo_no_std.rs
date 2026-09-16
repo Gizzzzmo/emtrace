@@ -27,8 +27,8 @@ impl Sink for StaticVec {
     }
     fn begin(
         &mut self,
-        _info_addr: emtrace::PointerT,
-        _total_size: emtrace::SizeT,
+        _info_addr: usize,
+        _total_size: usize,
     ) -> core::result::Result<(), Self::BeginError> {
         Ok(())
     }
