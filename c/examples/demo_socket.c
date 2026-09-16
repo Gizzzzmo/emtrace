@@ -16,13 +16,16 @@ static void begin(const void* info, size_t total_size, int connfd) {
     uintptr_t ptr = (uintptr_t) info;
     out(&ptr, sizeof(ptr), connfd);
 }
+#define SERIALIZE_POINTER(ptr, out_fn, connfd)                                                     \
+    uintptr_t ser_ptr = (uintptr_t) (ptr);                                                         \
+    out(&ser_ptr, sizeof(ser_ptr), connfd);
 
 #define DUMMY(x, y, z) ((void) 0)
 
 #define TRACEF(connfd, ...)                                                                        \
     EMT_TRACE_F(                                                                                   \
         __attribute__((used)) __attribute__((section(".emtrace"))) const, EMT_PY_FORMAT, uint16_t, \
-        out, begin, DUMMY, connfd, "", __VA_ARGS__                                                 \
+        out, SERIALIZE_POINTER, begin, DUMMY, connfd, "", __VA_ARGS__                              \
     )
 
 int main(void) {

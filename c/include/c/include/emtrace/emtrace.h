@@ -63,6 +63,9 @@ typedef struct {
 
 void emt_default_begin(const void* info, size_t total_size, void* extra_arg);
 void emt_default_out(const void* data, size_t size, void* extra_arg);
+void emt_default_serialize_pointer(
+    const void* ptr, void (*out)(const void* data, size_t size, void* extra_arg), void* extra_arg
+);
 void emt_default_finish(const void* info, size_t total_size, void* extra_arg);
 extern const emt_magic_t g_emt_default_magic;
 
@@ -252,7 +255,8 @@ static inline void emt_cobs_finalize(
 #endif
 
 #define EMT_TRACE_F(                                                                               \
-    fmt_info_attributes, formatter, length_type, out_fn, begin, finish, extra_arg, postfix, ...    \
+    fmt_info_attributes, formatter, length_type, out_fn, ptr_serializer, begin, finish, extra_arg, \
+    postfix, ...                                                                                   \
 )                                                                                                  \
     do {                                                                                           \
                                                                                                    \
@@ -289,6 +293,7 @@ static inline void emt_cobs_finalize(
             EMT_F_TOTAL_SIZE(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)),       \
             extra_arg                                                                              \
         );                                                                                         \
+        ptr_serializer(&emt_info_unlikely_to_shadow, out_fn, extra_arg);                           \
                                                                                                    \
         EMT_F(                                                                                     \
             out_fn, length_type, extra_arg, EMT_NUM_ARGS_REST(__VA_ARGS__),                        \
@@ -427,8 +432,14 @@ static inline void emt_cobs_finalize(
         emt_cobs_init(&state);                                                                     \
         EMT_FLOCK_FILE(info, total_size, (fp));                                                    \
         emt_out_file("", 1, (fp));                                                                 \
-        emt_ptr_t ptr = (emt_ptr_t) ((uintptr_t) info >> (alignment_power));                       \
-        emt_default_out((const void*) &ptr, sizeof(emt_ptr_t), extra_arg);                         \
+    }                                                                                              \
+    void emt_default_serialize_pointer(                                                            \
+        const void* ptr, void (*out)(const void* data, size_t size, void* extra_arg),              \
+        void* extra_arg                                                                            \
+    ) {                                                                                            \
+        (void) extra_arg;                                                                          \
+        emt_ptr_t serialized_ptr = (emt_ptr_t) ((uintptr_t) ptr >> (alignment_power));             \
+        out((const void*) &serialized_ptr, sizeof(emt_ptr_t), extra_arg);                          \
     }                                                                                              \
     void emt_default_out(const void* data, size_t total_size, void* extra_arg) {                   \
         (void) extra_arg; /* unused */                                                             \
@@ -448,8 +459,14 @@ static inline void emt_cobs_finalize(
         (void) extra_arg; /* unused */                                                             \
         emt_cobs_init(&state);                                                                     \
         EMT_FLOCK_FILE(info, total_size, (fp));                                                    \
-        emt_ptr_t ptr = (emt_ptr_t) ((uintptr_t) info >> (alignment_power));                       \
-        emt_default_out((const void*) &ptr, sizeof(emt_ptr_t), extra_arg);                         \
+    }                                                                                              \
+    void emt_default_serialize_pointer(                                                            \
+        const void* ptr, void (*out)(const void* data, size_t size, void* extra_arg),              \
+        void* extra_arg                                                                            \
+    ) {                                                                                            \
+        (void) extra_arg;                                                                          \
+        emt_ptr_t serialized_ptr = (emt_ptr_t) ((uintptr_t) ptr >> (alignment_power));             \
+        out((const void*) &serialized_ptr, sizeof(emt_ptr_t), extra_arg);                          \
     }                                                                                              \
     void emt_default_out(const void* data, size_t total_size, void* extra_arg) {                   \
         (void) extra_arg; /* unused */                                                             \
@@ -469,6 +486,14 @@ static inline void emt_cobs_finalize(
         EMT_FLOCK_FILE(info, total_size, (fp));                                                    \
         emt_ptr_t ptr = (emt_ptr_t) ((uintptr_t) info >> (alignment_power));                       \
         emt_default_out((const void*) &ptr, sizeof(emt_ptr_t), extra_arg);                         \
+    }                                                                                              \
+    void emt_default_serialize_pointer(                                                            \
+        const void* ptr, void (*out)(const void* data, size_t size, void* extra_arg),              \
+        void* extra_arg                                                                            \
+    ) {                                                                                            \
+        (void) extra_arg;                                                                          \
+        emt_ptr_t serialized_ptr = (emt_ptr_t) ((uintptr_t) ptr >> (alignment_power));             \
+        out((const void*) &serialized_ptr, sizeof(emt_ptr_t), extra_arg);                          \
     }                                                                                              \
     void emt_default_out(const void* data, size_t total_size, void* extra_arg) {                   \
         (void) extra_arg; /* unused */                                                             \
@@ -490,23 +515,25 @@ static inline void emt_cobs_finalize(
 #define EMTRACE_F(...)                                                                             \
     EMT_TRACE_F(                                                                                   \
         EMT_DEFAULT_SEC_ATTR, EMT_PY_FORMAT, EMT_DEFAULT_LENGTH_TYPE, emt_default_out,             \
-        emt_default_begin, emt_default_finish, stdout, "", __VA_ARGS__                             \
+        emt_default_serialize_pointer, emt_default_begin, emt_default_finish, NULL, "",            \
+        __VA_ARGS__                                                                                \
     )
 #define EMTRACE(str)                                                                               \
     EMT_TRACE_F(                                                                                   \
         EMT_DEFAULT_SEC_ATTR, EMT_NO_FORMAT, EMT_DEFAULT_LENGTH_TYPE, emt_default_out,             \
-        emt_default_begin, emt_default_finish, stdout, "", str                                     \
+        emt_default_serialize_pointer, emt_default_begin, emt_default_finish, NULL, "", str        \
     )
 
 #define EMTRACELN_F(...)                                                                           \
     EMT_TRACE_F(                                                                                   \
         EMT_DEFAULT_SEC_ATTR, EMT_PY_FORMAT, EMT_DEFAULT_LENGTH_TYPE, emt_default_out,             \
-        emt_default_begin, emt_default_finish, stdout, "\n", __VA_ARGS__                           \
+        emt_default_serialize_pointer, emt_default_begin, emt_default_finish, NULL, "\n",          \
+        __VA_ARGS__                                                                                \
     )
 #define EMTRACELN(str)                                                                             \
     EMT_TRACE_F(                                                                                   \
         EMT_DEFAULT_SEC_ATTR, EMT_NO_FORMAT, EMT_DEFAULT_LENGTH_TYPE, emt_default_out,             \
-        emt_default_begin, emt_default_finish, stdout, "", str "\n"                                \
+        emt_default_serialize_pointer, emt_default_begin, emt_default_finish, NULL, "", str "\n"   \
     )
 
 #define EMTRACE_MAGIC(emt_ptr_t)                                                                   \
