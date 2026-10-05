@@ -62,7 +62,7 @@ In hexadecimal the magic string is:
 It must lie at the beginning of the magic record's payload.
 
 The metadata is structured as follows: Immediately after the magic string there
-are seven more single-byte integers:
+are six more single-byte integers:
 
 - The first two contain a single version number in little-endian format.
 - The third is an offset pointer relative to the start of the record, pointing
@@ -134,11 +134,16 @@ At runtime, each time a trace point fires it writes:
    `aslr_offset` is the difference between the section offset of the `MGIC`
    record and the runtime address of `MGIC` reported in the initialization step.
 2. For each argument, the raw bytes of the argument value:
-   - For `EMT_FLAG_STATIC` arguments: exactly `size` bytes.
+   - For `EMT_FLAG_STATIC` scalar arguments: exactly `size` bytes.
+   - For `EMT_FLAG_STATIC` list arguments: the concatenation of the streams of
+     `size` elements, where each element is encoded as described by the type's
+     child (i.e. `size` is an element count, not a byte count).
    - For `EMT_FLAG_NULL_TERMINATED` arguments: bytes up to and including the
      terminating `\0`.
-   - For `EMT_FLAG_LENGTH_PREFIXED` arguments: an `emt_size_t` element count
-     followed by `count × child_size` bytes of element data.
+   - For `EMT_FLAG_LENGTH_PREFIXED` arguments: an element count, whose
+     byte-width is given by the type's `size` field, followed by the
+     concatenation of the streams of that many elements (for static,
+     fixed-size elements this is `count × child_size` bytes).
 
 Before the first trace record the program writes the runtime address of the
 `MGIC` record (also as an `emt_ptr_t`) so the parser can determine the ASLR

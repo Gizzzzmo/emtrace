@@ -34,7 +34,7 @@ fn main() {
     let arr = ["An", "array", "of", "&str"];
     traceln!("{}", [&str; 4]: arr);
 
-    let v = vec!["A", "vector", "of", "String"]
+    let v = ["A", "vector", "of", "String"]
         .iter()
         .map(|s| String::from_str(s).unwrap())
         .collect();

@@ -20,7 +20,6 @@ PARSER_VERSION = 0
 _KNOWN_RECORD_TYPES_V0: frozenset[bytes] = frozenset([b"MGIC", b"TRCE"])
 
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -47,6 +46,45 @@ def _load_section(
 _VALID_ENCODING_IDS = {0, 1, 2}
 _VALID_FLAG_VALUES = {0, 1, 2}
 _VALID_FORMATTER_IDS = {0, 1, 2}
+
+
+def _check_framing_non_overlap(
+    data: bytes,
+    offset: int,
+    mgic: MgicInfo,
+    *,
+    errors: list[str],
+) -> None:
+    """Check that the three pointed-to pieces of a record do not overlap each
+    other or the six-byte framing header (see TRACE_FORMAT.md)."""
+    sz = mgic.size_t_size
+    type_start = offset + int(data[offset + 3])
+    size_start = offset + int(data[offset + 4])
+    payload_start = offset + int(data[offset + 5])
+
+    framing_end = offset + 6
+    for name, start in (
+        ("type", type_start),
+        ("record_size", size_start),
+        ("payload", payload_start),
+    ):
+        if start < framing_end:
+            errors.append(
+                f"Record at offset {offset}: {name} piece starts at {start}, "
+                f"inside the 6-byte framing header."
+            )
+
+    type_end = type_start + 4
+    size_end = size_start + sz
+    if type_start < size_end and size_start < type_end:
+        errors.append(
+            f"Record at offset {offset}: type and record_size pieces overlap."
+        )
+    if type_start <= payload_start < type_end or size_start <= payload_start < size_end:
+        errors.append(
+            f"Record at offset {offset}: payload piece overlaps the type or "
+            f"record_size piece."
+        )
 
 
 def _check(
@@ -115,6 +153,8 @@ def _check(
             i += rec_size
             continue
 
+        _check_framing_non_overlap(data, i, mgic, errors=errors)
+
         if rec_type == b"MGIC":
             found_mgic = True
             _check_mgic_record(data, i, mgic, warnings=warnings, errors=errors)
@@ -165,7 +205,7 @@ def _check_mgic_record(
             f"(expected one of {sorted(_VALID_ENCODING_IDS)})."
         )
 
-    # sizeof(emt_size_t) and sizeof(emt_ptr_t) must be > 0.
+    # sizeof(emt_ptr_t) must be > 0.
     emt_ptr = int(data[magic_off + 36])
     if emt_ptr == 0:
         errors.append(f"MGIC record at {offset}: sizeof(emt_ptr_t) is 0.")
@@ -193,6 +233,13 @@ def _check_trce_record(
     rec_size = _sz_at(offset + rec_size_offset)
     rec_end = offset + rec_size
 
+    def _string_ok(abs_pos: int, what: str, label: str) -> None:
+        if abs_pos >= rec_end or b"\x00" not in data[abs_pos:rec_end]:
+            errors.append(
+                f"TRCE record at {offset}, {label}: {what} does not point to a "
+                f"null-terminated string within the record."
+            )
+
     payload_start = offset + payload_offset
     if payload_start + 2 * sz > rec_end:
         errors.append(
@@ -207,19 +254,12 @@ def _check_trce_record(
     pos += sz
 
     # Validate format string offset.
-    fmt_abs = offset + fmt_offset
-    if fmt_abs >= rec_end:
-        errors.append(
-            f"TRCE record at {offset}: fmt_offset={fmt_offset} points outside record."
-        )
-        return
-    if b"\x00" not in data[fmt_abs:rec_end]:
-        errors.append(
-            f"TRCE record at {offset}: format string at offset {fmt_offset} is not null-terminated within the record."
-        )
-        return
+    _string_ok(offset + fmt_offset, f"fmt_offset={fmt_offset}", "payload")
 
-    # Validate each argument descriptor.
+    # Validate each argument descriptor and its children.
+    # Children are serialized in pre-order: each 5-entry child block
+    # [name_offset, type_id_offset, size, flag, num_children] is followed
+    # immediately by the blocks of its own children, and so on.
     for arg_idx in range(num_args):
         if pos + 4 * sz > rec_end:
             errors.append(
@@ -237,12 +277,11 @@ def _check_trce_record(
         pos += sz
 
         # Validate type_id string.
-        type_id_abs = offset + type_id_offset
-        if type_id_abs >= rec_end or b"\x00" not in data[type_id_abs:rec_end]:
-            errors.append(
-                f"TRCE record at {offset}, arg {arg_idx}: type_id_offset={type_id_offset} "
-                f"does not point to a null-terminated string within the record."
-            )
+        _string_ok(
+            offset + type_id_offset,
+            f"type_id_offset={type_id_offset}",
+            f"arg {arg_idx}",
+        )
 
         if flag not in _VALID_FLAG_VALUES:
             errors.append(
@@ -250,45 +289,51 @@ def _check_trce_record(
                 f"(expected one of {sorted(_VALID_FLAG_VALUES)})."
             )
 
-        # Validate child descriptors.
-        for child_idx in range(num_children):
-            if pos + 4 * sz > rec_end:
+        # Validate child descriptors, mirroring the parser's pre-order walk.
+        stack: list[tuple[str, int]] = [(f"arg {arg_idx}", num_children)]
+        while stack:
+            parent_label, remaining = stack[-1]
+            if remaining == 0:
+                _ = stack.pop()
+                continue
+            if pos + 5 * sz > rec_end:
                 errors.append(
-                    f"TRCE record at {offset}, arg {arg_idx}, child {child_idx}: "
-                    f"descriptor extends past record end."
+                    f"TRCE record at {offset}, {parent_label}: child descriptor "
+                    f"extends past record end."
                 )
                 return
 
             child_name_offset = _sz_at(pos)
             pos += sz
+            child_type_id_offset = _sz_at(pos)
+            pos += sz
             _child_size = _sz_at(pos)
             pos += sz
             child_flag = _sz_at(pos)
             pos += sz
-            child_type_id_offset = _sz_at(pos)
+            child_num_children = _sz_at(pos)
             pos += sz
 
-            child_name_abs = offset + child_name_offset
-            if child_name_abs >= rec_end or b"\x00" not in data[child_name_abs:rec_end]:
-                errors.append(
-                    f"TRCE record at {offset}, arg {arg_idx}, child {child_idx}: "
-                    f"child_name_offset={child_name_offset} does not point to a null-terminated "
-                    f"string within the record."
-                )
-
-            child_type_abs = offset + child_type_id_offset
-            if child_type_abs >= rec_end or b"\x00" not in data[child_type_abs:rec_end]:
-                errors.append(
-                    f"TRCE record at {offset}, arg {arg_idx}, child {child_idx}: "
-                    f"child_type_id_offset={child_type_id_offset} does not point to a "
-                    f"null-terminated string within the record."
-                )
+            _string_ok(
+                offset + child_name_offset,
+                f"child_name_offset={child_name_offset}",
+                parent_label,
+            )
+            _string_ok(
+                offset + child_type_id_offset,
+                f"child_type_id_offset={child_type_id_offset}",
+                parent_label,
+            )
 
             if child_flag not in _VALID_FLAG_VALUES:
                 errors.append(
-                    f"TRCE record at {offset}, arg {arg_idx}, child {child_idx}: "
+                    f"TRCE record at {offset}, {parent_label}: "
                     f"invalid child_flag={child_flag}."
                 )
+
+            stack[-1] = (parent_label, remaining - 1)
+            if child_num_children > 0:
+                stack.append((f"{parent_label}, child", child_num_children))
 
     # Validate trailing layout entries: formatter_id, file_offset, line.
     if pos + 3 * sz > rec_end:
@@ -333,7 +378,10 @@ def cmd_check(args: Any) -> int:
 
     mgic = RecordParser(memoryview(data)).find_and_parse_mgic()
     if mgic is None:
-        print("[error] Failed to find or parse MGIC record in section data.", file=sys.stderr)
+        print(
+            "[error] Failed to find or parse MGIC record in section data.",
+            file=sys.stderr,
+        )
         return 1
 
     warnings: list[str] = []
@@ -393,7 +441,10 @@ def cmd_dump(args: Any) -> int:
     record_parser = RecordParser(memoryview(data), debug_trace=trace)
     mgic = record_parser.find_and_parse_mgic()
     if mgic is None:
-        print("[error] Failed to find or parse MGIC record in section data.", file=sys.stderr)
+        print(
+            "[error] Failed to find or parse MGIC record in section data.",
+            file=sys.stderr,
+        )
         return 1
 
     fmt_infos = record_parser.parse_all_trace_records()

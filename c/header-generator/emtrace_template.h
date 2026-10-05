@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /// MGIC record: 'EMT' prefix (3) + offset bytes (3) + 'MGIC' type (4).
-/// Followed by record_size (size_t), then meta[39], then padding, then size_t_meta[2].
+/// Followed by record_size (size_t), then meta[38], then size_t_meta[2].
 ///
 /// Byte layout of framing[10]:
 ///   [0..2]  = 'E', 'M', 'T'
@@ -35,7 +35,7 @@ extern "C" {
 ///   [5]     = offset from record start to payload      = 10 + sizeof(size_t)
 ///   [6..9]  = 'M', 'G', 'I', 'C'
 ///
-/// Byte layout of meta[39]:
+/// Byte layout of meta[38]:
 ///   [0..31] = 32-byte magic constant
 ///   [32]    = version number low byte  (= 0)
 ///   [33]    = version number high byte (= 0)
@@ -51,7 +51,7 @@ typedef struct {
     uint8_t framing[10];   ///< 'E','M','T' + 3 offset bytes + 'M','G','I','C'
     size_t record_size;    ///< total size of this record in bytes
     uint8_t meta[38];      ///< magic(32) + version(2) + size_t_meta_offset(1) + sizeof_size_t(1) +
-                           ///<   sizeof_emt_size_t(1) + sizeof_emt_ptr_t(1) + alignment_power(1)
+                           ///<   sizeof_emt_ptr_t(1) + alignment_power(1)
     size_t size_t_meta[2]; ///< byteorder_id, encoding_id
 } emt_magic_t;
 
@@ -476,10 +476,10 @@ static inline void emt_cobs_finalize(
     attrs emt_magic_t g_emt_default_magic =                                                        \
         EMT_MAGIC(EMT_ENCODING_NONE, emt_ptr_t, alignment_power);                                  \
     void emt_default_begin(const void* info, size_t total_size, void* extra_arg) {                 \
+        (void) info;                                                                               \
+        (void) total_size;                                                                         \
         (void) extra_arg; /* unused */                                                             \
         EMT_FLOCK_FILE(info, total_size, (fp));                                                    \
-        emt_ptr_t ptr = (emt_ptr_t) ((uintptr_t) info >> (alignment_power));                       \
-        emt_default_out((const void*) &ptr, sizeof(emt_ptr_t), extra_arg);                         \
     }                                                                                              \
     void emt_default_serialize_pointer(                                                            \
         const void* ptr, void (*out)(const void* data, size_t size, void* extra_arg),              \
@@ -494,13 +494,16 @@ static inline void emt_cobs_finalize(
         emt_out_file(data, total_size, (fp));                                                      \
     }                                                                                              \
     void emt_default_finish(const void* info, size_t total_size, void* extra_arg) {                \
+        (void) info;                                                                               \
+        (void) total_size;                                                                         \
         (void) extra_arg; /* unused */                                                             \
         EMT_FUNLOCK_FILE(info, total_size, (fp));                                                  \
     }
 
-#define EMT_INIT(magic_ptr, begin, finish, extra_arg)                                              \
+#define EMT_INIT(magic_ptr, serialize_ptr, out_fn, begin, finish, extra_arg)                       \
     do {                                                                                           \
         begin((const void*) (magic_ptr), sizeof(emt_magic_t), extra_arg);                          \
+        serialize_ptr((const void*) (magic_ptr), out_fn, extra_arg);                               \
         finish((const void*) (magic_ptr), sizeof(emt_magic_t), extra_arg);                         \
     } while (0)
 
@@ -540,7 +543,10 @@ static inline void emt_cobs_finalize(
     EMT_FILE_COBS_PASSTHROUGH(EMT_DEFAULT_SEC_ATTR, emt_ptr_t, EMT_DEFAULT_ALIGNMENT_POWER, stdout)
 
 static inline void emtrace_init(void) {
-    EMT_INIT(&g_emt_default_magic, emt_default_begin, emt_default_finish, stdout);
+    EMT_INIT(
+        &g_emt_default_magic, emt_default_serialize_pointer, emt_default_out, emt_default_begin,
+        emt_default_finish, stdout
+    );
 }
 
 #endif // EMT_DEFAULT_SEC_ATTR

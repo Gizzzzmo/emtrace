@@ -65,8 +65,8 @@ def build_mgic_record(
     sz = size_t_size
 
     # Header offsets (all relative to record start).
-    type_offset = 6       # b"MGIC" at byte 6
-    size_offset = 10      # record_size (size_t) at byte 10
+    type_offset = 6  # b"MGIC" at byte 6
+    size_offset = 10  # record_size (size_t) at byte 10
     payload_offset = 10 + sz  # magic constant starts immediately after record_size
 
     # size_t_meta lives right after the 6 single-byte metadata fields that
@@ -113,12 +113,18 @@ def build_mgic_record(
     return bytes(prefix) + bytes(record)
 
 
+# Child type descriptor: (name, type_id, size, flag, grandchildren).
+# *grandchildren* is again a list of children, allowing arbitrarily deep
+# nesting (pre-order serialization as described in TRACE_FORMAT.md).
+Child = tuple[str, str, int, int, list["Child"]]
+
+
 def build_trce_record(
     fmt_string: str = "hello",
     formatter_id: int = 0,
     file: str = "test.c",
     line: int = 42,
-    args: list[tuple[str, int, int, list[tuple[str, int, int, str]]]] | None = None,
+    args: list[tuple[str, int, int, list[Child]]] | None = None,
     size_t_size: int = 8,
     byteorder: Literal["little", "big"] = "little",
     prefix: bytes = b"",
@@ -126,7 +132,7 @@ def build_trce_record(
     """Build a minimal, spec-correct TRCE record.
 
     *args* is a list of ``(type_id, size, flag, children)`` tuples where each
-    child is ``(child_name, child_size, child_flag, child_type_id)``.
+    child is ``(name, type_id, size, flag, grandchildren)``.
 
     Returns the complete byte sequence.  The record itself always starts at
     ``len(prefix)``.
@@ -139,19 +145,19 @@ def build_trce_record(
     def pack(v: int) -> bytes:
         return _pack_size_t(v, sz, byteorder)
 
-    # ── Step 1: build the layout array (size_t values only) ──────────────────
-    # We need to know string offsets, but those depend on the layout size.
-    # So first count layout entries, then compute string section, then fill.
-
+    # ── Step 1: count layout entries ──────────────────────────────────────────
     # Header: num_args, fmt_offset  (2 entries)
     # Per arg: type_id_offset, size, flag, num_children  (4 entries)
-    # Per child of arg: name_offset, child_size, child_flag, type_id_offset (4 entries)
+    # Per child (pre-order): name, type_id, size, flag, num_children (5 entries)
     # Trailer: formatter_id, file_offset, line  (3 entries)
+
+    def subtree_entries(children: list[Child]) -> int:
+        return sum(5 + subtree_entries(child[4]) for child in children)
 
     num_layout_entries = 2  # num_args, fmt_offset
     for _, _, _, children in args:
         num_layout_entries += 4  # arg descriptor
-        num_layout_entries += 4 * len(children)  # child descriptors
+        num_layout_entries += subtree_entries(children)  # child descriptors
     num_layout_entries += 3  # formatter_id, file_offset, line
 
     # Header offsets (relative to record start).
@@ -173,18 +179,21 @@ def build_trce_record(
 
     fmt_offset = add_string(fmt_string)
 
-    # Collect (type_id_offset, children_offsets) per arg in order.
+    # Collect string offsets for all child descriptors, in pre-order (the same
+    # order in which the child blocks are emitted below).
     arg_type_id_offsets: list[int] = []
-    arg_children_offsets: list[list[tuple[int, int]]] = []  # [(name_off, type_id_off), ...]
+    child_string_offsets: list[tuple[int, int]] = []  # [(name_off, type_id_off), ...]
+
+    def collect_child_strings(children: list[Child]) -> None:
+        for name, child_type_id, _, _, grandchildren in children:
+            name_off = add_string(name)
+            tid_off = add_string(child_type_id)
+            child_string_offsets.append((name_off, tid_off))
+            collect_child_strings(grandchildren)
 
     for type_id, _, _, children in args:
         arg_type_id_offsets.append(add_string(type_id))
-        child_offsets: list[tuple[int, int]] = []
-        for child_name, _, _, child_type_id in children:
-            name_off = add_string(child_name)
-            tid_off = add_string(child_type_id)
-            child_offsets.append((name_off, tid_off))
-        arg_children_offsets.append(child_offsets)
+        collect_child_strings(children)
 
     file_offset = add_string(file)
 
@@ -194,24 +203,31 @@ def build_trce_record(
     def append_size_t(v: int) -> None:
         layout.extend(pack(v))
 
-    append_size_t(len(args))   # num_args
+    child_offsets_iter = iter(child_string_offsets)
+
+    def emit_children(children: list[Child]) -> None:
+        for _, _, child_size, child_flag, grandchildren in children:
+            name_off, tid_off = next(child_offsets_iter)
+            append_size_t(name_off)  # name_offset
+            append_size_t(tid_off)  # type_id_offset
+            append_size_t(child_size)  # size
+            append_size_t(child_flag)  # flag
+            append_size_t(len(grandchildren))  # num_children
+            emit_children(grandchildren)
+
+    append_size_t(len(args))  # num_args
     append_size_t(fmt_offset)  # fmt_offset
 
     for i, (_, arg_size, arg_flag, children) in enumerate(args):
         append_size_t(arg_type_id_offsets[i])  # type_id_offset
-        append_size_t(arg_size)                 # size
-        append_size_t(arg_flag)                 # flag
-        append_size_t(len(children))            # num_children
-        for j, (_, child_size, child_flag, _) in enumerate(children):
-            name_off, tid_off = arg_children_offsets[i][j]
-            append_size_t(name_off)    # name_offset
-            append_size_t(child_size)  # child_size
-            append_size_t(child_flag)  # child_flag
-            append_size_t(tid_off)     # type_id_offset
+        append_size_t(arg_size)  # size
+        append_size_t(arg_flag)  # flag
+        append_size_t(len(children))  # num_children
+        emit_children(children)
 
     append_size_t(formatter_id)  # formatter_id
-    append_size_t(file_offset)   # file_offset
-    append_size_t(line)          # line
+    append_size_t(file_offset)  # file_offset
+    append_size_t(line)  # line
 
     assert len(layout) == layout_bytes
 
@@ -560,14 +576,14 @@ def test_find_and_parse_mgic_no_magic():
 def test_find_and_parse_mgic_magic_without_framing():
     """Magic constant present in data but not preceded by a valid EMT header."""
     # Just the raw magic bytes with no EMT framing anywhere before them.
-    data = b"\xAA" * 10 + _MAGIC_CONSTANT + b"\x00" * 20
+    data = b"\xaa" * 10 + _MAGIC_CONSTANT + b"\x00" * 20
     parser = RecordParser(memoryview(data))
     assert parser.find_and_parse_mgic() is None
 
 
 def test_find_and_parse_mgic_with_leading_garbage():
     """find_and_parse_mgic works when garbage bytes precede the MGIC record."""
-    prefix = b"\xDE\xAD\xBE\xEF" * 8  # 32 bytes of garbage
+    prefix = b"\xde\xad\xbe\xef" * 8  # 32 bytes of garbage
     data = build_mgic_record(size_t_size=8, byteorder="little", prefix=prefix)
     parser = RecordParser(memoryview(data))
     mgic = parser.find_and_parse_mgic()
@@ -582,7 +598,9 @@ def test_find_and_parse_mgic_with_leading_garbage():
 
 
 def test_parse_trace_payload_no_args():
-    data = build_trce_record(fmt_string="hello world", formatter_id=0, file="src/a.c", line=10)
+    data = build_trce_record(
+        fmt_string="hello world", formatter_id=0, file="src/a.c", line=10
+    )
     parser = make_parser(data)
     info = parser.parse_trace_payload(0, 10 + 8)
     assert info.fmt_string == "hello world"
@@ -630,8 +648,8 @@ def test_parse_trace_payload_length_prefixed_arg():
 
 def test_parse_trace_payload_compound_arg_with_children():
     children = [
-        ("x", 4, 0, "float"),
-        ("y", 4, 0, "float"),
+        ("x", "float", 4, 0, []),
+        ("y", "float", 4, 0, []),
     ]
     data = build_trce_record(
         fmt_string="{0}",
@@ -644,6 +662,136 @@ def test_parse_trace_payload_compound_arg_with_children():
     assert type_info.children["x"][0] == "float"
     assert type_info.children["x"][1].size == Size(kind="fixed", size=4)
     assert type_info.children["y"][0] == "float"
+
+
+def test_parse_trace_payload_nested_list_two_levels():
+    # list of list of int: outer list -> inner list -> int leaf.
+    args = [("list", 2, 0, [("", "list", 2, 0, [("", "int", 4, 0, [])])])]
+    data = build_trce_record(fmt_string="{0}", args=args)
+    parser = make_parser(data)
+    info = parser.parse_trace_payload(0, 10 + 8, record_end=len(data))
+    _, outer = info.type_infos[0]
+    assert outer.size == Size(kind="fixed", size=2)
+    inner_id, inner = outer.children[""]
+    assert inner_id == "list"
+    assert inner.size == Size(kind="fixed", size=2)
+    leaf_id, leaf = inner.children[""]
+    assert leaf_id == "int"
+    assert leaf.size == Size(kind="fixed", size=4)
+    assert leaf.children == {}
+
+
+def test_parse_trace_payload_nested_list_three_levels():
+    # list of list of list of int16_t.
+    args = [
+        (
+            "list",
+            2,
+            0,
+            [("", "list", 2, 0, [("", "list", 2, 0, [("", "int16_t", 2, 0, [])])])],
+        )
+    ]
+    data = build_trce_record(fmt_string="{0}", args=args)
+    parser = make_parser(data)
+    info = parser.parse_trace_payload(0, 10 + 8, record_end=len(data))
+    _, l1 = info.type_infos[0]
+    l2_id, l2 = l1.children[""]
+    l3_id, l3 = l2.children[""]
+    leaf_id, leaf = l3.children[""]
+    assert (l2_id, l3_id, leaf_id) == ("list", "list", "int16_t")
+    assert leaf.size == Size(kind="fixed", size=2)
+    assert leaf.children == {}
+
+
+def test_parse_trace_payload_nested_arg_then_sibling():
+    # A nested subtree must be fully consumed in pre-order before the next
+    # top-level argument's descriptor is read.
+    args = [
+        ("list", 2, 0, [("", "list", 2, 0, [("", "int", 4, 0, [])])]),
+        ("double", 8, 0, []),
+    ]
+    data = build_trce_record(
+        fmt_string="{0} {1}", formatter_id=2, file="nested.c", line=7, args=args
+    )
+    parser = make_parser(data)
+    info = parser.parse_trace_payload(0, 10 + 8, record_end=len(data))
+    assert len(info.type_infos) == 2
+    arg0_id, arg0 = info.type_infos[0]
+    assert arg0_id == "list"
+    inner_id, inner = arg0.children[""]
+    assert inner_id == "list"
+    assert inner.children[""][0] == "int"
+    arg1_id, arg1 = info.type_infos[1]
+    assert arg1_id == "double"
+    assert arg1.size == Size(kind="fixed", size=8)
+    assert arg1.children == {}
+    assert info.formatter == 2
+    assert info.file == "nested.c"
+    assert info.line == 7
+
+
+def test_parse_trace_payload_wide_and_deep():
+    # One parent with two children; the first child has two grandchildren.
+    args = [
+        (
+            "struct",
+            12,
+            0,
+            [
+                ("i", "int", 4, 0, [("", "list", 2, 0, [("", "int", 4, 0, [])])]),
+                ("d", "double", 8, 0, []),
+            ],
+        )
+    ]
+    data = build_trce_record(fmt_string="{0}", args=args)
+    parser = make_parser(data)
+    info = parser.parse_trace_payload(0, 10 + 8, record_end=len(data))
+    _, parent = info.type_infos[0]
+    assert set(parent.children.keys()) == {"i", "d"}
+    i_id, i = parent.children["i"]
+    d_id, d = parent.children["d"]
+    assert i_id == "int"
+    assert d_id == "double"
+    assert d.children == {}
+    list_id, list_info = i.children[""]
+    assert list_id == "list"
+    assert list_info.children[""][0] == "int"
+
+
+def test_parse_trace_payload_nested_4byte_size_t_big_endian():
+    args = [("list", 2, 0, [("", "list", 2, 0, [("", "uint16_t", 2, 0, [])])])]
+    data = build_trce_record(
+        fmt_string="{0}",
+        args=args,
+        size_t_size=4,
+        byteorder="big",
+    )
+    parser = make_parser(data, size_t_size=4, byteorder="big")
+    info = parser.parse_trace_payload(0, 10 + 4, record_end=len(data))
+    _, l1 = info.type_infos[0]
+    _, l2 = l1.children[""]
+    assert l2.children[""][0] == "uint16_t"
+
+
+def test_parse_trace_payload_overlong_consumption_rejected():
+    # A num_children count that would consume more entries than the record
+    # contains must be rejected instead of silently mis-parsing.
+    data = bytearray(
+        build_trce_record(
+            fmt_string="{0}", args=[("list", 2, 0, [("", "int", 4, 0, [])])]
+        )
+    )
+    sz = 8
+    payload_offset = 10 + sz
+    # The child descriptor starts after the 2 header entries and the 4-entry
+    # arg descriptor; its num_children is the 5th of its 5 size_t values.
+    child_desc_start = payload_offset + 2 * sz + 4 * sz
+    data[child_desc_start + 4 * sz : child_desc_start + 5 * sz] = _pack_size_t(
+        1 << 40, sz, "little"
+    )
+    parser = make_parser(bytes(data))
+    with pytest.raises(AssertionError):
+        parser.parse_trace_record(0)
 
 
 def test_parse_trace_payload_multiple_args():
@@ -759,7 +907,7 @@ def test_parse_all_trace_records_mgic_skipped():
 def test_parse_all_trace_records_garbage_between():
     """Garbage bytes between records are skipped; both TRCE records are found."""
     r1 = build_trce_record(fmt_string="first")
-    garbage = b"\xDE\xAD\xBE\xEF" * 4
+    garbage = b"\xde\xad\xbe\xef" * 4
     r2 = build_trce_record(fmt_string="second")
     data = r1 + garbage + r2
     parser = make_parser(data)

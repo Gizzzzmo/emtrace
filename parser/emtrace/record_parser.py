@@ -51,7 +51,9 @@ class MgicInfo:
     """Parsed contents of a MGIC record."""
 
     record_start: int
-    magic_offset: int  # absolute offset of the 32-byte magic constant within the section data
+    magic_offset: (
+        int  # absolute offset of the 32-byte magic constant within the section data
+    )
     version: int
     size_t_size: int
     ptr_size: int
@@ -147,15 +149,27 @@ class RecordParser:
         if record_type != b"TRCE":
             return None, record_end
 
-        return self.parse_trace_payload(offset, payload_start), record_end
+        return self.parse_trace_payload(offset, payload_start, record_end), record_end
 
-    def parse_trace_payload(self, offset: int, payload_offset: int) -> FmtInfo:
-        """Parse a TRCE record payload from the data starting at *offset* (record start)."""
+    def parse_trace_payload(
+        self, offset: int, payload_offset: int, record_end: int | None = None
+    ) -> FmtInfo:
+        """Parse a TRCE record payload from the data starting at *offset* (record start).
+
+        If *record_end* is given, all layout consumption is bounds-checked against it
+        (layout entries must not extend past the end of the record).
+        """
         pos = payload_offset
         self.debug_trace(f"  record starts at {offset}, payload starts at {pos}")
 
+        limit = len(self.data) if record_end is None else record_end
+
         def consume(n: int) -> memoryview:
             nonlocal pos
+            assert pos + n <= limit, (
+                f"TRCE record at {offset}: layout consumption at {pos} + {n} extends "
+                f"past the record end at {limit}."
+            )
             s = self.data[pos : pos + n]
             pos += n
             return s
@@ -164,13 +178,20 @@ class RecordParser:
             return int.from_bytes(consume(self.size_t_size), byteorder=self.byteorder)
 
         def get_string_at(str_pos: int, delimiter: bytes = b"\x00") -> str:
-            s = self.data[str_pos : str_pos + len(delimiter)].tobytes()
             start = str_pos
+            s = self.data[str_pos : str_pos + len(delimiter)].tobytes()
             while s != delimiter and len(s) == len(delimiter):
-                s = self.data[str_pos : str_pos + len(delimiter)].tobytes()
                 str_pos += 1
-
-            return str(self.data[start : str_pos - len(delimiter)], "utf-8")
+                s = self.data[str_pos : str_pos + len(delimiter)].tobytes()
+            assert s == delimiter and len(s) == len(delimiter), (
+                f"String at {start} is not terminated by {delimiter!r} before end of data."
+            )
+            try:
+                return str(self.data[start:str_pos], "utf-8")
+            except UnicodeDecodeError as e:
+                raise AssertionError(
+                    f"String at {start} is not valid UTF-8: {e}"
+                ) from e
 
         num_args = consume_size_t()
         self.debug_trace(f"  {num_args=}")
@@ -182,7 +203,8 @@ class RecordParser:
         type_infos: list[tuple[str, TypeInfo]] = []
         for i in range(num_args):
             self.debug_trace(f"  {i + 1}:")
-            # Each layout entry: [type_id_offset, size, flag, num_children] (4 size_t values)
+            # Top-level type entry: [type_id_offset, size, flag, num_children]
+            # (4 size_t values; top-level types have no parent, hence no name pointer).
             offset_type_desc = consume_size_t()
             self.debug_trace(f"    {offset_type_desc=}")
             type_id = get_string_at(offset + offset_type_desc)
@@ -195,6 +217,11 @@ class RecordParser:
             num_children = consume_size_t()
             self.debug_trace(f"    {num_children=}")
 
+            # Children are serialized in pre-order: a child entry is followed
+            # immediately by the entries of its own children, and so on.  The
+            # stack holds one (parent, remaining-count) pair per open subtree.
+            # Child entry: [name_offset, type_id_offset, size, flag, num_children]
+            # (5 size_t values; children have a parent, hence the name pointer).
             if num_children > 0:
                 stack: tuple[list[TypeInfo], list[int]] = [type_info], [num_children]
             else:
@@ -204,18 +231,17 @@ class RecordParser:
                 assert len(stack[0]) == len(stack[1])
                 assert stack[1][-1] > 0
                 self.debug_trace(f"      {stack[1]=}")
-                # Child layout entry: [name_offset, size, flag, type_id_offset] (4 size_t values)
                 child_offset_name = consume_size_t()
+                child_offset_type_id = consume_size_t()
                 child_raw_size = consume_size_t()
                 child_raw_flag = consume_size_t()
-                child_offset_type_id = consume_size_t()
+                child_num_children = consume_size_t()
                 child_name = get_string_at(offset + child_offset_name)
                 child_type_id = get_string_at(offset + child_offset_type_id)
                 child_size = self._size_from_flag(child_raw_size, child_raw_flag)
-                child_num_children = (
-                    0  # children of children not supported in current format
+                self.debug_trace(
+                    f"      {child_name=} {child_type_id=} {child_size=} {child_num_children=}"
                 )
-                self.debug_trace(f"      {child_name=} {child_type_id=} {child_size=}")
                 child_type_info = TypeInfo(child_size)
 
                 stack[0][-1].children[child_name] = (child_type_id, child_type_info)
@@ -280,13 +306,13 @@ class RecordParser:
         Raises ``AssertionError`` on malformed data.
         """
         magic_offset = payload_offset
-        assert (
-            magic_offset + 32 + 7 <= len(self.data)
-        ), f"MGIC payload at {magic_offset} truncated: need {32 + 7} bytes, only {len(self.data) - magic_offset} available."
-
-        assert self.data[magic_offset : magic_offset + 32].tobytes() == _MAGIC_CONSTANT, (
-            f"Magic constant mismatch at offset {magic_offset}."
+        assert magic_offset + 32 + 7 <= len(self.data), (
+            f"MGIC payload at {magic_offset} truncated: need {32 + 7} bytes, only {len(self.data) - magic_offset} available."
         )
+
+        assert (
+            self.data[magic_offset : magic_offset + 32].tobytes() == _MAGIC_CONSTANT
+        ), f"Magic constant mismatch at offset {magic_offset}."
 
         # Seven single-byte metadata fields immediately follow the 32-byte magic constant.
         version_lo = int(self.data[magic_offset + 32])
@@ -306,14 +332,18 @@ class RecordParser:
             f"MGIC size_t_meta[] at {size_t_meta_loc} truncated: need {2 * size_t_size} bytes."
         )
 
-        byteorder_id = self.data[size_t_meta_loc : size_t_meta_loc + size_t_size].tobytes()
+        byteorder_id = self.data[
+            size_t_meta_loc : size_t_meta_loc + size_t_size
+        ].tobytes()
         byteorder = detect_byteorder(byteorder_id)
         assert byteorder is not None and byteorder != "unknown", (
             f"Unable to detect byte order from probe value {byteorder_id.hex()!r} (size_t_size={size_t_size})."
         )
 
         encoding_id = int.from_bytes(
-            self.data[size_t_meta_loc + size_t_size : size_t_meta_loc + 2 * size_t_size].tobytes(),
+            self.data[
+                size_t_meta_loc + size_t_size : size_t_meta_loc + 2 * size_t_size
+            ].tobytes(),
             byteorder=byteorder,
         )
 
@@ -382,7 +412,12 @@ class RecordParser:
             payload_offset_byte = int(self.data[candidate + 5])
             if candidate + type_offset + 4 > len(self.data):
                 continue
-            if self.data[candidate + type_offset : candidate + type_offset + 4].tobytes() != b"MGIC":
+            if (
+                self.data[
+                    candidate + type_offset : candidate + type_offset + 4
+                ].tobytes()
+                != b"MGIC"
+            ):
                 continue
             if candidate + payload_offset_byte != magic_offset:
                 continue

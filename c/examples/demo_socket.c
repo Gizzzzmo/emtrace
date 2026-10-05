@@ -12,9 +12,9 @@
 
 static void out(const void* data, size_t size, int connfd) { (void) write(connfd, data, size); }
 static void begin(const void* info, size_t total_size, int connfd) {
+    (void) info;
     (void) total_size;
-    uintptr_t ptr = (uintptr_t) info;
-    out(&ptr, sizeof(ptr), connfd);
+    (void) connfd;
 }
 #define SERIALIZE_POINTER(ptr, out_fn, connfd)                                                     \
     uintptr_t ser_ptr = (uintptr_t) (ptr);                                                         \
@@ -75,7 +75,7 @@ int main(void) {
         static emt_magic_t magic =
             EMT_MAGIC(EMT_ENCODING_NONE, size_t, EMT_DEFAULT_ALIGNMENT_POWER);
 
-        EMT_INIT(&magic, begin, DUMMY, connfd);
+        EMT_INIT(&magic, SERIALIZE_POINTER, out, begin, DUMMY, connfd);
         int x = 1;
         int y = 2;
         for (int i = 0; i < 15; i++) {
