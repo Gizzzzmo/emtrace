@@ -67,6 +67,7 @@ class FmtInfo:
         self.type_infos: list[tuple[str, TypeInfo]] = []
         self.file: str = ""
         self.line: int = -1
+        self.version: tuple[int, int] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -78,6 +79,9 @@ class FmtInfo:
             ],
             "file": self.file,
             "line": self.line,
+            "version": {"major": self.version[0], "minor": self.version[1]}
+            if self.version is not None
+            else None,
         }
 
     @staticmethod
@@ -89,12 +93,19 @@ class FmtInfo:
         ]
         fmt_info.file = data["file"]
         fmt_info.line = data["line"]
+        version = data.get("version")
+        if version is not None:
+            fmt_info.version = (version["major"], version["minor"])
         return fmt_info
 
     def add_source_info(self, file: str, line: int) -> None:
         """Add source location information to the format info."""
         self.file = file
         self.line = line
+
+    def add_version(self, major: int, minor: int) -> None:
+        """Record the record-type version this trace point was parsed with."""
+        self.version = (major, minor)
 
     def add_param(self, id: str, type_info: TypeInfo) -> None:
         """Add a parameter to the format info."""

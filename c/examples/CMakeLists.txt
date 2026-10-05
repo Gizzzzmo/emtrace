@@ -35,6 +35,7 @@ if(EMTRACE_ENABLE_TESTS)
         test_edge_cases
         test_large_numbers
         test_arr
+        test_too_many_records
     )
     foreach(testname ${eetests})
         add_executable(${testname} ${testname}.c)

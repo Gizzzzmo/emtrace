@@ -16,7 +16,11 @@ from .parser import (
     translation_be,
 )
 from .formatters import FORMATTERS
-from .record_parser import RecordParser, detect_byteorder as detect_byteorder
+from .record_parser import (
+    RecordParser,
+    RecordVersionError,
+    detect_byteorder as detect_byteorder,
+)
 
 try:
     import lief
@@ -51,9 +55,6 @@ except ImportError:
 
     def parse_macho(_: Path):
         return None
-
-
-
 
 
 def error(*args: Any, **kwargs: Any):
@@ -226,7 +227,11 @@ def emtrace(
     else:
         data = bytes(format_info)
         record_parser = RecordParser(memoryview(data), debug_trace=trace)
-        mgic = record_parser.find_and_parse_mgic()
+        try:
+            mgic = record_parser.find_and_parse_mgic()
+        except RecordVersionError as e:
+            error(str(e))
+            sys.exit(1)
         if mgic is None:
             error("Failed to find or parse MGIC record in section data.")
             sys.exit(1)
@@ -238,8 +243,8 @@ def emtrace(
         encoding_id: int = mgic.encoding_id
         record_start: int = mgic.record_start
         trace(
-            f"version={mgic.version} {size_t_size=} {ptr_size=} {alignment_power=} "
-            f"byteorder={byteorder} {encoding_id=} {record_start=}"
+            f"version={mgic.version_major}.{mgic.version_minor} {size_t_size=} {ptr_size=} "
+            f"{alignment_power=} byteorder={byteorder} {encoding_id=} {record_start=}"
         )
         record_cache = {}
 
@@ -351,7 +356,15 @@ def emtrace(
                 )
                 sys.exit(1)
 
-            info, _ = record_parser.parse_trace_record(section_offset)
+            try:
+                info, _ = record_parser.parse_trace_record(section_offset)
+            except RecordVersionError as e:
+                error(
+                    f"Skipping trace point at section_offset={section_offset:#x}: {e}"
+                )
+                if encoding != "cobs":
+                    sys.exit(1)
+                continue
             if info is None:
                 error(
                     f"No trace point found for address={address:#x} (section_offset={section_offset})."

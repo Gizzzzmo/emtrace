@@ -30,6 +30,17 @@ C_TEST_EXECUTABLES = [
     "examples/test_arr_cobs",
 ]
 
+# Executables that are expected to FAIL `emctl check`: they deliberately
+# declare more records than their emt_ptr_t can address (a 1-byte emt_ptr_t
+# with alignment power 8 can only represent addresses below 2^16 bytes, but
+# the .emtrace section is larger).
+# These must not be added to C_TEST_EXECUTABLES: the generic tests expect
+# check to pass, and the runtime tests need a .emt_exp section.
+C_TEST_EXECUTABLES_EXPECT_CHECK_FAILURE = [
+    "examples/test_too_many_records",
+    "examples/test_too_many_records_cobs",
+]
+
 C_BUILD_DIRS = [
     "../c/build/clang/rel",
     "../c/build/clang/dbg",
@@ -124,6 +135,48 @@ def test_emctl_check_on_executable(executable_path_str: str):
 
     if result.stderr:
         print(result.stderr.decode(), file=sys.stderr)
+
+
+@pytest.mark.parametrize(
+    "executable_path_str",
+    [
+        f"{build_dir}/{exe}"
+        for build_dir in C_BUILD_DIRS
+        for exe in C_TEST_EXECUTABLES_EXPECT_CHECK_FAILURE
+    ],
+)
+def test_emctl_check_address_overflow(executable_path_str: str):
+    """
+    Runs emctl check on executables that deliberately declare more records
+    than their emt_ptr_t can address, and verifies that check fails with the
+    address-representability error.
+    """
+    pytest_dir = Path(__file__).parent
+    executable = pytest_dir / executable_path_str
+
+    if not executable.exists():
+        pytest.skip(
+            f"Executable {executable_path_str} not found. Make sure it is built."
+        )
+
+    parser_dir = str(pytest_dir.parent / "parser")
+    env = os.environ.copy()
+    env["PYTHONPATH"] = parser_dir + os.pathsep + env.get("PYTHONPATH", "")
+
+    result = subprocess.run(
+        [sys.executable, "-m", "emtrace.emctl", "check", str(executable)],
+        capture_output=True,
+        timeout=5,
+        env=env,
+    )
+
+    stderr = result.stderr.decode()
+    assert result.returncode == 1, (
+        f"emctl check unexpectedly returned {result.returncode} for "
+        f"{executable_path_str}:\nSTDOUT:\n{result.stdout.decode()}\nSTDERR:\n{stderr}"
+    )
+    assert "cannot be represented" in stderr
+    assert "1-byte emt_ptr_t" in stderr
 
 
 @pytest.mark.parametrize("executable_path_str", TEST_EXECUTABLES)

@@ -1,6 +1,5 @@
 from io import TextIOWrapper
 import subprocess
-import sys
 from pathlib import Path
 from argparse import ArgumentParser
 

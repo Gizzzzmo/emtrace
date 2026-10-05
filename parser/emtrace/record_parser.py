@@ -9,15 +9,117 @@ _FLAG_STATIC = 0
 _FLAG_NULL_TERMINATED = 1
 _FLAG_LENGTH_PREFIXED = 2
 
-# TRCE record framing: 'EMT'(3) + offset_bytes(3) + 'TRCE'(4) = 10 bytes.
+# Record framing: 'EMT'(3) + metadata(7) + type tag(4) = 14 bytes.
+#
+#   [0..2]  'E','M','T'
+#   [3]     type offset (single-byte, points at the 4-byte type tag)
+#   [4]     size offset (points at the size_t record_size value)
+#   [5]     payload offset
+#   [6]     endianness probe offset (points at a size_t-shaped probe value)
+#   [7]     size_t width in bytes
+#   [8]     major version of the record type's layout
+#   [9]     minor version of the record type's layout
+#   [10..13] type tag
 _RECORD_FRAMING_PREFIX = b"EMT"
+_FRAMING_SIZE = 14
+_FRAMING_METADATA_SIZE = 7  # between the 'EMT' prefix and the type tag
 
 RECORD_TYPE = Literal[b"TRCE", b"MGIC"]
+
+# Highest record-type versions this parser knows how to decode.  Record types
+# are versioned independently (see TRACE_FORMAT.md).
+KNOWN_VERSIONS: dict[bytes, tuple[int, int]] = {
+    b"MGIC": (1, 0),
+    b"TRCE": (1, 0),
+}
+
+# `size_t` widths the parser is able to decode (endianness probe detection
+# supports arbitrary widths, but widths beyond 8 make no sense).
+_MIN_SIZE_T_SIZE = 1
+_MAX_SIZE_T_SIZE = 8
 
 # 32-byte magic constant that identifies the MGIC record.
 _MAGIC_CONSTANT: bytes = bytes.fromhex(
     "d197f522d9269fd1ad703392f659dfd0fbecbd60971325e89201b25a385d9ec7"
 )
+
+# MGIC payload layout (relative to the payload offset):
+#   [0..31]  32-byte magic constant
+#   [32]     sizeof(emt_ptr_t)
+#   [33]     alignment power
+#   [34]     encoding id
+_MGIC_PTR_SIZE_OFFSET = 32
+_MGIC_ALIGNMENT_POWER_OFFSET = 33
+_MGIC_ENCODING_ID_OFFSET = 34
+
+
+class RecordVersionError(Exception):
+    """A record's major version is not supported by this parser.
+
+    Minor version differences are deliberately *not* errors: parsers decode
+    unknown minor versions with the rules of the highest minor version they
+    know (see TRACE_FORMAT.md).
+    """
+
+    def __init__(
+        self,
+        record_type: bytes,
+        major: int,
+        minor: int,
+        known: tuple[int, int],
+    ) -> None:
+        self.record_type = record_type
+        self.major = major
+        self.minor = minor
+        self.known = known
+        super().__init__(
+            f"Unsupported {record_type.decode('ascii', 'replace')} record version "
+            f"{major}.{minor} (parser knows {'.'.join(map(str, known))})."
+        )
+
+
+@dataclass
+class RecordInfo:
+    """Per-record decoding context parsed from the record framing."""
+
+    record_start: int
+    record_size: int
+    type_offset: int  # absolute offset of the 4-byte type tag
+    size_offset: int  # absolute offset of the size_t record_size value
+    payload_offset: int  # absolute offset of the payload
+    endianness_offset: int  # absolute offset of the size_t endianness probe
+    size_t_size: int
+    major: int
+    minor: int
+    byteorder: Literal["little", "big", "unknown"]
+    record_type: bytes | None = None  # 4-byte tag; None when unknown
+
+    @property
+    def record_end(self) -> int:
+        return self.record_start + self.record_size
+
+    @property
+    def version(self) -> tuple[int, int]:
+        return (self.major, self.minor)
+
+
+@dataclass
+class MgicInfo:
+    """Parsed contents of a MGIC record."""
+
+    record_start: int
+    magic_offset: int  # absolute offset of the 32-byte magic constant
+    size_t_size: int  # from the MGIC record framing
+    byteorder: Literal["little", "big"]  # from the MGIC record framing
+    version_major: int
+    version_minor: int
+    ptr_size: int
+    alignment_power: int
+    encoding_id: int
+
+    @property
+    def version(self) -> tuple[int, int]:
+        return (self.version_major, self.version_minor)
 
 
 def detect_byteorder(b: bytes) -> Literal["little", "big", "unknown"] | None:
@@ -44,22 +146,6 @@ def detect_byteorder(b: bytes) -> Literal["little", "big", "unknown"] | None:
             return None
         found[int(byte)] = True
     return byteorder
-
-
-@dataclass
-class MgicInfo:
-    """Parsed contents of a MGIC record."""
-
-    record_start: int
-    magic_offset: (
-        int  # absolute offset of the 32-byte magic constant within the section data
-    )
-    version: int
-    size_t_size: int
-    ptr_size: int
-    alignment_power: int
-    byteorder: Literal["little", "big"]
-    encoding_id: int
 
 
 class RecordParser:
@@ -95,70 +181,173 @@ class RecordParser:
             size=size,
         )
 
-    def parse_record_header(self, offset: int) -> tuple[RECORD_TYPE | None, int, int]:
-        if self.data[offset : offset + 3].tobytes() != _RECORD_FRAMING_PREFIX:
-            return None, offset + 1, offset + 1
-        if offset + 5 >= len(self.data):
+    def _read_framing(self, offset: int) -> RecordInfo | None:
+        """Parse the 14-byte record framing at *offset*.
+
+        Returns ``None`` when there is no structurally valid record framing at
+        *offset* (no ``EMT`` prefix, truncated framing, undetectable
+        endianness, or a record that extends past the end of the data).  No
+        assumption is made about the record type.
+        """
+        data = self.data
+        if offset + _FRAMING_SIZE > len(data):
+            return None
+        if data[offset : offset + 3].tobytes() != _RECORD_FRAMING_PREFIX:
+            return None
+
+        type_off = int(data[offset + 3])
+        size_off = int(data[offset + 4])
+        payload_off = int(data[offset + 5])
+        endi_off = int(data[offset + 6])
+        size_t_size = int(data[offset + 7])
+        major = int(data[offset + 8])
+        minor = int(data[offset + 9])
+
+        if not (_MIN_SIZE_T_SIZE <= size_t_size <= _MAX_SIZE_T_SIZE):
             self.debug_trace(
-                f"Reached end of data while looking for record metadata {offset}"
+                f"Record framing at {offset}: unsupported size_t width {size_t_size}."
             )
-            return None, len(self.data), len(self.data)
+            return None
 
-        record_type_offset = offset + self.data[offset + 3]
-        record_size_offset = offset + self.data[offset + 4]
-        record_payload_offset = offset + self.data[offset + 5]
+        if offset + type_off + 4 > len(data):
+            return None
+        record_type = data[offset + type_off : offset + type_off + 4].tobytes()
 
-        if record_type_offset + 4 >= len(
-            self.data
-        ) or record_size_offset + self.size_t_size >= len(self.data):
+        probe_start = offset + endi_off
+        if probe_start + size_t_size > len(data):
+            return None
+        probe = data[probe_start : probe_start + size_t_size].tobytes()
+        byteorder = detect_byteorder(probe)
+        if byteorder is None or byteorder == "unknown":
             self.debug_trace(
-                "Reached end of data while looking for record type and size"
+                f"Record framing at {offset}: unable to detect byte order from probe "
+                f"{probe.hex()!r}."
             )
-            return None, len(self.data), len(self.data)
+            return None
+        assert byteorder in ("little", "big")
 
+        size_start = offset + size_off
+        if size_start + size_t_size > len(data):
+            return None
         record_size = int.from_bytes(
-            self.data[record_size_offset : record_size_offset + self.size_t_size],
-            byteorder=self.byteorder,
+            data[size_start : size_start + size_t_size], byteorder=byteorder
         )
-        record_end = offset + record_size
-        if record_end > len(self.data):
+        if record_size < _FRAMING_SIZE:
             self.debug_trace(
-                f"Record at offset {offset} claims size {record_size} which extends past end of data."
+                f"Record framing at {offset}: record_size {record_size} is smaller "
+                f"than the {_FRAMING_SIZE}-byte framing."
             )
-            return None, len(self.data), len(self.data)
+            return None
+        if offset + record_size > len(data):
+            self.debug_trace(
+                f"Record framing at {offset}: record_size {record_size} extends past "
+                f"end of data ({len(data)})."
+            )
+            return None
 
-        record_type = self.data[record_type_offset : record_type_offset + 4].tobytes()
+        if offset + payload_off > len(data):
+            return None
 
-        match record_type:
-            case b"TRCE":
-                return b"TRCE", record_payload_offset, record_end
-            case b"MGIC":
-                return b"MGIC", record_payload_offset, record_end
-            case _:
-                self.debug_trace(
-                    f"Found EMT framing prefix at offset {offset} but type was not TRCE or MGIC ({record_type} instead)"
-                )
-                return None, record_end, record_end
+        return RecordInfo(
+            record_start=offset,
+            record_size=record_size,
+            type_offset=offset + type_off,
+            size_offset=size_start,
+            payload_offset=offset + payload_off,
+            endianness_offset=probe_start,
+            size_t_size=size_t_size,
+            major=major,
+            minor=minor,
+            byteorder=byteorder,
+            record_type=record_type,
+        )
+
+    def parse_record_header(
+        self, offset: int
+    ) -> tuple[RECORD_TYPE | None, RecordInfo | None, int]:
+        """Parse a record framing at *offset*.
+
+        Returns ``(record_type, info, next_offset)``:
+
+        - ``record_type`` is the 4-byte type tag when it belongs to a known
+          record type, otherwise ``None``.
+        - ``info`` carries the per-record decoding context.  It is ``None``
+          only when there is no structurally valid framing at *offset*; for
+          records with an unknown type tag ``info`` is still returned so that
+          callers can skip the whole record.
+        - ``next_offset`` is the offset where a scanning caller should continue.
+        """
+        if self.data[offset : offset + 3].tobytes() != _RECORD_FRAMING_PREFIX:
+            return None, None, offset + 1
+        if offset + _FRAMING_SIZE > len(self.data):
+            return None, None, len(self.data)
+
+        info = self._read_framing(offset)
+        if info is None:
+            # An 'EMT' prefix is present but the framing is invalid — scanning
+            # byte by byte would produce spurious results, so bail out.
+            return None, None, len(self.data)
+
+        assert info.record_type is not None
+        if info.record_type in KNOWN_VERSIONS:
+            return info.record_type, info, info.record_end  # type: ignore[return-value]
+
+        self.debug_trace(
+            f"Found record framing at offset {offset} with unknown type "
+            f"{info.record_type!r} (version {info.major}.{info.minor})."
+        )
+        return None, info, info.record_end
 
     def parse_trace_record(self, offset: int) -> tuple[FmtInfo | None, int]:
-        """Parse a TRCE record format info from the data starting at *offset* (record start)."""
+        """Parse a TRCE record format info from the data starting at *offset* (record start).
+
+        Raises ``RecordVersionError`` when the record's major version is not
+        supported by this parser.
+        """
         self.debug_trace("parse_fmt_info:")
 
-        record_type, payload_start, record_end = self.parse_record_header(offset)
+        record_type, info, next_offset = self.parse_record_header(offset)
 
-        if record_type != b"TRCE":
-            return None, record_end
+        if record_type != b"TRCE" or info is None:
+            return None, next_offset
 
-        return self.parse_trace_payload(offset, payload_start, record_end), record_end
+        known_major, known_minor = KNOWN_VERSIONS[b"TRCE"]
+        if info.major != known_major:
+            raise RecordVersionError(
+                b"TRCE", info.major, info.minor, (known_major, known_minor)
+            )
+
+        record_info = self.parse_trace_payload(
+            offset,
+            info.payload_offset,
+            info.record_end,
+            size_t_size=info.size_t_size,
+            byteorder=info.byteorder,  # type: ignore[arg-type]
+        )
+        record_info.add_version(info.major, info.minor)
+        return record_info, info.record_end
 
     def parse_trace_payload(
-        self, offset: int, payload_offset: int, record_end: int | None = None
+        self,
+        offset: int,
+        payload_offset: int,
+        record_end: int | None = None,
+        *,
+        size_t_size: int | None = None,
+        byteorder: Literal["little", "big"] | None = None,
     ) -> FmtInfo:
         """Parse a TRCE record payload from the data starting at *offset* (record start).
 
         If *record_end* is given, all layout consumption is bounds-checked against it
         (layout entries must not extend past the end of the record).
+
+        *size_t_size* and *byteorder* describe the record's own decoding context; when
+        not given, the parser's global context (as established by ``find_and_parse_mgic``)
+        is used.
         """
+        sz = self.size_t_size if size_t_size is None else size_t_size
+        bo = self.byteorder if byteorder is None else byteorder
+
         pos = payload_offset
         self.debug_trace(f"  record starts at {offset}, payload starts at {pos}")
 
@@ -175,7 +364,7 @@ class RecordParser:
             return s
 
         def consume_size_t() -> int:
-            return int.from_bytes(consume(self.size_t_size), byteorder=self.byteorder)
+            return int.from_bytes(consume(sz), byteorder=bo)
 
         def get_string_at(str_pos: int, delimiter: bytes = b"\x00") -> str:
             start = str_pos
@@ -274,8 +463,10 @@ class RecordParser:
         return info
 
     def parse_all_trace_records(self) -> dict[int, FmtInfo]:
-        """Parse all TRCE record FmtInfo objects from the given data."""
+        """Parse all TRCE record FmtInfo objects from the given data.
 
+        Records with an unsupported major version raise ``RecordVersionError``.
+        """
         infos: dict[int, FmtInfo] = {}
 
         i = 0
@@ -293,100 +484,81 @@ class RecordParser:
 
         return infos
 
-    def parse_mgic_payload(self, record_start: int, payload_offset: int) -> MgicInfo:
-        """Parse a MGIC record payload.
+    def parse_mgic_payload(self, info: RecordInfo) -> MgicInfo:
+        """Parse a MGIC record payload from an already-parsed framing.
 
-        *record_start* is the absolute offset of the ``EMT`` framing prefix.
-        *payload_offset* is the absolute offset of the payload (i.e. the first byte of the
-        32-byte magic constant).
-
-        Sizes and byte order are derived entirely from the payload itself — this method does
-        **not** read ``self.size_t_size`` or ``self.byteorder``.
+        Sizes and byte order come from the framing context *info* — this method
+        does **not** read ``self.size_t_size`` or ``self.byteorder``.
 
         Raises ``AssertionError`` on malformed data.
         """
-        magic_offset = payload_offset
-        assert magic_offset + 32 + 7 <= len(self.data), (
-            f"MGIC payload at {magic_offset} truncated: need {32 + 7} bytes, only {len(self.data) - magic_offset} available."
+        assert info.record_type == b"MGIC", (
+            f"parse_mgic_payload called on a {info.record_type!r} record."
+        )
+
+        magic_offset = info.payload_offset
+        assert magic_offset + _MGIC_ENCODING_ID_OFFSET + 1 <= info.record_end, (
+            f"MGIC payload at {magic_offset} truncated."
         )
 
         assert (
             self.data[magic_offset : magic_offset + 32].tobytes() == _MAGIC_CONSTANT
         ), f"Magic constant mismatch at offset {magic_offset}."
 
-        # Seven single-byte metadata fields immediately follow the 32-byte magic constant.
-        version_lo = int(self.data[magic_offset + 32])
-        version_hi = int(self.data[magic_offset + 33])
-        size_t_meta_record_offset = int(self.data[magic_offset + 34])
-        size_t_size = int(self.data[magic_offset + 35])
-        ptr_size = int(self.data[magic_offset + 36])
-        alignment_power = int(self.data[magic_offset + 37])
+        ptr_size = int(self.data[magic_offset + _MGIC_PTR_SIZE_OFFSET])
+        alignment_power = int(self.data[magic_offset + _MGIC_ALIGNMENT_POWER_OFFSET])
 
-        assert size_t_size > 0, "sizeof(size_t) reported as 0 in MGIC payload."
+        assert ptr_size > 0, "sizeof(emt_ptr_t) reported as 0 in MGIC payload."
 
-        # size_t_meta[] is at record_start + size_t_meta_record_offset and holds two size_t values:
-        #   [0]  byte-order probe (0x0706050403020100 in native endianness, truncated to size_t)
-        #   [1]  encoding_id
-        size_t_meta_loc = record_start + size_t_meta_record_offset
-        assert size_t_meta_loc + 2 * size_t_size <= len(self.data), (
-            f"MGIC size_t_meta[] at {size_t_meta_loc} truncated: need {2 * size_t_size} bytes."
-        )
-
-        byteorder_id = self.data[
-            size_t_meta_loc : size_t_meta_loc + size_t_size
-        ].tobytes()
-        byteorder = detect_byteorder(byteorder_id)
-        assert byteorder is not None and byteorder != "unknown", (
-            f"Unable to detect byte order from probe value {byteorder_id.hex()!r} (size_t_size={size_t_size})."
-        )
-
-        encoding_id = int.from_bytes(
-            self.data[
-                size_t_meta_loc + size_t_size : size_t_meta_loc + 2 * size_t_size
-            ].tobytes(),
-            byteorder=byteorder,
-        )
+        encoding_id = int(self.data[magic_offset + _MGIC_ENCODING_ID_OFFSET])
 
         return MgicInfo(
-            record_start=record_start,
+            record_start=info.record_start,
             magic_offset=magic_offset,
-            version=version_lo | (version_hi << 8),
-            size_t_size=size_t_size,
+            size_t_size=info.size_t_size,
+            byteorder=info.byteorder,  # type: ignore[arg-type]
+            version_major=info.major,
+            version_minor=info.minor,
             ptr_size=ptr_size,
             alignment_power=alignment_power,
-            byteorder=byteorder,
             encoding_id=encoding_id,
         )
 
     def parse_mgic_record(self, offset: int) -> tuple[MgicInfo | None, int]:
         """Parse a MGIC record starting at *offset*.
 
-        Requires ``self.size_t_size`` to already be set correctly (used by
-        ``parse_record_header`` to read the record-size field).
-
-        Returns ``(MgicInfo, record_end)`` on success or ``(None, record_end)`` on failure.
-        No internal state is mutated.
+        Returns ``(MgicInfo, record_end)`` on success or ``(None, next_offset)``
+        on failure.  No internal state is mutated.  Raises
+        ``RecordVersionError`` when the MGIC record's major version is not
+        supported by this parser.
         """
-        record_type, payload_start, record_end = self.parse_record_header(offset)
+        record_type, info, next_offset = self.parse_record_header(offset)
 
-        if record_type != b"MGIC":
-            return None, record_end
+        if record_type != b"MGIC" or info is None:
+            return None, next_offset
 
-        return self.parse_mgic_payload(offset, payload_start), record_end
+        known_major, known_minor = KNOWN_VERSIONS[b"MGIC"]
+        if info.major != known_major:
+            raise RecordVersionError(
+                b"MGIC", info.major, info.minor, (known_major, known_minor)
+            )
+
+        return self.parse_mgic_payload(info), info.record_end
 
     def find_and_parse_mgic(self) -> MgicInfo | None:
         """Search for the MGIC record in ``self.data`` and parse it.
 
-        Locates the 32-byte magic constant, then scans backward for the ``EMT`` framing
-        header whose payload offset points exactly to that constant.  Delegates to
-        ``parse_mgic_payload`` so no prior knowledge of ``size_t_size`` or ``byteorder``
-        is required.
+        Locates the 32-byte magic constant, then scans backward for the ``EMT``
+        framing header whose payload offset points exactly to that constant.
+        Delegates to ``parse_mgic_payload`` so no prior knowledge of
+        ``size_t_size`` or ``byteorder`` is required.
 
-        On success updates ``self.size_t_size``, ``self.ptr_size``, and ``self.byteorder``
-        from the parsed ``MgicInfo``.
+        On success updates ``self.size_t_size``, ``self.ptr_size``, and
+        ``self.byteorder`` from the parsed ``MgicInfo``.
 
-        Returns the ``MgicInfo`` on success, or ``None`` if the record cannot be found or
-        parsed.
+        Returns the ``MgicInfo`` on success, or ``None`` if the record cannot be
+        found or parsed.  Raises ``RecordVersionError`` when the MGIC record's
+        major version is not supported by this parser.
         """
         data_bytes = self.data.tobytes()
         magic_offset = data_bytes.find(_MAGIC_CONSTANT)
@@ -396,35 +568,24 @@ class RecordParser:
 
         self.debug_trace(f"Found magic constant at offset {magic_offset}")
 
-        # Scan backward from the magic constant for the EMT framing header.
-        # The framing header is: b"EMT" + type_offset_byte + size_offset_byte + payload_offset_byte
-        # We verify that:
-        #   data[candidate : candidate+3] == b"EMT"
-        #   data[candidate + type_offset]  : candidate + type_offset + 4] == b"MGIC"
-        #   candidate + payload_offset_byte == magic_offset  (payload starts at magic constant)
+        # Scan backward from the magic constant for the EMT framing header
+        # whose payload offset points exactly at the magic constant, and whose
+        # type tag is b"MGIC".
         record_start = -1
+        record_info: RecordInfo | None = None
         for candidate in range(magic_offset - 1, max(magic_offset - 256, -1), -1):
-            if self.data[candidate : candidate + 3].tobytes() != b"EMT":
+            info = self._read_framing(candidate)
+            if info is None:
                 continue
-            if candidate + 6 > len(self.data):
+            if info.record_type != b"MGIC":
                 continue
-            type_offset = int(self.data[candidate + 3])
-            payload_offset_byte = int(self.data[candidate + 5])
-            if candidate + type_offset + 4 > len(self.data):
-                continue
-            if (
-                self.data[
-                    candidate + type_offset : candidate + type_offset + 4
-                ].tobytes()
-                != b"MGIC"
-            ):
-                continue
-            if candidate + payload_offset_byte != magic_offset:
+            if info.payload_offset != magic_offset:
                 continue
             record_start = candidate
+            record_info = info
             break
 
-        if record_start == -1:
+        if record_start == -1 or record_info is None:
             self.debug_trace(
                 "MGIC record framing (EMT...MGIC) not found before magic constant."
             )
@@ -432,11 +593,16 @@ class RecordParser:
 
         self.debug_trace(f"Found MGIC record framing at offset {record_start}")
 
-        try:
-            mgic = self.parse_mgic_payload(record_start, magic_offset)
-        except AssertionError as e:
-            self.debug_trace(f"Failed to parse MGIC payload: {e}")
-            return None
+        mgic = self.parse_mgic_payload(record_info)
+
+        known_major, known_minor = KNOWN_VERSIONS[b"MGIC"]
+        if mgic.version_major != known_major:
+            raise RecordVersionError(
+                b"MGIC",
+                mgic.version_major,
+                mgic.version_minor,
+                (known_major, known_minor),
+            )
 
         self.size_t_size = mgic.size_t_size
         self.ptr_size = mgic.ptr_size

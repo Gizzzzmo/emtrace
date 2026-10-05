@@ -25,34 +25,42 @@ extern "C" {
     } while (0)
 #endif
 
-/// MGIC record: 'EMT' prefix (3) + offset bytes (3) + 'MGIC' type (4).
-/// Followed by record_size (size_t), then meta[38], then size_t_meta[2].
+/// Version of the MGIC record type's layout.
+#define EMT_MAGIC_VERSION_MAJOR 1
+#define EMT_MAGIC_VERSION_MINOR 0
+/// Version of the TRCE record type's layout.
+#define EMT_TRACE_VERSION_MAJOR 1
+#define EMT_TRACE_VERSION_MINOR 0
+
+/// Endianness probe value stored in every record (truncated to sizeof(size_t)).
+#define EMT_ENDIANNESS_PROBE ((size_t) 0x0706050403020100)
+
+/// MGIC record: 'EMT' prefix (3) + metadata bytes (7) + 'MGIC' type (4).
+/// Followed by record_size (size_t), endianness_probe (size_t), meta[35].
 ///
-/// Byte layout of framing[10]:
+/// Byte layout of framing[14]:
 ///   [0..2]  = 'E', 'M', 'T'
-///   [3]     = offset from record start to type string  = 6
-///   [4]     = offset from record start to record_size  = 10
-///   [5]     = offset from record start to payload      = 10 + sizeof(size_t)
-///   [6..9]  = 'M', 'G', 'I', 'C'
+///   [3]     = offset from record start to type string      = 10
+///   [4]     = offset from record start to record_size      = offsetof(emt_magic_t, record_size)
+///   [5]     = offset from record start to payload          = offsetof(emt_magic_t, meta)
+///   [6]     = offset from record start to endianness probe = offsetof(emt_magic_t,
+///                                                             endianness_probe)
+///   [7]     = sizeof(size_t)
+///   [8]     = EMT_MAGIC_VERSION_MAJOR
+///   [9]     = EMT_MAGIC_VERSION_MINOR
+///   [10..13] = 'M', 'G', 'I', 'C'
 ///
-/// Byte layout of meta[38]:
+/// Byte layout of meta[35]:
 ///   [0..31] = 32-byte magic constant
-///   [32]    = version number low byte  (= 0)
-///   [33]    = version number high byte (= 0)
-///   [34]    = offset from record start to size_t_meta  = offsetof(emt_magic_t, size_t_meta)
-///   [35]    = sizeof(size_t)
-///   [36]    = sizeof(emt_ptr_t)
-///   [37]    = EMT_ALIGNMENT_POWER
-///
-/// size_t_meta[2]:
-///   [0]     = byteorder id: 0x0706050403020100 (or truncated to sizeof(size_t))
-///   [1]     = encoding id
+///   [32]    = sizeof(emt_ptr_t)
+///   [33]    = EMT_ALIGNMENT_POWER
+///   [34]    = encoding id
 typedef struct {
-    uint8_t framing[10];   ///< 'E','M','T' + 3 offset bytes + 'M','G','I','C'
-    size_t record_size;    ///< total size of this record in bytes
-    uint8_t meta[38];      ///< magic(32) + version(2) + size_t_meta_offset(1) + sizeof_size_t(1) +
-                           ///<   sizeof_emt_ptr_t(1) + alignment_power(1)
-    size_t size_t_meta[2]; ///< byteorder_id, encoding_id
+    uint8_t framing[14];     ///< 'E','M','T' + 7 metadata bytes + 'M','G','I','C'
+    size_t record_size;      ///< total size of this record in bytes
+    size_t endianness_probe; ///< endianness probe value (see TRACE_FORMAT.md)
+    uint8_t meta[35];        ///< magic(32) + sizeof_emt_ptr_t(1) + alignment_power(1) +
+                             ///<   encoding_id(1)
 } emt_magic_t;
 
 void emt_default_begin(const void* info, size_t total_size, void* extra_arg);
@@ -255,8 +263,9 @@ static inline void emt_cobs_finalize(
     do {                                                                                           \
                                                                                                    \
         struct emt_info_unlikely_to_shadow_t {                                                     \
-            uint8_t framing[10];                                                                   \
+            uint8_t framing[14];                                                                   \
             size_t record_size;                                                                    \
+            size_t endianness_probe;                                                               \
             size_t layout                                                                          \
                 [5 + EMT_F_LAYOUT_SIZE(                                                            \
                          EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)             \
@@ -267,11 +276,14 @@ static inline void emt_cobs_finalize(
         };                                                                                         \
         static fmt_info_attributes struct emt_info_unlikely_to_shadow_t                            \
             emt_info_unlikely_to_shadow = {                                                        \
-                {'E', 'M', 'T', 6,                                                                 \
+                {'E', 'M', 'T', 10,                                                                \
                  (uint8_t) offsetof(struct emt_info_unlikely_to_shadow_t, record_size),            \
-                 (uint8_t) offsetof(struct emt_info_unlikely_to_shadow_t, layout), 'T', 'R', 'C',  \
-                 'E'},                                                                             \
+                 (uint8_t) offsetof(struct emt_info_unlikely_to_shadow_t, layout),                 \
+                 (uint8_t) offsetof(struct emt_info_unlikely_to_shadow_t, endianness_probe),       \
+                 (uint8_t) sizeof(size_t), EMT_TRACE_VERSION_MAJOR, EMT_TRACE_VERSION_MINOR, 'T',  \
+                 'R', 'C', 'E'},                                                                   \
                 sizeof(struct emt_info_unlikely_to_shadow_t),                                      \
+                EMT_ENDIANNESS_PROBE,                                                              \
                 {EMT_NUM_ARGS_REST(__VA_ARGS__) / 5,                                               \
                  offsetof(struct emt_info_unlikely_to_shadow_t, fmt),                              \
                  EMT_F_LAYOUT(                                                                     \
@@ -306,15 +318,20 @@ static inline void emt_cobs_finalize(
             'E',                                                                                   \
             'M',                                                                                   \
             'T',                                                                                   \
-            6,                                                                                     \
+            10,                                                                                    \
             (uint8_t) offsetof(emt_magic_t, record_size),                                          \
             (uint8_t) offsetof(emt_magic_t, meta),                                                 \
+            (uint8_t) offsetof(emt_magic_t, endianness_probe),                                     \
+            (uint8_t) sizeof(size_t),                                                              \
+            EMT_MAGIC_VERSION_MAJOR,                                                               \
+            EMT_MAGIC_VERSION_MINOR,                                                               \
             'M',                                                                                   \
             'G',                                                                                   \
             'I',                                                                                   \
             'C',                                                                                   \
         },                                                                                         \
         sizeof(emt_magic_t),                                                                       \
+        EMT_ENDIANNESS_PROBE,                                                                      \
         {                                                                                          \
             0xd1,                                                                                  \
             0x97,                                                                                  \
@@ -348,16 +365,9 @@ static inline void emt_cobs_finalize(
             0x5d,                                                                                  \
             0x9e,                                                                                  \
             0xc7,                                                                                  \
-            0,                                                                                     \
-            0,                                                                                     \
-            (uint8_t) offsetof(emt_magic_t, size_t_meta),                                          \
-            (uint8_t) sizeof(size_t),                                                              \
             (uint8_t) sizeof(emt_ptr_t),                                                           \
             alignment_power,                                                                       \
-        },                                                                                         \
-        {                                                                                          \
-            (size_t) 0x0706050403020100,                                                           \
-            encoding,                                                                              \
+            (uint8_t) (encoding),                                                                  \
         },                                                                                         \
     }
 
