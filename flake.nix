@@ -27,24 +27,24 @@
           cmake
         ];
         parser-nativeBuildInputs = [
-          pkgs.python313Packages.hatchling
+          pkgs.python314Packages.hatchling
         ];
 
         # propagated build inputs
         parser-propagatedbuildInputs = with pkgs; [
-          python313Packages.lief
+          python314Packages.lief
         ];
 
         packages = with pkgs; [
           bat
           alejandra
           mdformat
-          python313Packages.mdformat-gfm
+          python314Packages.mdformat-gfm
           cargo-expand
-          llvmPackages_20.clang-tools
-          llvmPackages_20.clang
-          llvmPackages_20.clang-unwrapped
-          llvmPackages_20.lldb
+          llvmPackages_22.clang-tools
+          llvmPackages_22.clang
+          llvmPackages_22.clang-unwrapped
+          llvmPackages_22.lldb
           ninja
           neocmakelsp
           conan
@@ -55,15 +55,15 @@
           gersemi
           basedpyright
           ruff
-          python313
-          python313Packages.pytest
-          python313Packages.twine
-          python313Packages.wheel
-          python313Packages.pytest-xdist
+          python314
+          python314Packages.pytest
+          python314Packages.twine
+          python314Packages.wheel
+          python314Packages.pytest-xdist
         ];
       in let
-        parserMeta = builtins.fromTOML (builtins.readFile ./parser/pyproject.toml);
-        rustMeta = builtins.fromTOML (builtins.readFile ./rust/Cargo.toml);
+        parserMeta = fromTOML (builtins.readFile ./parser/pyproject.toml);
+        rustMeta = fromTOML (builtins.readFile ./rust/Cargo.toml);
       in
         with pkgs; {
           devShells.default = mkShell {
@@ -74,7 +74,7 @@
             inherit packages;
           };
 
-          packages.parser = pkgs.python313Packages.buildPythonPackage {
+          packages.parser = pkgs.python314Packages.buildPythonPackage {
             pname = parserMeta.project.name;
             version = parserMeta.project.version;
             src = ./parser;
