@@ -9,9 +9,10 @@ output channel is completely customizable.
 
 > [!Note]
 >
-> I don't know if it works with binaries that run on Windows or Mac OS (although
-> it might). More generally it only explicitly supports the ELF binary format
-> right now.
+> gcc and clang should work out of the box with [the C implementation](#in-c).
+> ELF Executables (Linux, and most embedded software) have first-class support
+> from [the parser](./parser/). Windows PE executables (tested with clang+msvc)
+> are also known to work. On MacOS nothing has been tested.
 
 ## Usage
 
