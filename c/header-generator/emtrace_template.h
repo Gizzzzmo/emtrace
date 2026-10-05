@@ -3,6 +3,12 @@
 #include <stdio.h>
 #include <string.h>
 
+// to switch stdout to binary mode in `emtrace_init()`
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif // _WIN32
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -551,6 +557,10 @@ static inline void emt_cobs_finalize(
     EMT_FILE_COBS_PASSTHROUGH(EMT_DEFAULT_SEC_ATTR, emt_ptr_t, EMT_DEFAULT_ALIGNMENT_POWER, stdout)
 
 static inline void emtrace_init(void) {
+#ifdef _WIN32
+    // this prevents byte `0xa` from being replaced with the sequence `0xd` `0xa` (carriage return)
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
     EMT_INIT(
         &g_emt_default_magic, emt_default_serialize_pointer, emt_default_out, emt_default_begin,
         emt_default_finish, stdout
