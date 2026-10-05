@@ -101,7 +101,7 @@ gersemi *ARGS:
 
 [no-cd]
 preproc FILE:
-    clang -E -P -I {{justfile_dir}}/c/include/c/include {{FILE}} | clang-format | bat --language=c
+    clang -std=c23 -E -P -I {{justfile_dir}}/c/include/c/include {{FILE}} | clang-format | bat --language=c
 
 alias pp := preproc
 
