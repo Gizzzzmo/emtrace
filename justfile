@@ -21,11 +21,7 @@ justfile_dir := if os() == "windows" { shell("cygpath -u '" + justfile_directory
 
 [no-cd]
 emtrace *ARGS:
-    python {{justfile_dir}}/parser/emtrace.py {{ARGS}} 
-
-[no-cd]
-emctl *ARGS:
-    python {{justfile_dir}}/parser/emctl.py {{ARGS}}
+    python {{justfile_dir}}/parser/emtrace.py {{ARGS}}
 
 gen-header *ARGS:
     python ./c/header-generator/build_macro.py {{ARGS}}

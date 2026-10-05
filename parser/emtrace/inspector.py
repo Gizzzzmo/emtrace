@@ -1,11 +1,10 @@
-"""emctl - management and inspection tool for emtrace sections."""
+"""Check, export, and inspect logic for emtrace sections (see emtrace/main.py for the CLI)."""
 
 from __future__ import annotations
 
 import json
 import sys
 import tempfile
-from argparse import ArgumentParser, _SubParsersAction
 from collections import Counter
 from dataclasses import dataclass
 from math import gcd
@@ -434,7 +433,7 @@ def _check_trce_record(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Subcommand: check
+# Command: check
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -485,11 +484,11 @@ def cmd_check(args: Any) -> int:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Subcommand: dump
+# Command: export
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def cmd_dump(args: Any) -> int:
+def cmd_export(args: Any) -> int:
     debug_script = args.debug_script
 
     def trace(*args: Any, **kwargs: Any):
@@ -564,7 +563,7 @@ def cmd_dump(args: Any) -> int:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Subcommand: inspect
+# Command: inspect
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -988,130 +987,3 @@ def _inspect_raw(path: Path, section_name: str) -> int:
                 )
             )
     return 0
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Shared input-source arguments helper
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-def _add_input_args(sub: ArgumentParser) -> None:
-    """Add --format and --section-name to a subcommand parser."""
-    _ = sub.add_argument(
-        "input",
-        help=(
-            "Path to an executable, or a raw binary file containing the .emtrace section bytes."
-        ),
-    )
-    _ = sub.add_argument(
-        "--format",
-        nargs="?",
-        default="auto",
-        choices=["auto", "exe", "elf", "pe", "macho", "binary"],
-        help=(
-            "Format of the input file. 'auto' (default) tries to detect automatically: "
-            "first as an executable (ELF/PE/MachO), then as raw binary."
-        ),
-    )
-    _ = sub.add_argument(
-        "--section-name",
-        default=".emtrace",
-        metavar="NAME",
-        help="ELF/PE/MachO section name to read (default: .emtrace).",
-    )
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Entry point
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-def main() -> int:
-    parser = ArgumentParser(
-        "emctl",
-        description="Management and inspection tool for emtrace sections.",
-    )
-    _ = parser.add_argument(
-        "--debug-script",
-        action="store_true",
-        help="Debug the script by printing internal trace information to stderr (for development use only).",
-    )
-
-    subs: _SubParsersAction[ArgumentParser] = parser.add_subparsers(
-        dest="command", metavar="<command>"
-    )
-    _ = subs.required = True
-
-    # ── check ──────────────────────────────────────────────────────────────
-    check_parser = subs.add_parser(
-        "check",
-        help="Check that an emtrace section conforms to the trace format specification.",
-        description=(
-            "Scans all records in the emtrace section and validates them against the "
-            "trace format specification: framing layout, per-record versions, record "
-            "payloads, MGIC uniqueness, that the MGIC record's alignment power "
-            "does not exceed the alignment power all records actually conform to, "
-            "and that every record's address is representable and unique in a "
-            "emt_ptr_t. Major version incompatibilities are a hard error; minor "
-            "version differences are ignored unless --error-on-minor is given."
-        ),
-    )
-    _add_input_args(check_parser)
-    _ = check_parser.add_argument(
-        "--error-on-minor",
-        action="store_true",
-        help="Treat records with a higher minor version than known as errors instead of ignoring them.",
-    )
-    check_parser.set_defaults(func=cmd_check)
-
-    # ── dump ───────────────────────────────────────────────────────────────
-    dump_parser = subs.add_parser(
-        "dump",
-        help="Dump all trace-point metadata from an emtrace section as JSON.",
-        description=(
-            "Parses every TRCE record in the emtrace section and writes a JSON "
-            "representation to stdout (or to a file with --output)."
-        ),
-    )
-    _add_input_args(dump_parser)
-    _ = dump_parser.add_argument(
-        "--output",
-        "-o",
-        default="-",
-        metavar="FILE",
-        help="Write JSON output to FILE instead of stdout. Use '-' for stdout (default).",
-    )
-    dump_parser.set_defaults(func=cmd_dump)
-
-    # ── inspect ────────────────────────────────────────────────────────────
-    inspect_parser = subs.add_parser(
-        "inspect",
-        help="Summarize the emtrace data of an executable, object file, or static archive.",
-        description=(
-            "Auto-detects whether the input is a static archive, an unlinked "
-            "object file, or a linked executable, and prints summary information: "
-            "record counts per type, record-type versions, size_t widths, "
-            "detected endianness, emt_ptr_t size, the alignment power reported by "
-            "the MGIC record, the highest alignment all records actually conform "
-            "to, and — for archives — the highest possible alignment power "
-            "achievable when linking."
-        ),
-    )
-    _ = inspect_parser.add_argument(
-        "input",
-        help="Path to a static archive (.a), object file (.o), executable, or raw section bytes.",
-    )
-    _ = inspect_parser.add_argument(
-        "--section-name",
-        default=".emtrace",
-        metavar="NAME",
-        help="ELF/PE/MachO section name to inspect (default: .emtrace).",
-    )
-    inspect_parser.set_defaults(func=cmd_inspect)
-
-    args = parser.parse_args()
-    return args.func(args)
-
-
-if __name__ == "__main__":
-    sys.exit(main())

@@ -1,4 +1,4 @@
-"""Unit tests for emtrace.emctl (check, dump helpers, inspect)."""
+"""Unit tests for emtrace.inspector (check, export helpers, inspect)."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import struct
 import pytest
 from pathlib import Path
 
-from emtrace import emctl
-from emtrace.emctl import (
+from emtrace import inspector
+from emtrace.inspector import (
     _check,
     _detect_input_type,
     _parse_archive,
@@ -117,7 +117,8 @@ def test_check_misaligned_record():
     data = build_mgic_record(alignment_power=3) + build_trce_record()
     warnings, errors = run_check(data)
     assert any(
-        "declares alignment power 3" in e and "only conform to an alignment power of 0" in e
+        "declares alignment power 3" in e
+        and "only conform to an alignment power of 0" in e
         for e in errors
     )
 
@@ -139,7 +140,8 @@ def test_check_alignment_power_above_common_alignment():
     data = mgic + b"\x00" * (80 - len(mgic)) + build_trce_record()
     warnings, errors = run_check(data)
     assert any(
-        "declares alignment power 5" in e and "only conform to an alignment power of 4" in e
+        "declares alignment power 5" in e
+        and "only conform to an alignment power of 4" in e
         for e in errors
     )
     # The offending records are listed in the error.
@@ -426,9 +428,12 @@ def test_inspect_archive_summary(tmp_path: Path, capsys: pytest.CaptureFixture[s
         )
     )
 
-    assert emctl.cmd_inspect(
-        type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
-    ) == 0
+    assert (
+        inspector.cmd_inspect(
+            type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
+        )
+        == 0
+    )
     out = capsys.readouterr().out
     assert "type:             archive" in out
     assert "aligned.o" in out
@@ -460,9 +465,12 @@ def test_inspect_archive_record_constrained(
         )
     )
 
-    assert emctl.cmd_inspect(
-        type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
-    ) == 0
+    assert (
+        inspector.cmd_inspect(
+            type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
+        )
+        == 0
+    )
     out = capsys.readouterr().out
     # Despite the 256-aligned section, wide_records.o's records only conform
     # to power 2 — and that is what caps the archive.
@@ -484,18 +492,26 @@ def test_inspect_archive_unconstrained_member(
     _ = archive.write_bytes(
         build_archive(
             [
-                ("magic_only.o", build_minimal_elf_o(section_magic_only, sh_addralign=256)),
+                (
+                    "magic_only.o",
+                    build_minimal_elf_o(section_magic_only, sh_addralign=256),
+                ),
                 ("loose.o", build_minimal_elf_o(section_loose, sh_addralign=8)),
             ]
         )
     )
 
-    assert emctl.cmd_inspect(
-        type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
-    ) == 0
+    assert (
+        inspector.cmd_inspect(
+            type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
+        )
+        == 0
+    )
     out = capsys.readouterr().out
     assert "highest possible alignment power: 3 (constrained by: loose.o)" in out
     # The unconstrained member's record alignment is reported as "-".
-    lines = [line for line in out.splitlines() if line.strip().startswith("magic_only.o")]
+    lines = [
+        line for line in out.splitlines() if line.strip().startswith("magic_only.o")
+    ]
     assert len(lines) == 1
     assert " - " in lines[0]

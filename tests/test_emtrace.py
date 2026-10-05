@@ -30,7 +30,7 @@ C_TEST_EXECUTABLES = [
     "examples/test_arr_cobs",
 ]
 
-# Executables that are expected to FAIL `emctl check`: they deliberately
+# Executables that are expected to FAIL `emtrace check`: they deliberately
 # declare more records than their emt_ptr_t can address (a 1-byte emt_ptr_t
 # with alignment power 8 can only represent addresses below 2^16 bytes, but
 # the .emtrace section is larger).
@@ -95,9 +95,9 @@ print(TEST_EXECUTABLES)
 
 
 @pytest.mark.parametrize("executable_path_str", TEST_EXECUTABLES)
-def test_emctl_check_on_executable(executable_path_str: str):
+def test_check_on_executable(executable_path_str: str):
     """
-    Runs emctl check on the .emtrace section of each test executable and
+    Runs emtrace check on the .emtrace section of each test executable and
     verifies it passes conformance without errors.
     """
     pytest_dir = Path(__file__).parent
@@ -113,7 +113,7 @@ def test_emctl_check_on_executable(executable_path_str: str):
     env["PYTHONPATH"] = parser_dir + os.pathsep + env.get("PYTHONPATH", "")
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "emtrace.emctl", "check", str(executable)],
+            [sys.executable, "-m", "emtrace", "check", str(executable)],
             capture_output=True,
             check=True,
             timeout=5,
@@ -123,7 +123,7 @@ def test_emctl_check_on_executable(executable_path_str: str):
         pytest.fail(
             "\n".join(
                 [
-                    f"emctl check failed for {executable_path_str} with exit code {e.returncode}:",
+                    f"emtrace check failed for {executable_path_str} with exit code {e.returncode}:",
                     f"STDERR:\n{e.stderr.decode()}",
                     f"STDOUT:\n{e.stdout.decode()}",
                 ]
@@ -131,7 +131,7 @@ def test_emctl_check_on_executable(executable_path_str: str):
             pytrace=False,
         )
     except subprocess.TimeoutExpired:
-        pytest.fail(f"Timeout running emctl check for {executable_path_str}")
+        pytest.fail(f"Timeout running emtrace check for {executable_path_str}")
 
     if result.stderr:
         print(result.stderr.decode(), file=sys.stderr)
@@ -145,9 +145,9 @@ def test_emctl_check_on_executable(executable_path_str: str):
         for exe in C_TEST_EXECUTABLES_EXPECT_CHECK_FAILURE
     ],
 )
-def test_emctl_check_address_overflow(executable_path_str: str):
+def test_check_address_overflow(executable_path_str: str):
     """
-    Runs emctl check on executables that deliberately declare more records
+    Runs emtrace check on executables that deliberately declare more records
     than their emt_ptr_t can address, and verifies that check fails with the
     address-representability error.
     """
@@ -164,7 +164,7 @@ def test_emctl_check_address_overflow(executable_path_str: str):
     env["PYTHONPATH"] = parser_dir + os.pathsep + env.get("PYTHONPATH", "")
 
     result = subprocess.run(
-        [sys.executable, "-m", "emtrace.emctl", "check", str(executable)],
+        [sys.executable, "-m", "emtrace", "check", str(executable)],
         capture_output=True,
         timeout=5,
         env=env,
@@ -172,7 +172,7 @@ def test_emctl_check_address_overflow(executable_path_str: str):
 
     stderr = result.stderr.decode()
     assert result.returncode == 1, (
-        f"emctl check unexpectedly returned {result.returncode} for "
+        f"emtrace check unexpectedly returned {result.returncode} for "
         f"{executable_path_str}:\nSTDOUT:\n{result.stdout.decode()}\nSTDERR:\n{stderr}"
     )
     assert "cannot be represented" in stderr
@@ -182,9 +182,9 @@ def test_emctl_check_address_overflow(executable_path_str: str):
 @pytest.mark.parametrize("executable_path_str", TEST_EXECUTABLES)
 def test_emtrace_json_roundtrip(executable_path_str: str):
     """
-    Dumps the .emtrace section of an executable to JSON via emctl dump, runs the
+    Exports the .emtrace section of an executable to JSON via emtrace export, runs the
     executable to capture its raw trace output, extracts the .emt_exp expected output
-    from the ELF, then feeds the JSON and raw input into emtrace in --test mode,
+    from the ELF, then feeds the JSON and raw input into emtrace run in --test mode,
     comparing against the .emt_exp section (the same reference used by test_emtrace_on_executable).
     """
     pytest_dir = Path(__file__).parent
@@ -216,14 +216,14 @@ def test_emtrace_json_roundtrip(executable_path_str: str):
         raw_path = os.path.join(tmpdir, "raw.bin")
         expected_path = os.path.join(tmpdir, "expected.bin")
 
-        # Step 1: dump .emtrace section to JSON.
+        # Step 1: export .emtrace section to JSON.
         try:
             subprocess.run(
                 [
                     sys.executable,
                     "-m",
-                    "emtrace.emctl",
-                    "dump",
+                    "emtrace",
+                    "export",
                     str(executable),
                     "--output",
                     json_path,
@@ -237,7 +237,7 @@ def test_emtrace_json_roundtrip(executable_path_str: str):
             pytest.fail(
                 "\n".join(
                     [
-                        f"emctl dump failed for {executable_path_str} with exit code {e.returncode}:",
+                        f"emtrace export failed for {executable_path_str} with exit code {e.returncode}:",
                         f"STDERR:\n{e.stderr.decode()}",
                         f"STDOUT:\n{e.stdout.decode()}",
                     ]
@@ -278,12 +278,13 @@ def test_emtrace_json_roundtrip(executable_path_str: str):
         with open(expected_path, "wb") as f:
             f.write(expected_bytes)
 
-        # Step 4: decode using emtrace with JSON format info, raw input, and --test.
+        # Step 4: decode using emtrace run with JSON format info, raw input, and --test.
         try:
             subprocess.run(
                 [
                     sys.executable,
                     emtrace_script,
+                    "run",
                     json_path,
                     "--input",
                     "file://" + raw_path,
@@ -310,7 +311,7 @@ def test_emtrace_json_roundtrip(executable_path_str: str):
 @pytest.mark.parametrize("executable_path_str", TEST_EXECUTABLES)
 def test_emtrace_on_executable(executable_path_str: str):
     """
-    Runs an executable, captures its trace output, and then runs emtrace.py
+    Runs an executable, captures its trace output, and then runs emtrace run
     in test mode to verify its output against the expected output embedded
     in the executable's .emt_exp section.
     """
@@ -328,6 +329,7 @@ def test_emtrace_on_executable(executable_path_str: str):
             [
                 sys.executable,
                 str(emtrace_script),
+                "run",
                 str(executable),
                 "--test",
                 "--debug-script",

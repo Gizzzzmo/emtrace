@@ -25,12 +25,16 @@ pip install emtrace
 
 Now you can choose the language you want to use below. Once you have a compiled
 binary (regardless of source language) you can run it, and pipe its output into
-`emtrace`, to which you also have to supply the path to the same binary. E.g.
-something like this (assuming your executable is a.out):
+`emtrace run`, to which you also have to supply the path to the same binary.
+E.g. something like this (assuming your executable is a.out):
 
 ```bash
-emtrace a.out
+emtrace run a.out
 ```
+
+`emtrace` also has `check`, `export`, and `inspect` subcommands for validating
+and examining the emtrace data of binaries, object files, and static archives
+(see `emtrace --help`).
 
 ### In C
 
