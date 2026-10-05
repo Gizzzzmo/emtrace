@@ -41,8 +41,10 @@ include it (works out of the gate with gcc, and clang).
 ```c
 #include <emtrace/emtrace.h>
 
+EMTRACE_MAGIC(unsigned);
+
 int main(void) {
-    EMTRACE_INIT();
+    emtrace_init();
     EMTRACELN("Hello World!");
 
     int a = 1;

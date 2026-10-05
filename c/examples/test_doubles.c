@@ -10,9 +10,9 @@ EXPECT_OUTPUT(
 );
 
 #ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(size_t)
+EMTRACE_MAGIC_COBS(size_t);
 #else
-EMTRACE_MAGIC(size_t)
+EMTRACE_MAGIC(size_t);
 #endif
 
 int main(void) {

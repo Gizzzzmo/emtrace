@@ -7,7 +7,7 @@
 // Null bytes in passed-through output need to be escaped with an additionally null-byte,
 // although that shouldn't be a concern with text-based output.
 
-EMTRACE_MAGIC_COBS_PASSTHROUGH(size_t)
+EMTRACE_MAGIC_COBS_PASSTHROUGH(size_t);
 
 static int run(void) {
     emtrace_init();
@@ -29,6 +29,6 @@ int main(int argc, char** argv) {
 
     // Otherwise invoke emtrace to run ourselves - this time with run
     char command[256];
-    snprintf(command, sizeof(command), "emtrace %s -- run", argv[0]);
+    snprintf(command, sizeof(command), "emtrace run %s -- run", argv[0]);
     return system(command);
 }

@@ -1,10 +1,10 @@
 #include "emtrace/emtrace.h"
 #include <thread>
 
-EMTRACE_MAGIC(size_t)
+EMTRACE_MAGIC(size_t);
 
 auto main() -> int {
-    auto work = []() {
+    auto work = []() -> void {
         for (int i = 0; i < 1000000; i++) {
             EMTRACE("Just a string\n");
             EMTRACE_F(

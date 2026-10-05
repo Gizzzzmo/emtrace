@@ -2,7 +2,7 @@
 // this python script: c/header-generator/build_macro.py Script arguments were: --max-args=32
 #ifndef EMTRACE_EMTRACE_H
 #define EMTRACE_EMTRACE_H
-// NOLINTBEGIN(modernize-avoid-c-arrays)
+// NOLINTBEGIN(modernize-avoid-c-arrays,modernize-use-auto)
 
 #include <stddef.h>
 #include <stdint.h>
@@ -434,12 +434,10 @@ static inline void emt_cobs_finalize(
     emt_cobs_encode((ptr), (size), &state, emt_out_file_wrapper, file)
 
 #define EMT_FILE_COBS_PASSTHROUGH(attrs, emt_ptr_t, alignment_power, fp)                           \
-    attrs emt_magic_t g_emt_default_magic =                                                        \
-        EMT_MAGIC(EMT_ENCODING_COBS_PASSTHROUGH, emt_ptr_t, alignment_power);                      \
-    static emt_cobs_state_t state;                                                                 \
+    static emt_cobs_state_t emt_cobs_state;                                                        \
     void emt_default_begin(const void* info, size_t total_size, void* extra_arg) {                 \
         (void) extra_arg; /* unused */                                                             \
-        emt_cobs_init(&state);                                                                     \
+        emt_cobs_init(&emt_cobs_state);                                                            \
         EMT_FLOCK_FILE(info, total_size, (fp));                                                    \
         emt_out_file("", 1, (fp));                                                                 \
     }                                                                                              \
@@ -453,21 +451,21 @@ static inline void emt_cobs_finalize(
     }                                                                                              \
     void emt_default_out(const void* data, size_t total_size, void* extra_arg) {                   \
         (void) extra_arg; /* unused */                                                             \
-        emt_cobs_encode(data, total_size, &state, emt_out_file_wrapper, (fp));                     \
+        emt_cobs_encode(data, total_size, &emt_cobs_state, emt_out_file_wrapper, (fp));            \
     }                                                                                              \
     void emt_default_finish(const void* info, size_t total_size, void* extra_arg) {                \
         (void) extra_arg; /* unused */                                                             \
-        emt_cobs_finalize(&state, emt_out_file_wrapper, (fp));                                     \
+        emt_cobs_finalize(&emt_cobs_state, emt_out_file_wrapper, (fp));                            \
         EMT_FUNLOCK_FILE(info, total_size, (fp));                                                  \
-    }
+    }                                                                                              \
+    attrs emt_magic_t g_emt_default_magic =                                                        \
+        EMT_MAGIC(EMT_ENCODING_COBS_PASSTHROUGH, emt_ptr_t, alignment_power)
 
 #define EMT_FILE_COBS(attrs, emt_ptr_t, alignment_power, fp)                                       \
-    attrs emt_magic_t g_emt_default_magic =                                                        \
-        EMT_MAGIC(EMT_ENCODING_COBS, emt_ptr_t, alignment_power);                                  \
-    static emt_cobs_state_t state;                                                                 \
+    static emt_cobs_state_t emt_cobs_state;                                                        \
     void emt_default_begin(const void* info, size_t total_size, void* extra_arg) {                 \
         (void) extra_arg; /* unused */                                                             \
-        emt_cobs_init(&state);                                                                     \
+        emt_cobs_init(&emt_cobs_state);                                                            \
         EMT_FLOCK_FILE(info, total_size, (fp));                                                    \
     }                                                                                              \
     void emt_default_serialize_pointer(                                                            \
@@ -480,17 +478,16 @@ static inline void emt_cobs_finalize(
     }                                                                                              \
     void emt_default_out(const void* data, size_t total_size, void* extra_arg) {                   \
         (void) extra_arg; /* unused */                                                             \
-        emt_cobs_encode(data, total_size, &state, emt_out_file_wrapper, (fp));                     \
+        emt_cobs_encode(data, total_size, &emt_cobs_state, emt_out_file_wrapper, (fp));            \
     }                                                                                              \
     void emt_default_finish(const void* info, size_t total_size, void* extra_arg) {                \
         (void) extra_arg; /* unused */                                                             \
-        emt_cobs_finalize(&state, emt_out_file_wrapper, (fp));                                     \
+        emt_cobs_finalize(&emt_cobs_state, emt_out_file_wrapper, (fp));                            \
         EMT_FUNLOCK_FILE(info, total_size, (fp));                                                  \
-    }
+    }                                                                                              \
+    attrs emt_magic_t g_emt_default_magic = EMT_MAGIC(EMT_ENCODING_COBS, emt_ptr_t, alignment_power)
 
 #define EMT_FILE(attrs, emt_ptr_t, alignment_power, fp)                                            \
-    attrs emt_magic_t g_emt_default_magic =                                                        \
-        EMT_MAGIC(EMT_ENCODING_NONE, emt_ptr_t, alignment_power);                                  \
     void emt_default_begin(const void* info, size_t total_size, void* extra_arg) {                 \
         (void) info;                                                                               \
         (void) total_size;                                                                         \
@@ -514,7 +511,8 @@ static inline void emt_cobs_finalize(
         (void) total_size;                                                                         \
         (void) extra_arg; /* unused */                                                             \
         EMT_FUNLOCK_FILE(info, total_size, (fp));                                                  \
-    }
+    }                                                                                              \
+    attrs emt_magic_t g_emt_default_magic = EMT_MAGIC(EMT_ENCODING_NONE, emt_ptr_t, alignment_power)
 
 #define EMT_INIT(magic_ptr, serialize_ptr, out_fn, begin, finish, extra_arg)                       \
     do {                                                                                           \
@@ -4042,6 +4040,6 @@ static inline void emtrace_init(void) {
     EMT_F_HELPER(out_fn, default_length_type, extra_arg, x, __VA_ARGS__)
 #define EMT_F_HELPER(out_fn, default_length_type, extra_arg, x, ...)                               \
     EMT_F_##x(out_fn, default_length_type, extra_arg, __VA_ARGS__)
-// NOLINTEND(modernize-avoid-c-arrays)
+// NOLINTEND(modernize-avoid-c-arrays,modernize-use-auto)
 
 #endif // EMTRACE_EMTRACE_H

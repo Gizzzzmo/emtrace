@@ -4,15 +4,15 @@
  * This file intentionally invokes EMTRACE too many times to be able to address each record
  * independently with a 1-byte record-pointer (unsigned char in `EMTRACE_MAGIC`)
  *
- * There's an end-to-end test that verifies that `emctl check <output-binary>` reports the error
+ * There's an end-to-end test that verifies that `emtrace check <output-binary>` reports the error
  * correctly.
  */
 #include "emtrace/emtrace.h"
 
 #ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(unsigned char)
+EMTRACE_MAGIC_COBS(unsigned char);
 #else
-EMTRACE_MAGIC(unsigned char)
+EMTRACE_MAGIC(unsigned char);
 #endif
 
 // NOLINTNEXTLINE(readability-function-size)

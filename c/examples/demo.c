@@ -3,7 +3,7 @@
 
 static void bar(void) { EMTRACE("YAY\n"); }
 
-EMTRACE_MAGIC(size_t)
+EMTRACE_MAGIC(size_t);
 
 int main(void) {
     emtrace_init();
