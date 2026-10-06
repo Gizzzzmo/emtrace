@@ -50,6 +50,9 @@ cargo *ARGS:
 ruff *ARGS:
     ruff {{ARGS}}
 
+basedpyright *ARGS:
+    basedpyright {{ARGS}}
+
 pytest *ARGS:
     pytest {{ARGS}}
 
@@ -110,7 +113,7 @@ format: (ruff "format" ".") (cargo "fmt") (clang-format "-i") alejandra mdformat
 alias fmt := format
 
 [parallel]
-lint: (ruff "check") cargo-clippy (clang-tidy "--use-color") (clang-format "--dry-run" "-Werror")
+lint: (ruff "check") (basedpyright "--warnings") cargo-clippy (clang-tidy "--use-color") (clang-format "--dry-run" "-Werror") 
 
 [parallel]
 conf_all: (configure "dbg") (configure "rel") (configure "opt-dbg")

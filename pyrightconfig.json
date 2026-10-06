@@ -1,0 +1,8 @@
+{
+    "reportAny": false,
+    "reportExplicitAny": false,
+    "reportUnknownVariableType": false,
+    "reportUnknownMemberType": false,
+    "reportUnknownArgumentType": false,
+    "reportImplicitStringConcatenation": false,
+}

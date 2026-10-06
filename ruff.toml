@@ -1,0 +1,19 @@
+# Canonical ruff config for the emtrace repo.
+#
+# The select list is pinned deliberately: ruff 0.16 expanded its default
+# rule set (PLW/SIM/PIE appeared with no repo change), so bare defaults are
+# a moving target under nix updates. Only families whose hits are signal.
+target-version = "py313"
+
+[lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "PIE", "SIM"]
+
+# Deliberately excluded, with reason:
+# - PL (all pylint): returncode-asserting test calls must NOT get
+#   check=False (PLW1510), and run()'s 10-parameter signature is intentional
+#   (PLR0913).
+# - E501: unactionable noise; the formatter owns wrapping.
+# - S (bandit): S101 would flag every assert in the test suite.
+# - ANN/N/C4: annotation/naming/simplify churn against deliberate `Any` usage.
+# - RUF/PLC as families: over-broad for one stale-noqa / one alias site,
+#   which are fixed once instead.
