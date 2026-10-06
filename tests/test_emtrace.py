@@ -1,4 +1,5 @@
 import pytest
+import shutil
 import subprocess
 import sys
 import json
@@ -46,6 +47,12 @@ C_BUILD_DIRS = [
     "../c/build/clang/dbg",
     "../c/build/clang/opt-dbg",
 ]
+
+# The strip/nonload tests edit the binaries themselves and are comparatively
+# slow, so they only run against one build directory (the compiled code is
+# identical across presets).
+EDIT_BUILD_DIR = "../c/build/clang/rel"
+EDIT_TEST_EXECUTABLES = [f"{EDIT_BUILD_DIR}/{exe}" for exe in C_TEST_EXECUTABLES]
 
 build_dir_file = Path(__file__).parent / "build_dirs.json"
 if build_dir_file.is_file():
@@ -357,3 +364,300 @@ def test_emtrace_on_executable(executable_path_str: str):
     print(emtrace_process.stdout.decode())
     if emtrace_process.stderr:
         print(emtrace_process.stderr.decode(), file=sys.stderr)
+
+
+def _parser_env() -> tuple[str, dict[str, str]]:
+    """Parser directory and a subprocess environment with it on PYTHONPATH."""
+    pytest_dir = Path(__file__).parent
+    parser_dir = str(pytest_dir.parent / "parser")
+    env = os.environ.copy()
+    env["PYTHONPATH"] = parser_dir + os.pathsep + env.get("PYTHONPATH", "")
+    return parser_dir, env
+
+
+@pytest.mark.parametrize("executable_path_str", EDIT_TEST_EXECUTABLES)
+def test_nonload_on_executable(executable_path_str: str):
+    """
+    Writes a copy of each test executable with `emtrace nonload` (the (INFO)
+    linker-script effect: the .emtrace section stays in the file but is
+    marked non-loadable) and verifies that the copy still runs, that
+    `emtrace run --test` still decodes its output against .emt_exp, that
+    `emtrace check` still passes, and that the section really lost its
+    loadable flag and its address.
+    """
+    pytest_dir = Path(__file__).parent
+    executable = pytest_dir / executable_path_str
+
+    if not executable.exists():
+        pytest.skip(
+            f"Executable {executable_path_str} not found. Make sure it is built."
+        )
+
+    parser_dir, env = _parser_env()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        copy_path = os.path.join(tmpdir, "nonloaded")
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "emtrace",
+                "nonload",
+                str(executable),
+                "--output",
+                copy_path,
+            ],
+            capture_output=True,
+            timeout=5,
+            env=env,
+        )
+        assert result.returncode == 0, (
+            f"emtrace nonload failed for {executable_path_str}:\n"
+            f"STDOUT:\n{result.stdout.decode()}\nSTDERR:\n{result.stderr.decode()}"
+        )
+        assert "loadable flag cleared" in result.stdout.decode()
+
+        result = subprocess.run(
+            [sys.executable, "-m", "emtrace", "run", copy_path, "--test"],
+            capture_output=True,
+            timeout=5,
+            env=env,
+        )
+        assert result.returncode == 0, (
+            f"emtrace run --test failed on the nonloaded copy of "
+            f"{executable_path_str}:\nSTDOUT:\n{result.stdout.decode()}\n"
+            f"STDERR:\n{result.stderr.decode()}"
+        )
+
+        result = subprocess.run(
+            [sys.executable, "-m", "emtrace", "check", copy_path],
+            capture_output=True,
+            timeout=5,
+            env=env,
+        )
+        assert result.returncode == 0, (
+            f"emtrace check failed on the nonloaded copy of {executable_path_str}:\n"
+            f"STDOUT:\n{result.stdout.decode()}\nSTDERR:\n{result.stderr.decode()}"
+        )
+
+        import lief
+
+        sec = lief.ELF.parse(copy_path).get_section(".emtrace")
+        assert not sec.has(lief.ELF.Section.FLAGS.ALLOC)
+        assert int(sec.virtual_address) == 0
+
+
+@pytest.mark.parametrize("executable_path_str", EDIT_TEST_EXECUTABLES)
+def test_strip_on_executable(executable_path_str: str):
+    """
+    Writes a copy of each test executable with `emtrace strip` (the .emtrace
+    section entry removed and its content cleared) and verifies that the copy
+    still runs, that `emtrace check` fails because the section is gone, and
+    that no trace data remains in the file.
+    """
+    pytest_dir = Path(__file__).parent
+    executable = pytest_dir / executable_path_str
+
+    if not executable.exists():
+        pytest.skip(
+            f"Executable {executable_path_str} not found. Make sure it is built."
+        )
+
+    _, env = _parser_env()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        copy_path = os.path.join(tmpdir, "stripped")
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "emtrace",
+                "strip",
+                str(executable),
+                "--output",
+                copy_path,
+            ],
+            capture_output=True,
+            timeout=5,
+            env=env,
+        )
+        assert result.returncode == 0, (
+            f"emtrace strip failed for {executable_path_str}:\n"
+            f"STDOUT:\n{result.stdout.decode()}\nSTDERR:\n{result.stderr.decode()}"
+        )
+        assert "removed the .emtrace section entry" in result.stdout.decode()
+
+        result = subprocess.run([copy_path], capture_output=True, timeout=5)
+        assert result.returncode == 0, (
+            f"The stripped copy of {executable_path_str} does not run anymore:\n"
+            f"STDOUT:\n{result.stdout.decode()}\nSTDERR:\n{result.stderr.decode()}"
+        )
+
+        result = subprocess.run(
+            [sys.executable, "-m", "emtrace", "check", copy_path],
+            capture_output=True,
+            timeout=5,
+            env=env,
+        )
+        stderr = result.stderr.decode()
+        assert result.returncode == 1, (
+            f"emtrace check unexpectedly passed on the stripped copy of "
+            f"{executable_path_str}:\nSTDOUT:\n{result.stdout.decode()}\nSTDERR:\n{stderr}"
+        )
+        assert "error" in stderr
+
+        import lief
+
+        assert lief.ELF.parse(copy_path).get_section(".emtrace") is None
+        assert b"MGIC" not in Path(copy_path).read_bytes()
+
+
+def test_strip_experimental_be_on_real_binary():
+    """
+    Strips a real big-endian binary with --experimental-be and verifies the
+    section is gone, the traces no longer parse, and the binary still runs
+    (under qemu when available).
+
+    Fixture: tests/data/mips-be-emtrace, a static big-endian MIPS32
+    executable with a .emtrace section.  Built with:
+      clang --target=mips-linux-gnu -nostdlib -static \\
+        -fuse-ld=<ld.lld> -Wl,-e,_start mips.c -o mips-be-emtrace
+    from a freestanding _start (MIPS exit syscall, code 42) plus a used
+    .emtrace section holding marker bytes.
+    """
+    pytest_dir = Path(__file__).parent
+    executable = pytest_dir / "data" / "mips-be-emtrace"
+    if not executable.exists():
+        pytest.skip("BE fixture binary not found.")
+
+    _, env = _parser_env()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        copy_path = os.path.join(tmpdir, "stripped")
+
+        result = subprocess.run(
+            [sys.executable, "-m", "emtrace", "strip", str(executable)],
+            capture_output=True,
+            timeout=5,
+            env=env,
+        )
+        assert result.returncode == 1, (
+            f"emtrace strip unexpectedly accepted a BE binary without the flag:\n"
+            f"STDOUT:\n{result.stdout.decode()}\nSTDERR:\n{result.stderr.decode()}"
+        )
+        assert "big-endian" in result.stderr.decode()
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "emtrace",
+                "strip",
+                "--experimental-be",
+                str(executable),
+                "--output",
+                copy_path,
+            ],
+            capture_output=True,
+            timeout=30,
+            env=env,
+        )
+        assert result.returncode == 0, (
+            f"emtrace strip --experimental-be failed:\n"
+            f"STDOUT:\n{result.stdout.decode()}\nSTDERR:\n{result.stderr.decode()}"
+        )
+
+        import lief
+
+        assert lief.ELF.parse(copy_path).get_section(".emtrace") is None
+        assert b"TRACE_MARKER_" not in Path(copy_path).read_bytes()
+
+        result = subprocess.run(
+            [sys.executable, "-m", "emtrace", "check", copy_path],
+            capture_output=True,
+            timeout=5,
+            env=env,
+        )
+        assert result.returncode == 1, (
+            f"emtrace check unexpectedly passed on the stripped BE binary:\n"
+            f"STDOUT:\n{result.stdout.decode()}\nSTDERR:\n{result.stderr.decode()}"
+        )
+
+        if shutil.which("qemu-mips") is None:
+            pytest.skip("qemu-mips not installed; skipping execution checks.")
+        for path, label in ((str(executable), "original"), (copy_path, "stripped")):
+            result = subprocess.run(
+                ["qemu-mips", path], capture_output=True, timeout=30
+            )
+            assert result.returncode == 42, (
+                f"The {label} BE binary does not run anymore under qemu-mips "
+                f"(exit {result.returncode})."
+            )
+
+
+@pytest.mark.skipif(shutil.which("objcopy") is None, reason="objcopy not installed")
+@pytest.mark.parametrize("executable_path_str", EDIT_TEST_EXECUTABLES[:1])
+def test_strip_matches_objcopy(executable_path_str: str):
+    """
+    Differential test against `objcopy --remove-section .emtrace`: both tools
+    must produce a binary with no .emtrace section that still runs and whose
+    traces no longer parse.  (Only behavioral parity is asserted; the rebuilt
+    bytes legitimately differ.)
+    """
+    pytest_dir = Path(__file__).parent
+    executable = pytest_dir / executable_path_str
+
+    if not executable.exists():
+        pytest.skip(
+            f"Executable {executable_path_str} not found. Make sure it is built."
+        )
+
+    _, env = _parser_env()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        oc_path = os.path.join(tmpdir, "oc-stripped")
+        result = subprocess.run(
+            ["objcopy", "--remove-section", ".emtrace", str(executable), oc_path],
+            capture_output=True,
+            timeout=30,
+        )
+        assert result.returncode == 0, (
+            f"objcopy --remove-section failed:\nSTDERR:\n{result.stderr.decode()}"
+        )
+
+        em_path = os.path.join(tmpdir, "em-stripped")
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "emtrace",
+                "strip",
+                str(executable),
+                "--output",
+                em_path,
+            ],
+            capture_output=True,
+            timeout=5,
+            env=env,
+        )
+        assert result.returncode == 0, (
+            f"emtrace strip failed:\nSTDOUT:\n{result.stdout.decode()}\n"
+            f"STDERR:\n{result.stderr.decode()}"
+        )
+
+        import lief
+
+        for path in (oc_path, em_path):
+            assert lief.ELF.parse(path).get_section(".emtrace") is None
+            assert b"MGIC" not in Path(path).read_bytes()
+            run = subprocess.run([path], capture_output=True, timeout=5)
+            assert run.returncode == 0, f"{path} does not run anymore"
+            check = subprocess.run(
+                [sys.executable, "-m", "emtrace", "check", path],
+                capture_output=True,
+                timeout=5,
+                env=env,
+            )
+            assert check.returncode == 1, f"check passed on {path}"

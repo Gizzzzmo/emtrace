@@ -5,89 +5,17 @@ One entry point with subcommands:
   check    validate an emtrace section against the trace format specification
   export   export trace-point metadata as JSON
   inspect  summarize the emtrace data of an executable, object file, or archive
+  strip    remove the emtrace section from a linked ELF binary completely
+  nonload  make the emtrace section non-loadable ((INFO) linker-script effect)
 """
 
 from __future__ import annotations
 
 import sys
-import os
-import socket
-import shutil
-from argparse import ArgumentParser, ArgumentTypeError, _SubParsersAction
-from typing import Callable, Any
-from pathlib import Path
-from subprocess import Popen, PIPE
+from argparse import ArgumentParser, _SubParsersAction
 
-from . import inspector
-from .emtrace import emtrace as run_emtrace
-
-
-def get_input_stream(x: str, run_args: list[str]) -> Callable[[int], bytes]:
-    """Get a function that reads bytes from an input stream."""
-    parts = x.split("://", 1)
-    if not parts:
-        raise ArgumentTypeError("Bad input stream: cannot be empty string.")
-
-    if len(parts) == 1:
-        # auto detect stream_type
-        stream_id = parts[0]
-        match stream_id.split(":"):
-            case ["stdin"]:
-                return sys.stdin.buffer.read
-            case ["run"]:
-                p = Popen(run_args, stdout=PIPE)
-                if p.stdout is None:
-                    raise ArgumentTypeError(
-                        "Failed to start the provided binary for reading its output."
-                    )
-
-                return p.stdout.read
-            case parts if len(parts) in [2, 9]:
-                stream_type = "tcp"
-            case _:
-                stream_type = "file"
-    else:
-        stream_type = parts[0]
-        if stream_type not in ["tcp", "unix", "file"]:
-            raise ArgumentTypeError(
-                f"Bad input stream type {stream_type}: has to either be file, tcp or unix."
-            )
-        stream_id = parts[1]
-
-    match stream_type:
-        case "file":
-            return Path(stream_id).open("rb").read
-        case "unix":
-            family = socket.AF_UNIX
-            address = stream_id
-        case "tcp":
-            parts = stream_id.split(":")
-            if len(parts) == 2:
-                family = socket.AF_INET
-                address = (parts[0], int(parts[1]))
-            elif len(parts) == 9:
-                family = socket.AF_INET6
-                address = (":".join(parts[:-1]), int(parts[-1]))
-            else:
-                raise ArgumentTypeError(
-                    "Bad address for tcp type input stream: Needs to be <ip-address>:<port> (ip can be ipv4 or ipv6)"
-                )
-        case _:
-            assert False
-
-    s = socket.socket(family, socket.SOCK_STREAM)
-    s.connect(address)
-
-    return s.recv
-
-
-def dump_file(x: str | None) -> tuple[Callable[[bytes], Any], Callable[[], None]]:
-    """Get a function that writes to a file and a function to close it."""
-    if x is None:
-        return lambda _: None, lambda: None
-
-    f = Path(x).open("wb")
-    return f.write, f.close
+from . import edit_cmds, read_cmds, run_cmd
+from .streams import dump_file
 
 
 def _add_input_args(sub: ArgumentParser) -> None:
@@ -116,57 +44,33 @@ def _add_input_args(sub: ArgumentParser) -> None:
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Command: run
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-def cmd_run(args: Any) -> int:
-    """Process the trace output of a binary (the old `emtrace` script)."""
-    if args.check_available:
-        return 0
-
-    if args.search_in_path:
-        path = shutil.which(args.trace_info)
-        if path is not None:
-            args.trace_info = path
-
-    args.trace_info = str(Path(args.trace_info).resolve())
-    args.input = get_input_stream(args.input, [args.trace_info] + args.run_args)
-
-    # lazy evaluate the default option ('emtrace_input.bin') of the argument
-    if type(args.dump_input) is str:
-        args.dump_input = dump_file(args.dump_input)
-
-    def patched_input(n: int) -> bytes:
-        b = args.input(n)
-        args.dump_input[0](b)
-        return b
-
-    def ostream(b: bytes):
-        _ = sys.stdout.buffer.write(b)
-        if b"\n" in b:
-            _ = sys.stdout.buffer.flush()
-
-    if os.name == "posix":
-        from signal import signal, SIGPIPE, SIG_DFL
-
-        _ = signal(SIGPIPE, SIG_DFL)
-
-    run_emtrace(
-        Path(args.trace_info),
-        args.format,
-        patched_input,
-        ostream,
-        args.section_name,
-        args.with_src_loc,
-        args.src_hyperlinks,
-        args.debug_script,
-        args.test,
+def _add_edit_args(sub: ArgumentParser) -> None:
+    """Add the shared arguments of the strip and nonload commands."""
+    _ = sub.add_argument(
+        "input",
+        help="Path to a linked executable or shared object (ELF, PE, or Mach-O).",
     )
-    # flush
-    _ = args.dump_input[1]()
-    return 0
+    _ = sub.add_argument(
+        "--section-name",
+        default=".emtrace",
+        metavar="NAME",
+        help="Section to operate on (default: .emtrace).",
+    )
+    _ = sub.add_argument(
+        "--output",
+        "-o",
+        default=None,
+        metavar="FILE",
+        help="Write the modified binary to FILE instead of modifying INPUT in place.",
+    )
+    _ = sub.add_argument(
+        "--experimental-be",
+        action="store_true",
+        help=(
+            "Allow big-endian inputs. Rebuilding big-endian binaries is "
+            "unverified and may produce corrupt output — verify before use."
+        ),
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -177,7 +81,7 @@ def cmd_run(args: Any) -> int:
 def build_parser() -> ArgumentParser:
     parser = ArgumentParser(
         "emtrace",
-        description="Parse and format emtrace data: run, check, export, inspect.",
+        description="Parse and format emtrace data: run, check, export, inspect, strip, nonload.",
     )
     subs: _SubParsersAction[ArgumentParser] = parser.add_subparsers(
         dest="command", metavar="<command>"
@@ -260,7 +164,7 @@ def build_parser() -> ArgumentParser:
         action="store_true",
         help="Exit with exit code zero and don't do anything else.",
     )
-    run_parser.set_defaults(func=cmd_run)
+    run_parser.set_defaults(func=run_cmd.cmd_run)
 
     # ── check ──────────────────────────────────────────────────────────────
     check_parser = subs.add_parser(
@@ -282,7 +186,7 @@ def build_parser() -> ArgumentParser:
         action="store_true",
         help="Treat records with a higher minor version than known as errors instead of ignoring them.",
     )
-    check_parser.set_defaults(func=inspector.cmd_check)
+    check_parser.set_defaults(func=read_cmds.cmd_check)
 
     # ── export ─────────────────────────────────────────────────────────────
     export_parser = subs.add_parser(
@@ -306,7 +210,7 @@ def build_parser() -> ArgumentParser:
         action="store_true",
         help="Debug the script by printing internal trace information to stderr (for development use only).",
     )
-    export_parser.set_defaults(func=inspector.cmd_export)
+    export_parser.set_defaults(func=read_cmds.cmd_export)
 
     # ── inspect ────────────────────────────────────────────────────────────
     inspect_parser = subs.add_parser(
@@ -332,7 +236,41 @@ def build_parser() -> ArgumentParser:
         metavar="NAME",
         help="ELF/PE/MachO section name to inspect (default: .emtrace).",
     )
-    inspect_parser.set_defaults(func=inspector.cmd_inspect)
+    inspect_parser.set_defaults(func=read_cmds.cmd_inspect)
+
+    # ── strip ──────────────────────────────────────────────────────────────
+    strip_parser = subs.add_parser(
+        "strip",
+        help="Remove an emtrace section from a linked binary completely.",
+        description=(
+            "Removes the section entry, deletes symbols bound to it, and "
+            "clears its content (rebuilding the binary with LIEF) — the same "
+            "outcome as objcopy --remove-section. The binary keeps running, "
+            "but its traces can no longer be parsed."
+        ),
+    )
+    _add_edit_args(strip_parser)
+    strip_parser.set_defaults(func=edit_cmds.cmd_strip)
+
+    # ── nonload ────────────────────────────────────────────────────────────
+    nonload_parser = subs.add_parser(
+        "nonload",
+        help=(
+            "Make an emtrace section non-loadable (ELF only), the same effect "
+            "as an (INFO) region in a linker script."
+        ),
+        description=(
+            "Clears the SHF_ALLOC flag and the section address of the "
+            "section, the same effect as placing it in an (INFO) region of a "
+            "linker script. The section bytes stay in the file, so the traces "
+            "remain parseable, but tools that load or flash the binary (the "
+            "OS loader, gdb/lldb, objcopy to raw binary or ihex) ignore "
+            "non-ALLOC sections. Only implemented for ELF; use strip for "
+            "PE and Mach-O binaries."
+        ),
+    )
+    _add_edit_args(nonload_parser)
+    nonload_parser.set_defaults(func=edit_cmds.cmd_nonload)
 
     return parser
 

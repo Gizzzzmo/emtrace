@@ -17,7 +17,7 @@ test = [
 ]
 
 [project.scripts]
-emtrace = "emtrace.main:main"
+emtrace = "emtrace.cli.main:main"
 
 [build-system]
 requires = ["hatchling"]

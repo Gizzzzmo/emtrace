@@ -37,6 +37,50 @@ emtrace run a.out
 and examining the emtrace data of binaries, object files, and static archives
 (see `emtrace --help`).
 
+### Production binaries
+
+The `strip` and `nonload` commands prepare linked binaries for shipping (`strip`
+works on ELF, PE, and Mach-O; `nonload` is ELF-only):
+
+```bash
+emtrace strip a.out     # remove the .emtrace section completely
+emtrace nonload a.out   # mark it non-loadable, like an (INFO) linker script section
+```
+
+`nonload` clears the section's `SHF_ALLOC` flag and its address — the same
+effect as placing the section in an `(INFO)` region of a linker script. The
+trace data stays in the binary (so the traces remain parseable), but tools that
+load or flash the binary ignore non-ALLOC sections: the OS loader never maps it,
+gdb/lldb treat it as file metadata, and `objcopy` leaves it out of raw binary
+and ihex output, so it never ends up on a device. `strip` removes the section
+completely, like `objcopy --remove-section`: the section entry is removed, its
+symbols are deleted, and its content is cleared. Both commands rebuild the
+binary with LIEF, so the guarantees are behavioral (section gone, traces
+unparseable, binary still runs) rather than byte-exact.
+
+### As a Python library
+
+The `emtrace` package is also usable as a pure-Python library — the CLI in
+`emtrace.cli` is just a thin wrapper around it:
+
+```python
+from pathlib import Path
+from emtrace import check_section, inspect_path, strip_binary
+
+report = inspect_path(Path("a.out"), ".emtrace")
+if not report.ok:
+    for issue in report.errors:
+        print("error:", issue.message)
+
+stripped = strip_binary("a.out", ".emtrace")  # stripped.data holds the new bytes
+```
+
+Fallible calls return either `None` ("not found", for simple lookups) or a
+report object carrying `errors`/`warnings` lists — the library never prints and
+never exits. Without the optional `lief` dependency (e.g. installed with
+`pip install --no-deps emtrace`), anything that parses executables reports a
+clear error, while raw `binary`/`json` inputs keep working.
+
 ### In C
 
 The library currently consists of

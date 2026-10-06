@@ -6,7 +6,7 @@ import struct
 import pytest
 from pathlib import Path
 
-from emtrace import inspector
+from emtrace.cli import read_cmds
 from emtrace.inspector import (
     _check,
     _detect_input_type,
@@ -429,7 +429,7 @@ def test_inspect_archive_summary(tmp_path: Path, capsys: pytest.CaptureFixture[s
     )
 
     assert (
-        inspector.cmd_inspect(
+        read_cmds.cmd_inspect(
             type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
         )
         == 0
@@ -466,7 +466,7 @@ def test_inspect_archive_record_constrained(
     )
 
     assert (
-        inspector.cmd_inspect(
+        read_cmds.cmd_inspect(
             type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
         )
         == 0
@@ -502,7 +502,7 @@ def test_inspect_archive_unconstrained_member(
     )
 
     assert (
-        inspector.cmd_inspect(
+        read_cmds.cmd_inspect(
             type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
         )
         == 0

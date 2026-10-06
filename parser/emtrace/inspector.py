@@ -1,17 +1,22 @@
-"""Check, export, and inspect logic for emtrace sections (see emtrace/main.py for the CLI)."""
+"""Check, export, and inspect logic for emtrace sections (library core).
+
+All entry points return report objects carrying ``errors``/``warnings`` —
+this module never prints. Rendering lives in :mod:`emtrace.cli.read_cmds`.
+"""
 
 from __future__ import annotations
 
-import json
-import sys
 import tempfile
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import gcd
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-from .emtrace import get_format_info
+from . import _lief
+from ._lief import lief_missing_error, parse_binary
+from .engine import load_format_info
+from .errors import Report
 from .record_parser import (
     KNOWN_VERSIONS,
     MgicInfo,
@@ -20,11 +25,6 @@ from .record_parser import (
     RecordVersionError,
     _FRAMING_SIZE,
 )
-
-try:
-    import lief
-except ImportError:
-    from . import lief_stub as lief  # type: ignore[no-redef]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Parser versions: the highest per-record-type versions this tool understands.
@@ -38,18 +38,46 @@ PARSER_VERSIONS: dict[bytes, tuple[int, int]] = dict(KNOWN_VERSIONS)
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@dataclass
+class LoadedSection(Report):
+    """Outcome of loading raw section bytes (Tier 2)."""
+
+    data: bytes | None = None
+
+
+@dataclass
+class CheckReport(Report):
+    """Outcome of validating a section against the format spec (Tier 2)."""
+
+
+@dataclass
+class ExportReport(Report):
+    """Outcome of exporting trace-point metadata as JSON data (Tier 2)."""
+
+    trace_points: int = 0
+    output: dict[str, Any] | None = None
+
+
 def _load_section(
     path: Path,
     file_format: str,
     section_name: str,
-) -> bytes | str:
-    """Load raw section bytes from *path*.  Returns bytes or an error string."""
-    result = get_format_info(path, file_format, section_name)  # type: ignore[arg-type]
-    if result is None:
-        return f"Unable to read section '{section_name}' from '{path}'."
-    if isinstance(result, dict):
-        return "JSON input is not supported for this command."
-    return bytes(result)
+) -> LoadedSection:
+    """Load raw section bytes from *path* (Tier 2)."""
+    result = LoadedSection()
+    loaded = load_format_info(path, file_format, section_name)  # type: ignore[arg-type]
+    result.errors.extend(loaded.errors)
+    result.warnings.extend(loaded.warnings)
+    payload = loaded.payload
+    if payload is None:
+        if result.ok:
+            result.fail(f"Unable to read section '{section_name}' from '{path}'.")
+        return result
+    if isinstance(payload, dict):
+        result.fail("JSON input is not supported for this command.")
+        return result
+    result.data = bytes(payload)
+    return result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -437,18 +465,15 @@ def _check_trce_record(
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def cmd_check(args: Any) -> int:
-    path = Path(args.input).resolve()
-    data = _load_section(path, args.format, args.section_name)
-    if isinstance(data, str):
-        print(f"[error] {data}", file=sys.stderr)
-        return 1
+def check_section(data: bytes, *, error_on_minor: bool = False) -> CheckReport:
+    """Validate section bytes against the trace format spec (Tier 2)."""
+    report = CheckReport()
 
     try:
         mgic = RecordParser(memoryview(data)).find_and_parse_mgic()
     except RecordVersionError as e:
         mgic = None
-        print(f"[error] {e}", file=sys.stderr)
+        report.fail(str(e))
 
     warnings: list[str] = []
     errors: list[str] = []
@@ -456,31 +481,16 @@ def cmd_check(args: Any) -> int:
     _check(
         data,
         mgic,
-        error_on_minor=args.error_on_minor,
+        error_on_minor=error_on_minor,
         warnings=warnings,
         errors=errors,
     )
 
     for w in warnings:
-        print(w, file=sys.stderr)
+        report.warn(w)
     for e in errors:
-        print(f"[error] {e}", file=sys.stderr)
-
-    if errors:
-        print(
-            f"check failed: {len(errors)} error(s), {len(warnings)} warning(s).",
-            file=sys.stderr,
-        )
-        return 1
-
-    if warnings:
-        print(
-            f"check passed with {len(warnings)} warning(s).",
-            file=sys.stderr,
-        )
-    else:
-        print("check passed.", file=sys.stderr)
-    return 0
+        report.fail(e)
+    return report
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -488,40 +498,23 @@ def cmd_check(args: Any) -> int:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def cmd_export(args: Any) -> int:
-    debug_script = args.debug_script
+def export_section(
+    data: bytes, *, debug_trace: Callable[[*tuple[Any, ...]], None] | None = None
+) -> ExportReport:
+    """Export all trace-point metadata from section bytes (Tier 2)."""
+    report = ExportReport()
 
-    def trace(*args: Any, **kwargs: Any):
-        if debug_script:
-            print(
-                " ".join(
-                    [
-                        "\n".join("[trace] " + line for line in str(arg).split("\n"))
-                        for arg in args
-                    ]
-                ),
-                file=sys.stderr,
-                **kwargs,
-            )
-
-    path = Path(args.input).resolve()
-    data = _load_section(path, args.format, args.section_name)
-    if isinstance(data, str):
-        print(f"[error] {data}", file=sys.stderr)
-        return 1
-
-    record_parser = RecordParser(memoryview(data), debug_trace=trace)
+    record_parser = RecordParser(
+        memoryview(data), debug_trace=debug_trace or (lambda *args: None)
+    )
     try:
         mgic = record_parser.find_and_parse_mgic()
     except RecordVersionError as e:
-        print(f"[error] {e}", file=sys.stderr)
-        return 1
+        report.fail(str(e))
+        return report
     if mgic is None:
-        print(
-            "[error] Failed to find or parse MGIC record in section data.",
-            file=sys.stderr,
-        )
-        return 1
+        report.fail("Failed to find or parse MGIC record in section data.")
+        return report
 
     # Walk all trace records, tolerating records with unsupported versions.
     fmt_infos: dict[int, Any] = {}
@@ -530,14 +523,15 @@ def cmd_export(args: Any) -> int:
         try:
             info, next_offset = record_parser.parse_trace_record(i)
         except RecordVersionError as e:
-            print(f"[warning] skipping record at offset {i}: {e}", file=sys.stderr)
+            report.warn(f"skipping record at offset {i}: {e}")
             _structural, _framing, next_offset = record_parser.parse_record_header(i)
             info = None
         if info is not None:
             fmt_infos[i] = info
         i = next_offset
 
-    output: dict[str, Any] = {
+    report.trace_points = len(fmt_infos)
+    report.output = {
         "mgic_version": {"major": mgic.version_major, "minor": mgic.version_minor},
         "mgic_record_start": mgic.record_start,
         "size_t_size": mgic.size_t_size,
@@ -547,19 +541,7 @@ def cmd_export(args: Any) -> int:
         "encoding_id": mgic.encoding_id,
         "trace_points": {i: fmt_info.to_dict() for i, fmt_info in fmt_infos.items()},
     }
-
-    out_text = json.dumps(output, indent=2)
-
-    if args.output == "-":
-        print(out_text)
-    else:
-        out_path = Path(args.output)
-        _ = out_path.write_text(out_text, encoding="utf-8")
-        print(
-            f"Wrote {len(fmt_infos)} trace point(s) to '{out_path}'.", file=sys.stderr
-        )
-
-    return 0
+    return report
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -709,13 +691,15 @@ def _parse_archive(path: Path) -> list[tuple[str, bytes]]:
 
 def _parse_member_elf(content: bytes) -> Any | None:
     """Parse an ELF object file from its raw bytes (via a temp file)."""
+    if not _lief.HAS_LIEF:
+        return None
     if not content.startswith(b"\x7fELF"):
         return None
     with tempfile.NamedTemporaryFile(suffix=".o", delete=False) as f:
         _ = f.write(content)
         tmp_path = f.name
     try:
-        return lief.ELF.parse(Path(tmp_path))
+        return parse_binary("elf", Path(tmp_path))
     except (AttributeError, TypeError, ValueError):
         return None
     finally:
@@ -749,58 +733,101 @@ def _section_content(section: Any) -> bytes | None:
         return None
 
 
-def _fmt_count(counter: Counter[str]) -> str:
-    return ", ".join(f"{name}×{count}" for name, count in sorted(counter.items()))
+def summarize_records(data: bytes) -> _SectionSummary:
+    """Walk all records in *data* and aggregate summary information."""
+    return _summarize_records(data)
 
 
-def _print_section_summary(summary: _SectionSummary, indent: str = "  ") -> None:
-    counts = summary.record_counts
-    print(f"{indent}records:          {_fmt_count(counts) or 'none'}")
-    version_parts = [
-        f"{rec} ({', '.join(f'{v}x{c}' for v, c in sorted(vers.items()))})"
-        for rec, vers in sorted(summary.versions.items())
-    ]
-    print(f"{indent}versions:         {'; '.join(version_parts) or 'none'}")
-    if summary.size_t_sizes:
-        print(f"{indent}size_t widths:    {sorted(summary.size_t_sizes)}")
-    if summary.byteorders:
-        print(f"{indent}endianness:       {sorted(summary.byteorders)}")
-    if summary.mgic is not None:
-        m = summary.mgic
-        print(
-            f"{indent}mgic:             version {m.version_major}.{m.version_minor}, "
-            f"size_t width {m.size_t_size} ({m.byteorder}), ptr width {m.ptr_size}, "
-            f"alignment power {m.alignment_power}, encoding id {m.encoding_id}"
-        )
-    else:
-        print(f"{indent}mgic:             none")
+@dataclass
+class ArchiveMemberEntry:
+    """One archive member containing the inspected section."""
+
+    name: str
+    alignment: int | None
+    summary: _SectionSummary
+    section_power: int | None
+    rec_power: int | None
+    member_power: int | None
 
 
-def cmd_inspect(args: Any) -> int:
-    path = Path(args.input).resolve()
-    if not path.is_file():
-        print(f"[error] {path} does not exist.", file=sys.stderr)
-        return 1
+@dataclass
+class ArchiveDetails:
+    """Summary data for inspecting a static archive."""
 
-    input_type = _detect_input_type(path)
-    print(f"input:            {path}")
-    print(f"type:             {input_type}")
+    members_total: int
+    section_name: str
+    with_emtrace: list[ArchiveMemberEntry] = field(default_factory=list)
+    best_power: int | None = None
+    constrainers: list[str] = field(default_factory=list)
+    unknown_alignment: list[str] = field(default_factory=list)
+
+
+@dataclass
+class BinaryDetails:
+    """Summary data for inspecting a linked/unlinked binary."""
+
+    elf_type: str | None = None
+    linked: bool | None = None
+    alignment: int | None = None
+    content_len: int = 0
+    summary: _SectionSummary | None = None
+    notes: list[str] = field(default_factory=list)
+
+
+@dataclass
+class RawDetails:
+    """Summary data for inspecting raw section bytes."""
+
+    summary: _SectionSummary | None = None
+    notes: list[str] = field(default_factory=list)
+
+
+@dataclass
+class InspectReport(Report):
+    """Outcome of inspecting an archive, binary, or raw bytes (Tier 2)."""
+
+    path: Path | None = None
+    input_type: str = ""
+    archive: ArchiveDetails | None = None
+    binary: BinaryDetails | None = None
+    raw: RawDetails | None = None
+
+
+def inspect_path(path: Path, section_name: str) -> InspectReport:
+    """Summarize the emtrace data in *path* (Tier 2).
+
+    Auto-detects archives, executables/object files, and raw section bytes.
+    Executable inputs require the ``lief`` package.
+    """
+    report = InspectReport(path=path)
+    resolved = path.resolve() if isinstance(path, Path) else Path(path).resolve()
+    report.path = resolved
+    if not resolved.is_file():
+        report.fail(f"{resolved} does not exist.")
+        return report
+
+    input_type = _detect_input_type(resolved)
+    report.input_type = input_type
 
     if input_type == "archive":
-        return _inspect_archive(path, args.section_name)
-    if input_type in ("elf", "pe", "macho"):
-        return _inspect_binary(path, input_type, args.section_name)
-    return _inspect_raw(path, args.section_name)
+        report.archive = _inspect_archive_data(resolved, section_name, report)
+    elif input_type in ("elf", "pe", "macho"):
+        report.binary = _inspect_binary_data(resolved, input_type, section_name, report)
+    else:
+        report.raw = _inspect_raw_data(resolved, section_name, report)
+    return report
 
 
-def _inspect_archive(path: Path, section_name: str) -> int:
+def _inspect_archive_data(
+    path: Path, section_name: str, report: InspectReport
+) -> ArchiveDetails | None:
     try:
         members = _parse_archive(path)
     except ValueError as e:
-        print(f"[error] {e}", file=sys.stderr)
-        return 1
+        report.fail(str(e))
+        return None
 
-    with_emtrace: list[tuple[str, int | None, _SectionSummary]] = []
+    details = ArchiveDetails(members_total=len(members), section_name=section_name)
     for name, content in members:
         elf = _parse_member_elf(content)
         if elf is None:
@@ -812,21 +839,7 @@ def _inspect_archive(path: Path, section_name: str) -> int:
             if content_bytes is None:
                 continue
             summary = _summarize_records(content_bytes)
-            with_emtrace.append((name, _section_alignment(section), summary))
-
-    print(
-        f"members:          {len(members)} total, {len(with_emtrace)} with '{section_name}'"
-    )
-    if with_emtrace:
-        print()
-        print(
-            f"  {'member':<20} {'sh_addralign':>12} {'rec align':>9} "
-            f"{'effective':>9} {'mgic':>4}  records"
-        )
-        effective: list[tuple[int, str]] = []
-        unknown_alignment: list[str] = []
-        for name, alignment, summary in with_emtrace:
-            align_str = str(alignment) if alignment is not None else "?"
+            alignment = _section_alignment(section)
             sec_power = (
                 alignment.bit_length() - 1
                 if alignment is not None and alignment > 0
@@ -837,55 +850,43 @@ def _inspect_archive(path: Path, section_name: str) -> int:
                 member_power = min(sec_power, rec_power)
             else:
                 member_power = sec_power if sec_power is not None else rec_power
-            rec_str = str(rec_power) if rec_power is not None else "-"
-            eff_str = str(member_power) if member_power is not None else "?"
-            print(
-                f"  {name:<20} {align_str:>12} {rec_str:>9} "
-                f"{eff_str:>9} {'yes' if summary.mgic is not None else 'no':>4}  "
-                f"{_fmt_count(summary.record_counts) or 'none'}"
-            )
-            if sec_power is None:
-                unknown_alignment.append(name)
-            elif member_power is not None:
-                effective.append((member_power, name))
-
-        print()
-        if effective:
-            best_power, _ = min(effective)
-            constrainers = sorted(n for p, n in effective if p == best_power)
-            print(
-                f"highest possible alignment power: {best_power} "
-                f"(constrained by: {', '.join(constrainers)})"
-            )
-            if unknown_alignment:
-                print(
-                    f"excluded from the minimum (unknown section alignment): "
-                    f"{', '.join(unknown_alignment)}"
+            details.with_emtrace.append(
+                ArchiveMemberEntry(
+                    name=name,
+                    alignment=alignment,
+                    summary=summary,
+                    section_power=sec_power,
+                    rec_power=rec_power,
+                    member_power=member_power,
                 )
-        else:
-            print("highest possible alignment power: unknown (no alignment info)")
-    return 0
+            )
+
+    effective = [
+        (e.member_power, e.name)
+        for e in details.with_emtrace
+        if e.member_power is not None and e.section_power is not None
+    ]
+    details.unknown_alignment = [
+        e.name for e in details.with_emtrace if e.section_power is None
+    ]
+    if effective:
+        best_power, _ = min(effective)
+        details.best_power = best_power
+        details.constrainers = sorted(n for p, n in effective if p == best_power)
+    return details
 
 
-def _inspect_binary(path: Path, input_type: str, section_name: str) -> int:
-    binary = None
-    if input_type == "elf":
-        binary = lief.ELF.parse(path)
-    elif input_type == "pe":
-        binary = lief.PE.parse(path)
-    elif input_type == "macho":
-        binary = (
-            lief.parse(path)
-            if getattr(lief, "is_macho", lambda _: False)(path)
-            else None
-        )
+def _inspect_binary_data(
+    path: Path, input_type: str, section_name: str, report: InspectReport
+) -> BinaryDetails | None:
+    if not _lief.HAS_LIEF:
+        report.fail(lief_missing_error(f"parsing {input_type} executables"))
+        return None
+    binary = parse_binary(input_type, path)
 
     if binary is None:
-        print(
-            f"[error] Unable to parse '{path}' as {input_type} (is lief installed?).",
-            file=sys.stderr,
-        )
-        return 1
+        report.fail(f"Unable to parse '{path}' as {input_type} (is lief installed?).")
+        return None
 
     section = None
     for sec_name, sec in _binary_sections(binary):
@@ -893,91 +894,86 @@ def _inspect_binary(path: Path, input_type: str, section_name: str) -> int:
             section = sec
             break
     if section is None:
-        print(f"[error] No '{section_name}' section found in {path}.", file=sys.stderr)
-        return 1
+        report.fail(f"No '{section_name}' section found in {path}.")
+        return None
 
     content = _section_content(section)
     if content is None:
-        print(
-            f"[error] Unable to read section content of '{section_name}'.",
-            file=sys.stderr,
-        )
-        return 1
+        report.fail(f"Unable to read section content of '{section_name}'.")
+        return None
 
-    summary = _summarize_records(content)
-    alignment = _section_alignment(section)
+    details = BinaryDetails(
+        summary=_summarize_records(content),
+        alignment=_section_alignment(section),
+        content_len=len(content),
+    )
 
-    linked = True
     if input_type == "elf":
         try:
             file_type = getattr(binary.header, "file_type", None)
             type_name = str(file_type).split(".")[-1]
-            linked = type_name in ("EXEC", "DYN")
-            print(
-                f"elf type:         {type_name} ({'linked' if linked else 'unlinked object'})"
-            )
+            details.elf_type = type_name
+            details.linked = type_name in ("EXEC", "DYN")
         except AttributeError:
             pass
 
-    align_str = (
-        f"sh_addralign {alignment}" if alignment is not None else "alignment unknown"
-    )
-    print(f"section:          {section_name}, size {len(content)} bytes, {align_str}")
-    if alignment is not None and alignment > 0:
-        print(f"                  (sh_addralign power {alignment.bit_length() - 1})")
-    _print_section_summary(summary)
-
-    mgic = summary.mgic
+    assert details.summary is not None
+    mgic = details.summary.mgic
     if mgic is None:
-        return 0
+        return details
 
     power = mgic.alignment_power
     step = 2**power
-    notes: list[str] = []
+    alignment = details.alignment
     if alignment is not None:
         if alignment >= step:
-            notes.append(
+            details.notes.append(
                 f"section alignment OK (sh_addralign {alignment} >= 2^{power})"
             )
         else:
-            notes.append(
+            details.notes.append(
                 f"SECTION ALIGNMENT TOO LOW (sh_addralign {alignment} < 2^{power})"
             )
-    misaligned = [s for s in summary.record_starts if s % step != 0]
+    misaligned = [s for s in details.summary.record_starts if s % step != 0]
     if not misaligned:
-        notes.append(
-            f"all {len(summary.record_starts)} records start at 2^{power}-aligned offsets"
+        details.notes.append(
+            f"all {len(details.summary.record_starts)} records start at "
+            f"2^{power}-aligned offsets"
         )
     else:
-        notes.append(f"MISALIGNED RECORDS (not 2^{power}-aligned): {misaligned}")
-    if summary.common_alignment_power is not None:
-        notes.append(
+        details.notes.append(
+            f"MISALIGNED RECORDS (not 2^{power}-aligned): {misaligned}"
+        )
+    if details.summary.common_alignment_power is not None:
+        details.notes.append(
             f"all records conform to an alignment power of "
-            f"{summary.common_alignment_power}"
+            f"{details.summary.common_alignment_power}"
         )
     else:
-        notes.append("record alignment unconstrained (no non-trivial common alignment)")
+        details.notes.append(
+            "record alignment unconstrained (no non-trivial common alignment)"
+        )
+    return details
 
-    print("alignment:        " + "; ".join(notes))
-    return 0
 
-
-def _inspect_raw(path: Path, section_name: str) -> int:
+def _inspect_raw_data(
+    path: Path, section_name: str, report: InspectReport
+) -> RawDetails:
     """Inspect a raw binary file that is assumed to contain section bytes."""
-    print(
-        f"note:             input is neither an archive nor a known executable format; "
+    report.warn(
+        f"input is neither an archive nor a known executable format; "
         f"interpreting it as raw '{section_name}' section bytes."
     )
     data = path.read_bytes()
     summary = _summarize_records(data)
-    _print_section_summary(summary)
+    details = RawDetails(summary=summary)
     mgic = summary.mgic
     if mgic is not None:
         power = mgic.alignment_power
         misaligned = [s for s in summary.record_starts if s % 2**power != 0]
         if summary.common_alignment_power is not None:
-            print(
-                f"alignment:        all records conform to an alignment power of "
+            details.notes.append(
+                f"all records conform to an alignment power of "
                 f"{summary.common_alignment_power}; "
                 + (
                     f"all {len(summary.record_starts)} records start at "
@@ -986,4 +982,4 @@ def _inspect_raw(path: Path, section_name: str) -> int:
                     else f"MISALIGNED RECORDS (not 2^{power}-aligned): {misaligned}"
                 )
             )
-    return 0
+    return details

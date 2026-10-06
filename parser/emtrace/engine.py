@@ -1,146 +1,157 @@
-#!/usr/bin/env python3
+"""Trace-processing engine (the ``run`` command's library core).
+
+Reads the format information (MGIC record plus trace-point records) from an
+executable section, a JSON description, or raw section bytes, then decodes a
+stream of trace events through the injected *istream* callable and formats
+them through the injected *ostream* callable.
+
+All failures are returned as :class:`RunReport` / :class:`FormatInfoResult`
+issues — this module never prints and never raises for input problems
+(internal control flow may still use exceptions, folded at the boundary).
+"""
 
 from __future__ import annotations
 
-import sys
 import json
 import os
-from typing import Callable, Literal, Any
+import sys
+from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
+from typing import Any, Callable, Literal
 
+from . import _lief
+from ._lief import find_section_bytes, lief_missing_error, parse_binary
 from .cobs import cobs_get_frame
+from .errors import Report
 from .format_info import FmtInfo
-from .parser import (
-    Parser,
-    translation_le,
-    translation_be,
-)
 from .formatters import FORMATTERS
-from .record_parser import (
-    RecordParser,
-    RecordVersionError,
-    detect_byteorder as detect_byteorder,
-)
+from .parser import Parser, translation_be, translation_le
+from .record_parser import RecordParser, RecordVersionError
+from .record_parser import detect_byteorder as detect_byteorder
 
-try:
-    import lief
-
-    Binary = lief.MachO.Binary | lief.ELF.Binary | lief.PE.Binary
-
-    def parse_exe(
-        trace_info_file: Path, section_name: str, parse: Callable[[Path], Binary | None]
-    ) -> bytes | None:
-        exe = parse(trace_info_file)
-        if exe is None:
-            return None
-        section = exe.get_section(section_name)
-
-        if section is None:
-            return None
-        return bytes(section.content)
-
-    def parse_macho(x: Path):
-        exe = lief.parse(x) if lief.is_macho(x) else None
-        assert isinstance(exe, lief.MachO.Binary)
-        return exe
-
-except ImportError:
-    from . import lief_stub as lief
-
-    def parse_exe(
-        trace_info_file: Path, section_name: str, parse: Callable[[Path], Any]
-    ) -> None:
-        _ = trace_info_file, section_name, parse
-        return None
-
-    def parse_macho(_: Path):
-        return None
+__all__ = [
+    "FormatInfoResult",
+    "RunReport",
+    "default_ostream",
+    "detect_byteorder",
+    "load_format_info",
+]
 
 
-def error(*args: Any, **kwargs: Any):
-    print(
-        " ".join(
-            [
-                "\n".join("[error] " + line for line in str(arg).split("\n"))
-                for arg in args
-            ]
-        ),
-        file=sys.stderr,
-        **kwargs,
-    )
+@dataclass
+class FormatInfoResult(Report):
+    """Outcome of loading format information (Tier 2).
+
+    ``payload`` is the loaded data: a JSON-derived dict, or raw section
+    bytes. ``None`` with errors set means loading failed.
+    """
+
+    payload: dict[str, Any] | bytes | None = None
 
 
-def _run_test_comparison(captured_output: bytearray, expected_output: bytes) -> None:
-    """Compare captured output against expected output, print diff on mismatch, exit 1 on failure."""
-    actual_output = bytes(captured_output)
-    if actual_output == expected_output:
-        print("Test passed!")
-    else:
-        import difflib
+@dataclass
+class RunReport(Report):
+    """Outcome of processing a trace stream (Tier 2)."""
 
-        print("Test failed!", file=sys.stderr)
-        diff = difflib.unified_diff(
-            expected_output.decode("utf-8").splitlines(keepends=True),
-            actual_output.decode("utf-8").splitlines(keepends=True),
-            fromfile="expected",
-            tofile="actual",
-        )
-        _ = sys.stdout.writelines(diff)
-        sys.exit(1)
+    records: int = 0
+    #: Captured output (only in test mode, when *test_section_name* is set).
+    captured: bytes | None = None
+    #: Expected output (only in test mode).
+    expected: bytes | None = None
 
 
 def default_ostream(b: bytes) -> None:
+    """Write *b* to stdout (the default output sink)."""
     _ = sys.stdout.buffer.write(b)
     return sys.stdout.buffer.flush()
 
 
-def get_format_info(
+def _parse_callable(
+    file_format: str,
+) -> Callable[[Path], Any | None] | None:
+    """The binary parser for an explicit executable *file_format*."""
+    if file_format in ("exe", "elf", "pe", "macho", "oat"):
+        return partial(parse_binary, file_format)
+    return None
+
+
+def load_format_info(
     trace_info_file: Path,
     file_format: Literal["auto", "exe", "elf", "pe", "macho", "oat", "json", "binary"],
     section_name: str,
-) -> dict[str, Any] | bytes | None:
+) -> FormatInfoResult:
+    """Load format information from *trace_info_file* (Tier 2).
+
+    ``auto`` tries JSON, then the embedded executable section, then raw
+    binary — degrading gracefully when lief is not installed.
+    """
+    result = FormatInfoResult()
     if file_format == "auto":
         try:
-            with open(trace_info_file, "r") as f:
-                json_info = json.load(f)
-                return json_info
+            with open(trace_info_file) as f:
+                result.payload = json.load(f)
+                return result
         except json.JSONDecodeError:
             pass
         except UnicodeDecodeError:
             pass
 
-        section_bytes = parse_exe(trace_info_file, section_name, lief.parse)
+        section_bytes = find_section_bytes(
+            trace_info_file, section_name, partial(parse_binary, "exe")
+        )
         if section_bytes is not None:
-            return section_bytes
-        else:
-            try:
-                return open(trace_info_file, "rb").read()
-            except FileNotFoundError:
-                return None
+            result.payload = section_bytes
+            return result
+        try:
+            result.payload = open(trace_info_file, "rb").read()
+            return result
+        except FileNotFoundError:
+            result.fail(
+                f"Unable to get section {section_name} from file {trace_info_file} "
+                f"as {file_format}."
+            )
+            return result
 
-    match file_format:
-        case "exe":
-            return parse_exe(trace_info_file, section_name, lief.parse)
-        case "elf":
-            return parse_exe(trace_info_file, section_name, lief.ELF.parse)
-        case "pe":
-            return parse_exe(trace_info_file, section_name, lief.PE.parse)
-        case "macho":
-            return parse_exe(trace_info_file, section_name, parse_macho)
-        case "oat":
-            return parse_exe(trace_info_file, section_name, lief.OAT.parse)
-        case "json":
-            try:
-                with open(trace_info_file, "r") as f:
-                    json_info = json.load(f)
-                    return json_info
-            except json.JSONDecodeError:
-                return None
-        case "binary":
-            try:
-                return open(trace_info_file, "rb").read()
-            except FileNotFoundError:
-                return None
+    if file_format == "json":
+        try:
+            with open(trace_info_file) as f:
+                result.payload = json.load(f)
+                return result
+        except json.JSONDecodeError:
+            result.fail(
+                f"Unable to get section {section_name} from file {trace_info_file} "
+                f"as {file_format}."
+            )
+            return result
+    elif file_format == "binary":
+        try:
+            result.payload = open(trace_info_file, "rb").read()
+            return result
+        except FileNotFoundError:
+            result.fail(
+                f"Unable to get section {section_name} from file {trace_info_file} "
+                f"as {file_format}."
+            )
+            return result
+    else:
+        parse = _parse_callable(file_format)
+        if parse is None:
+            result.fail(f"Unknown format: {file_format}.")
+            return result
+        if not _lief.HAS_LIEF:
+            result.fail(lief_missing_error(f"reading {file_format} executables"))
+            return result
+        section_bytes = find_section_bytes(trace_info_file, section_name, parse)
+        if section_bytes is None:
+            result.fail(
+                f"Unable to get section {section_name} from file {trace_info_file} "
+                f"as {file_format}."
+            )
+            return result
+        result.payload = section_bytes
+        return result
+    return result
 
 
 def emtrace(
@@ -155,14 +166,35 @@ def emtrace(
     src_hyperlinks: bool = False,
     debug_script: bool = False,
     test_section_name: str | None = None,
-) -> None:
-    """Main function for the emtrace script."""
+    trace_sink: Callable[[str], Any] | None = None,
+) -> RunReport:
+    """Process a trace stream; return a :class:`RunReport` (Tier 2).
+
+    *trace_sink* receives internal debug lines when *debug_script* is set
+    (defaults to writing them to stderr).
+    """
+
+    report = RunReport()
+
+    def trace(*args: Any, **kwargs: Any):
+        if debug_script:
+            text = " ".join(
+                [
+                    "\n".join("[trace] " + line for line in str(arg).split("\n"))
+                    for arg in args
+                ]
+            )
+            if trace_sink is not None:
+                trace_sink(text)
+            else:
+                print(text, file=sys.stderr, **kwargs)
 
     captured_output: None | bytearray = None
     if test_section_name is not None:
         captured_output = bytearray()
 
         def test_ostream(b: bytes):
+            assert captured_output is not None
             captured_output.extend(b)
 
         ostream = test_ostream
@@ -171,44 +203,38 @@ def emtrace(
     if test_section_name is not None and Path(test_section_name).is_file():
         expected_output_from_file = Path(test_section_name).read_bytes().rstrip(b"\x00")
 
-    def trace(*args: Any, **kwargs: Any):
-        if debug_script:
-            print(
-                " ".join(
-                    [
-                        "\n".join("[trace] " + line for line in str(arg).split("\n"))
-                        for arg in args
-                    ]
-                ),
-                file=sys.stderr,
-                **kwargs,
-            )
-
     trace(
         f"Main args: {trace_info_file=} {istream=} {ostream=} {section_name=} {with_src_loc=} {src_hyperlinks=} {debug_script=} {test_section_name=}"
     )
 
-    format_info = get_format_info(trace_info_file, file_format, section_name)
+    loaded = load_format_info(trace_info_file, file_format, section_name)  # type: ignore[arg-type]
+    report.errors.extend(loaded.errors)
+    report.warnings.extend(loaded.warnings)
+    format_info = loaded.payload
 
     if format_info is None:
-        error(
-            f"Unable to get section {section_name} from file {trace_info_file} as {file_format}."
-        )
-        sys.exit(1)
+        if not report.errors:
+            report.fail(
+                f"Unable to get section {section_name} from file {trace_info_file} "
+                f"as {file_format}."
+            )
+        return report
 
     expected_output: bytes | None = None
     if test_section_name is not None:
         if expected_output_from_file is not None:
             expected_output = expected_output_from_file
         else:
-            section_bytes = parse_exe(trace_info_file, test_section_name, lief.parse)
+            section_bytes = find_section_bytes(
+                trace_info_file, test_section_name, partial(parse_binary, "exe")
+            )
             if section_bytes is not None:
                 expected_output = section_bytes.rstrip(b"\x00")
         trace(f"Expected test output: {expected_output}")
 
     if test_section_name is not None and expected_output is None:
-        error(f"Section '{test_section_name}' not found in {trace_info_file}")
-        sys.exit(1)
+        report.fail(f"Section '{test_section_name}' not found in {trace_info_file}")
+        return report
 
     if isinstance(format_info, dict):
         j = format_info
@@ -230,11 +256,11 @@ def emtrace(
         try:
             mgic = record_parser.find_and_parse_mgic()
         except RecordVersionError as e:
-            error(str(e))
-            sys.exit(1)
+            report.fail(str(e))
+            return report
         if mgic is None:
-            error("Failed to find or parse MGIC record in section data.")
-            sys.exit(1)
+            report.fail("Failed to find or parse MGIC record in section data.")
+            return report
 
         size_t_size: int = mgic.size_t_size
         ptr_size: int = mgic.ptr_size
@@ -258,29 +284,26 @@ def emtrace(
             encoding = "cobs"
             cobs_passthrough = ostream
         case _:
-            error(f"Unknown encoding: {encoding_id}")
-            sys.exit(1)
+            report.fail(f"Unknown encoding: {encoding_id}")
+            return report
 
     encoding = "raw" if encoding_id == 0 else "cobs"
     trace(f"{encoding=} passthrough={cobs_passthrough is not None}")
-    # all_format_info = record_parser.parse_all_fmt_infos()
-    # with open("test.json", "w") as test_out:
-    #     json.dump(all_format_info, test_out, default=lambda x: x.to_dict())
 
     if encoding == "raw":
         magic_address = int.from_bytes(istream(ptr_size), byteorder=byteorder)
     else:
         frame = cobs_get_frame(istream, cobs_passthrough)
         if frame is None:
-            error("Stream ended before reading the first COBS frame.")
-            sys.exit(1)
+            report.fail("Stream ended before reading the first COBS frame.")
+            return report
         trace(f"First COBS frame: {frame}")
         if len(frame) < ptr_size:
-            error(
+            report.fail(
                 "Stream ended in the middle of reading the bytes for the magic address.",
             )
-            error(f"Leftover bytes: {frame}")
-            sys.exit(1)
+            report.fail(f"Leftover bytes: {frame}")
+            return report
         magic_address = int.from_bytes(frame[:ptr_size], byteorder=byteorder)
     trace(f"{hex(magic_address)=}")
     magic_address *= 2**alignment_power
@@ -316,10 +339,10 @@ def emtrace(
     while True:
         if frame_buffer is not None:
             if len(frame_buffer) != 0:
-                error(
+                report.fail(
                     "Leftover bytes in COBS frame buffer before reading next frame.",
                 )
-                error(f"Leftover bytes: {frame_buffer}")
+                report.fail(f"Leftover bytes: {frame_buffer}")
                 frame_buffer.clear()
             frame = cobs_get_frame(original_istream, cobs_passthrough)
             if frame is None:
@@ -332,13 +355,13 @@ def emtrace(
         if len(b) == 0:
             break
         if len(b) < ptr_size:
-            error(
+            report.fail(
                 "Stream ended in the middle of reading the bytes for the next format info location.",
             )
-            error(f"Leftover bytes: {b}")
+            report.fail(f"Leftover bytes: {b}")
             if encoding == "cobs":
                 continue
-            sys.exit(1)
+            return report
         trace(f"Next format info location bytes: {b}")
         address = int.from_bytes(b, byteorder="little")
         trace(f"as address: {hex(address)}")
@@ -351,26 +374,26 @@ def emtrace(
         else:
             trace("Not cached yet.")
             if record_parser is None:
-                error(
+                report.fail(
                     f"Record parser not initialized and record not in cache / json at section_offset={section_offset:#x}."
                 )
-                sys.exit(1)
+                return report
 
             try:
                 info, _ = record_parser.parse_trace_record(section_offset)
             except RecordVersionError as e:
-                error(
+                report.fail(
                     f"Skipping trace point at section_offset={section_offset:#x}: {e}"
                 )
                 if encoding != "cobs":
-                    sys.exit(1)
+                    return report
                 continue
             if info is None:
-                error(
+                report.fail(
                     f"No trace point found for address={address:#x} (section_offset={section_offset})."
                 )
                 if encoding != "cobs":
-                    sys.exit(1)
+                    return report
                 continue
             record_cache[section_offset] = info
 
@@ -378,22 +401,27 @@ def emtrace(
         formatted = parser.format(info, FORMATTERS)
         match formatted:
             case tuple():
-                error(
+                report.fail(
                     f"Stream ended in the middle of parsing bytes associated with format string {info.fmt_string}.",
                 )
-                error(f"from {info.file}:{info.line}")
-                error("successfully parsed arguments: ", *formatted[0])
-                error(f"Leftover bytes: {formatted[1]}")
+                report.fail(f"from {info.file}:{info.line}")
+                report.fail(
+                    " ".join(
+                        ["successfully parsed arguments: "]
+                        + [str(a) for a in formatted[0]]
+                    )
+                )
+                report.fail(f"Leftover bytes: {formatted[1]}")
                 if encoding == "cobs":
                     continue
-                sys.exit(1)
+                return report
             case list():
-                error("Failed to format")
-                error(f"```\n{info.fmt_string}\n```")
-                error(f"from {info.file}:{info.line}")
-                error("with arguments")
-                error("    ", *formatted[:-1])
-                error(formatted[-1])
+                report.fail("Failed to format")
+                report.fail(f"```\n{info.fmt_string}\n```")
+                report.fail(f"from {info.file}:{info.line}")
+                report.fail("with arguments")
+                report.fail(" ".join(["    "] + [str(a) for a in formatted[:-1]]))
+                report.fail(str(formatted[-1]))
                 continue
             case str():
                 pass
@@ -408,6 +436,7 @@ def emtrace(
 
         if path is None:
             _ = ostream(formatted.encode("utf-8"))
+            report.records += 1
             continue
 
         location_string = f"{path}:{info.line}"
@@ -441,8 +470,11 @@ def emtrace(
 
         if new_line_missing:
             _ = ostream(b"\n")
+        report.records += 1
 
     if test_section_name is not None:
         assert expected_output is not None
         assert captured_output is not None
-        _run_test_comparison(captured_output, expected_output)
+        report.captured = bytes(captured_output)
+        report.expected = expected_output
+    return report
