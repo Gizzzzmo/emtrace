@@ -1,6 +1,7 @@
 #include "test_utils.h"
 #include <emtrace/emtrace.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 EXPECT_OUTPUT(

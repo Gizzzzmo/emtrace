@@ -1,11 +1,15 @@
 #include "emtrace/emtrace.h"
-#include <netinet/in.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h> // read(), write(), close()
+
 #define MAX 80
 #define PORT 8080
 #define SA struct sockaddr
@@ -72,8 +76,7 @@ int main(void) {
             printf("server accept the client...\n");
         }
 
-        static emt_magic_t magic =
-            EMT_MAGIC(EMT_ENCODING_NONE, size_t, EMT_DEFAULT_ALIGNMENT_POWER);
+        EMT_DEFAULT_SEC_ATTR static emt_magic_t magic = EMT_MAGIC(EMT_ENCODING_NONE, size_t, 0);
 
         EMT_INIT(&magic, SERIALIZE_POINTER, out, begin, DUMMY, connfd);
         int x = 1;

@@ -62,7 +62,7 @@ if build_dir_file.is_file():
         except:
             pass
 
-RUST_TEST_EXECUTABLES = [
+RUST_TEST_EXECUTABLES: list[str] = [
     # "test_basic",
     # "test_bool",
     # "test_f32",

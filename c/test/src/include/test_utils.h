@@ -1,5 +1,5 @@
-#ifndef EMTRACE_TEST_UTILS_H
-#define EMTRACE_TEST_UTILS_H
+#ifndef TEST_UTILS_H
+#define TEST_UTILS_H
 
 #include "emtrace/emtrace.h"
 #include <stddef.h>
@@ -41,4 +41,4 @@ static inline void serialize_pointer(
         __VA_ARGS__                                                                                \
     )
 
-#endif // EMTRACE_TEST_UTILS_H
+#endif // TEST_UTILS_H

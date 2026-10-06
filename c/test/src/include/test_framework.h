@@ -1,5 +1,5 @@
-#ifndef EMTRACE_TEST_FRAMEWORK_H
-#define EMTRACE_TEST_FRAMEWORK_H
+#ifndef TEST_FRAMEWORK_H
+#define TEST_FRAMEWORK_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -56,4 +56,4 @@ static inline test_result_t run_tests(
     return result;
 }
 
-#endif // EMTRACE_TEST_FRAMEWORK_H
+#endif // TEST_FRAMEWORK_H

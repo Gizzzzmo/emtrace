@@ -1,5 +1,5 @@
-#ifndef EMTRACE_TEST_SUITES_H
-#define EMTRACE_TEST_SUITES_H
+#ifndef TEST_SUITES_H
+#define TEST_SUITES_H
 
 #include "test_framework.h"
 #include <stddef.h>
@@ -17,4 +17,4 @@ test_fn_t* emt_get_mixed_tests(size_t* count);
 }
 #endif
 
-#endif // EMTRACE_TEST_SUITES_H
+#endif // TEST_SUITES_H

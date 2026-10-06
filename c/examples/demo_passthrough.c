@@ -1,6 +1,8 @@
 #include <emtrace/emtrace.h>
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // COBS passthrough uses a null byte not just to mark the end of a frame, but also its beginning.
 // Any bytes after a frame and before the next null byte can thus be considered passed through.
@@ -30,5 +32,6 @@ int main(int argc, char** argv) {
     // Otherwise invoke emtrace to run ourselves - this time with run
     char command[256];
     snprintf(command, sizeof(command), "emtrace run %s -- run", argv[0]);
+    // NOLINTNEXTLINE(bugprone-command-processor) this is a simple demo, using system is fine
     return system(command);
 }

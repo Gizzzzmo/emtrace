@@ -68,37 +68,37 @@ def test_check_valid_section_with_alignment():
 
 
 def test_check_no_mgic():
-    warnings, errors = run_check(build_trce_record())
+    _, errors = run_check(build_trce_record())
     assert any("No MGIC record found" in e for e in errors)
 
 
 def test_check_duplicate_mgic():
     data = build_mgic_record() + build_mgic_record()
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert any("exactly one" in e for e in errors)
 
 
 def test_check_trce_major_version_mismatch():
     data = build_mgic_record() + build_trce_record(trace_version=(2, 0))
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert any("unsupported major version 2.0" in e for e in errors)
 
 
 def test_check_mgic_major_version_mismatch():
     data = build_mgic_record(magic_version=(2, 0))
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert any("unsupported major version 2.0" in e for e in errors)
 
 
 def test_check_minor_version_ignored_by_default():
     data = build_mgic_record() + build_trce_record(trace_version=(1, 9))
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert errors == []
 
 
 def test_check_minor_version_error_with_flag():
     data = build_mgic_record() + build_trce_record(trace_version=(1, 9))
-    warnings, errors = run_check(data, error_on_minor=True)
+    _, errors = run_check(data, error_on_minor=True)
     assert any("minor version 9 is higher" in e for e in errors)
 
 
@@ -115,7 +115,7 @@ def test_check_misaligned_record():
     # Force an unaligned record: MGIC declares alignment power 3, but the TRCE
     # record follows immediately (at a non-8-aligned offset).
     data = build_mgic_record(alignment_power=3) + build_trce_record()
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert any(
         "declares alignment power 3" in e
         and "only conform to an alignment power of 0" in e
@@ -128,7 +128,7 @@ def test_check_alignment_power_within_common_alignment():
     # MGIC (75 bytes) + padding + TRCE at offset 80 → common power 4.
     mgic = build_mgic_record(alignment_power=4)
     data = mgic + b"\x00" * (80 - len(mgic)) + build_trce_record()
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert not any("alignment power" in e for e in errors)
 
 
@@ -138,7 +138,7 @@ def test_check_alignment_power_above_common_alignment():
     # but the MGIC declares power 5 (32-byte alignment).
     mgic = build_mgic_record(alignment_power=5)
     data = mgic + b"\x00" * (80 - len(mgic)) + build_trce_record()
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert any(
         "declares alignment power 5" in e
         and "only conform to an alignment power of 4" in e
@@ -151,7 +151,7 @@ def test_check_alignment_power_above_common_alignment():
 def test_check_alignment_unconstrained_single_record():
     """A single record at offset 0 conforms to any declared alignment power."""
     data = build_mgic_record(alignment_power=8)
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert not any("alignment power" in e for e in errors)
 
 
@@ -160,7 +160,7 @@ def test_check_address_representable():
     record at offset 256 is not representable."""
     mgic = build_mgic_record(ptr_size=1, alignment_power=0)
     data = mgic + b"\x00" * (256 - len(mgic)) + build_trce_record()
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert any(
         "cannot be represented in a 1-byte emt_ptr_t with alignment power 0" in e
         for e in errors
@@ -173,14 +173,14 @@ def test_check_address_representable_ok():
     trce = build_trce_record()
     # Last record ends well below the 256-byte modulus.
     data = mgic + trce
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert not any("cannot be represented" in e for e in errors)
 
 
 def test_check_address_uniqueness_includes_mgic():
     """The check is not triggered by a normal, representable section."""
     data = build_mgic_record(ptr_size=2, alignment_power=0) + build_trce_record()
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert not any("emt_ptr_t" in e for e in errors)
 
 
@@ -191,7 +191,7 @@ def test_check_framing_overlap():
     # framing bytes of the TRCE record: [3]=10 type, [4]=size, [5]=payload,
     # [6]=endianness. Point payload at the record_size piece (offset 14).
     data[trce_start + 5] = 14
-    warnings, errors = run_check(bytes(data))
+    _, errors = run_check(bytes(data))
     assert any(
         "pieces overlap" in e or "inside the 14-byte framing" in e for e in errors
     )
@@ -199,7 +199,7 @@ def test_check_framing_overlap():
 
 def test_check_mgic_bad_encoding():
     data = bytearray(build_mgic_record(encoding_id=5))
-    warnings, errors = run_check(bytes(data))
+    _, errors = run_check(bytes(data))
     assert any("unknown encoding_id=5" in e for e in errors)
 
 
@@ -207,13 +207,13 @@ def test_check_trce_invalid_flag():
     data = build_mgic_record() + build_trce_record(
         fmt_string="{0}", args=[("int", 4, 7, [])]
     )
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert any("invalid flag=7" in e for e in errors)
 
 
 def test_check_trce_bad_formatter():
     data = build_mgic_record() + build_trce_record(formatter_id=9)
-    warnings, errors = run_check(data)
+    _, errors = run_check(data)
     assert any("unknown formatter_id=9" in e for e in errors)
 
 

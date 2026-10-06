@@ -2,6 +2,7 @@
 #include <emtrace/emtrace.h>
 #include <float.h>
 #include <math.h>
+#include <stddef.h>
 
 EXPECT_OUTPUT(
     "Doubles: 3.14159 2.71828 nan inf -inf\n"

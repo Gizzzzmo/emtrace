@@ -1,6 +1,7 @@
 #include "test_utils.h"
 #include <emtrace/emtrace.h>
 #include <limits.h>
+#include <stddef.h>
 #include <stdint.h>
 
 EXPECT_OUTPUT(

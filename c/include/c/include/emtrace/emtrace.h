@@ -2,7 +2,7 @@
 // this python script: c/header-generator/build_macro.py Script arguments were: --max-args=32
 #ifndef EMTRACE_EMTRACE_H
 #define EMTRACE_EMTRACE_H
-// NOLINTBEGIN(modernize-avoid-c-arrays,modernize-use-auto)
+// NOLINTBEGIN(modernize-*,bugprone-casting-through-void)
 
 #include <stddef.h>
 #include <stdint.h>
@@ -4056,6 +4056,6 @@ static inline void emtrace_init(void) {
     EMT_F_HELPER(out_fn, default_length_type, extra_arg, x, __VA_ARGS__)
 #define EMT_F_HELPER(out_fn, default_length_type, extra_arg, x, ...)                               \
     EMT_F_##x(out_fn, default_length_type, extra_arg, __VA_ARGS__)
-// NOLINTEND(modernize-avoid-c-arrays,modernize-use-auto)
+// NOLINTEND(modernize-*,bugprone-casting-through-void)
 
 #endif // EMTRACE_EMTRACE_H

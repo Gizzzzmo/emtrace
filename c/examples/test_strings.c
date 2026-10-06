@@ -1,5 +1,6 @@
 #include "test_utils.h"
 #include <emtrace/emtrace.h>
+#include <stddef.h>
 
 EXPECT_OUTPUT(
     "Hello, World!\n"

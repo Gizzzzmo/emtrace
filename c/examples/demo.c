@@ -1,4 +1,5 @@
 #include "emtrace/emtrace.h"
+#include <stddef.h>
 #include <stdint.h>
 
 static void bar(void) { EMTRACE("YAY\n"); }

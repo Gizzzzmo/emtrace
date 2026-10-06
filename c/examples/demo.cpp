@@ -1,4 +1,5 @@
 #include "emtrace/emtrace.h"
+#include <cstddef>
 
 EMTRACE_MAGIC(size_t);
 

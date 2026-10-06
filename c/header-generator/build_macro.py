@@ -294,18 +294,15 @@ if __name__ == "__main__":
         )
         _ = output.write("#ifndef EMTRACE_EMTRACE_H\n")
         _ = output.write("#define EMTRACE_EMTRACE_H\n")
-        _ = output.write(
-            "// NOLINTBEGIN(modernize-avoid-c-arrays,modernize-use-auto)\n\n"
-        )
+        nolint_errors = "modernize-*,bugprone-casting-through-void"
+        _ = output.write(f"// NOLINTBEGIN({nolint_errors})\n\n")
 
         with open(template_path, "r") as template:
             _ = output.write(template.read())
 
         generate_macros(output, max_args)
 
-        _ = output.write(
-            "// NOLINTEND(modernize-avoid-c-arrays,modernize-use-auto)\n\n"
-        )
+        _ = output.write(f"// NOLINTEND({nolint_errors})\n\n")
         _ = output.write("\n#endif // EMTRACE_EMTRACE_H\n")
 
     _ = subprocess.run(["clang-format", "-i", output_path])
