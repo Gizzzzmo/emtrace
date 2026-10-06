@@ -8,22 +8,22 @@ from __future__ import annotations
 
 import tempfile
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from math import gcd
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
-from . import _lief
-from ._lief import lief_missing_error, parse_binary
-from .engine import load_format_info
+from ._lief import HAS_LIEF, lief_missing_error, parse_binary
+from .engine import TraceInfoFormat, load_format_info
 from .errors import Report
 from .record_parser import (
+    _FRAMING_SIZE,
     KNOWN_VERSIONS,
     MgicInfo,
     RecordInfo,
     RecordParser,
     RecordVersionError,
-    _FRAMING_SIZE,
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -58,14 +58,14 @@ class ExportReport(Report):
     output: dict[str, Any] | None = None
 
 
-def _load_section(
+def load_section(
     path: Path,
-    file_format: str,
+    file_format: TraceInfoFormat,
     section_name: str,
 ) -> LoadedSection:
     """Load raw section bytes from *path* (Tier 2)."""
     result = LoadedSection()
-    loaded = load_format_info(path, file_format, section_name)  # type: ignore[arg-type]
+    loaded = load_format_info(path, file_format, section_name)
     result.errors.extend(loaded.errors)
     result.warnings.extend(loaded.warnings)
     payload = loaded.payload
@@ -107,7 +107,7 @@ def _common_alignment_power(offsets: list[int]) -> int | None:
 
 
 def _check_framing(
-    data: bytes,
+    _data: bytes,
     info: RecordInfo,
     *,
     errors: list[str],
@@ -151,7 +151,6 @@ def _check_version(
     info: RecordInfo,
     *,
     error_on_minor: bool,
-    warnings: list[str],
     errors: list[str],
 ) -> bool:
     """Check a record's version against the versions this tool understands.
@@ -218,16 +217,14 @@ def _check(
             i = info.record_end
             continue
 
-        decodable = _check_version(
-            info, error_on_minor=error_on_minor, warnings=warnings, errors=errors
-        )
+        decodable = _check_version(info, error_on_minor=error_on_minor, errors=errors)
         _ = decodable
 
         if rec_type == b"MGIC":
             found_mgic_offsets.append(i)
             _check_mgic_record(data, info, errors=errors)
         elif rec_type == b"TRCE":
-            _check_trce_record(data, info, warnings=warnings, errors=errors)
+            _check_trce_record(data, info, errors=errors)
 
         i = info.record_end
 
@@ -314,7 +311,6 @@ def _check_trce_record(
     data: bytes,
     info: RecordInfo,
     *,
-    warnings: list[str],
     errors: list[str],
 ) -> None:
     offset = info.record_start
@@ -691,7 +687,7 @@ def _parse_archive(path: Path) -> list[tuple[str, bytes]]:
 
 def _parse_member_elf(content: bytes) -> Any | None:
     """Parse an ELF object file from its raw bytes (via a temp file)."""
-    if not _lief.HAS_LIEF:
+    if not HAS_LIEF:
         return None
     if not content.startswith(b"\x7fELF"):
         return None
@@ -800,7 +796,7 @@ def inspect_path(path: Path, section_name: str) -> InspectReport:
     Executable inputs require the ``lief`` package.
     """
     report = InspectReport(path=path)
-    resolved = path.resolve() if isinstance(path, Path) else Path(path).resolve()
+    resolved = path.resolve()
     report.path = resolved
     if not resolved.is_file():
         report.fail(f"{resolved} does not exist.")
@@ -879,7 +875,7 @@ def _inspect_archive_data(
 def _inspect_binary_data(
     path: Path, input_type: str, section_name: str, report: InspectReport
 ) -> BinaryDetails | None:
-    if not _lief.HAS_LIEF:
+    if not HAS_LIEF:
         report.fail(lief_missing_error(f"parsing {input_type} executables"))
         return None
     binary = parse_binary(input_type, path)

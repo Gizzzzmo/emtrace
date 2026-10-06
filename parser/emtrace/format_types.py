@@ -52,7 +52,7 @@ class MyList[T]:
             case [sep, el_spec]:
                 return sep.join([el.__format__(el_spec) for el in self.list])
             case _:
-                assert False
+                assert False  # noqa: B011  # unreachable
 
     @override
     def __repr__(self) -> str:

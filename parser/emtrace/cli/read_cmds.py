@@ -43,7 +43,7 @@ def _print_section_summary(summary: _SectionSummary, indent: str = "  ") -> None
 def cmd_check(args: Any) -> int:
     """Check that an emtrace section conforms to the trace format spec."""
     path = Path(args.input).resolve()
-    loaded = inspector._load_section(path, args.format, args.section_name)
+    loaded = inspector.load_section(path, args.format, args.section_name)
     if loaded.data is None:
         for issue in loaded.errors:
             print_issue(issue)
@@ -95,7 +95,7 @@ def cmd_export(args: Any) -> int:
             )
 
     path = Path(args.input).resolve()
-    loaded = inspector._load_section(path, args.format, args.section_name)
+    loaded = inspector.load_section(path, args.format, args.section_name)
     if loaded.data is None:
         for issue in loaded.errors:
             print_issue(issue)

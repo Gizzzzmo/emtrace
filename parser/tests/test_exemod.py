@@ -13,7 +13,6 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-
 from emtrace import edit
 from emtrace.exemod import ExeError, ExeImage, SectionNotFoundError
 from emtrace.record_parser import RecordParser
@@ -253,7 +252,15 @@ def build_symtab_exe(
 
     phfmt = "IIQQQQQQ" if is64 else "IIIIIIII"
 
-    def phdr(index, p_type, p_flags, off, vaddr, filesz, memsz):
+    def phdr(
+        index: int,
+        p_type: int,
+        p_flags: int,
+        off: int,
+        vaddr: int,
+        filesz: int,
+        memsz: int,
+    ) -> None:
         values = (
             (p_type, p_flags, off, vaddr, vaddr, filesz, memsz, 0x1000)
             if is64
@@ -276,8 +283,18 @@ def build_symtab_exe(
     shfmt = "IIQQQQIIQQ" if is64 else "IIIIIIIIII"
 
     def shdr(
-        index, name, typ, flags, addr, off, size, link, info, addralign, entsize=0
-    ):
+        index: int,
+        name: int,
+        typ: int,
+        flags: int,
+        addr: int,
+        off: int,
+        size: int,
+        link: int,
+        info: int,
+        addralign: int,
+        entsize: int = 0,
+    ) -> None:
         struct.pack_into(
             end + shfmt,
             buf,
@@ -485,36 +502,36 @@ def test_open_detects_format(tmp_path: Path) -> None:
 def test_open_refuses_garbage_and_missing(tmp_path: Path) -> None:
     blob = _write(tmp_path, "blob.bin", b"not an executable" * 32)
     with pytest.raises(ExeError):
-        ExeImage.open(blob)
+        _ = ExeImage.open(blob)
     with pytest.raises(ExeError):
-        ExeImage.open(tmp_path / "does-not-exist")
+        _ = ExeImage.open(tmp_path / "does-not-exist")
 
 
 def test_open_refuses_unlinked(tmp_path: Path) -> None:
     obj = _write(tmp_path, "obj.o", build_test_exe(e_type=ET_REL))
     with pytest.raises(ExeError, match="[Oo]bject"):
-        ExeImage.open(obj)
+        _ = ExeImage.open(obj)
     macho_obj = _write(tmp_path, "obj.macho", build_macho_exe(file_type=1))
     with pytest.raises(ExeError, match="[Oo]bject"):
-        ExeImage.open(macho_obj)
+        _ = ExeImage.open(macho_obj)
 
 
 def test_open_refuses_big_endian(tmp_path: Path) -> None:
     be_elf = _write(tmp_path, "be.so", build_test_exe(little=False))
     with pytest.raises(ExeError, match="[Bb]ig-endian"):
-        ExeImage.open(be_elf)
+        _ = ExeImage.open(be_elf)
 
     be_macho = bytearray(build_macho_exe())
     be_macho[:4] = b"\xfe\xed\xfa\xcf"  # MH_CIGAM_64: byte-swapped magic
     with pytest.raises(ExeError, match="[Bb]ig-endian"):
-        ExeImage.open(_write(tmp_path, "be.macho", bytes(be_macho)))
+        _ = ExeImage.open(_write(tmp_path, "be.macho", bytes(be_macho)))
 
 
 def test_experimental_be_allows_genuine_be_elf(tmp_path: Path) -> None:
     data = build_be_s390_exe()
     path = _write(tmp_path, "be-s390.so", data)
     with pytest.raises(ExeError, match="[Bb]ig-endian"):
-        ExeImage.open(path)
+        _ = ExeImage.open(path)
 
     image = ExeImage.open(path, experimental_be=True)
     assert image.format == "elf"
@@ -529,17 +546,17 @@ def test_experimental_be_allows_genuine_be_elf(tmp_path: Path) -> None:
 
 def test_open_requires_lief(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     blob = _write(tmp_path, "a.so", build_test_exe())
-    monkeypatch.setattr("emtrace._lief.HAS_LIEF", False)
+    monkeypatch.setattr("emtrace.exemod.HAS_LIEF", False)
     with pytest.raises(ExeError, match="lief"):
-        ExeImage.open(blob)
+        _ = ExeImage.open(blob)
 
 
 def test_missing_section(tmp_path: Path) -> None:
     image = ExeImage.open(_write(tmp_path, "a.so", build_test_exe()))
     with pytest.raises(SectionNotFoundError):
-        image.strip_section(".nope")
+        _ = image.strip_section(".nope")
     with pytest.raises(SectionNotFoundError):
-        image.make_nonload(".nope")
+        _ = image.make_nonload(".nope")
 
 
 # ── nonload (ELF) ──────────────────────────────────────────────────────────
@@ -586,10 +603,10 @@ def _reparse(image: ExeImage) -> Any:
 def test_nonload_unsupported_on_pe_and_macho(tmp_path: Path) -> None:
     pe = ExeImage.open(_write(tmp_path, "b.exe", build_pe_exe()))
     with pytest.raises(ExeError, match="only implemented for ELF"):
-        pe.make_nonload(".emtrace")
+        _ = pe.make_nonload(".emtrace")
     macho = ExeImage.open(_write(tmp_path, "c.macho", build_macho_exe()))
     with pytest.raises(ExeError, match="only implemented for ELF"):
-        macho.make_nonload(".emtrace")
+        _ = macho.make_nonload(".emtrace")
 
 
 # ── strip (ELF) ────────────────────────────────────────────────────────────
@@ -648,7 +665,7 @@ def test_strip_refuses_reloc_to_deleted_symbol(
         )
     )
     with pytest.raises(ExeError, match="relocation"):
-        image.strip_section(".emtrace")
+        _ = image.strip_section(".emtrace")
 
 
 def test_strip_refuses_dynsym_reference() -> None:
@@ -660,7 +677,7 @@ def test_strip_refuses_dynsym_reference() -> None:
         dynamic_symbols=[_mock_sym("dyn_ref", 3)],
     )
     with pytest.raises(ExeError, match="[Dd]ynamic symbol"):
-        elf_backend.check_strippable(binary, target)
+        _ = elf_backend.check_strippable(binary, target)
 
 
 def test_strip_refuses_reloc_in_range() -> None:
@@ -669,7 +686,7 @@ def test_strip_refuses_reloc_in_range() -> None:
     target = _mock_section("target", index=3, va=0x1000, size=64)
     binary = _mock_binary(relocs=[SimpleNamespace(address=0x1020)])
     with pytest.raises(ExeError, match="relocation"):
-        elf_backend.check_strippable(binary, target)
+        _ = elf_backend.check_strippable(binary, target)
 
 
 def test_strip_refuses_reloc_to_deleted_symbol_mock() -> None:
@@ -680,7 +697,7 @@ def test_strip_refuses_reloc_to_deleted_symbol_mock() -> None:
     reloc = SimpleNamespace(address=0x9999, symbol=_mock_sym("doomed", 3))
     binary = _mock_binary(symbols=[bound], relocs=[reloc])
     with pytest.raises(ExeError, match="relocation"):
-        elf_backend.check_strippable(binary, target)
+        _ = elf_backend.check_strippable(binary, target)
 
 
 def test_check_strippable_returns_bound_symbols() -> None:
@@ -720,16 +737,16 @@ def _mock_binary(
         dynamic_symbols=dynamic_symbols or [],
         relocations=relocs or [],
     )
-    binary.get_section_idx = lambda section: 3  # noqa: E731
+    binary.get_section_idx = lambda section: 3  # pyright: ignore[reportUnknownLambdaType]
     return binary
 
 
 def test_strip_refuses_metadata_sections(tmp_path: Path) -> None:
     image = ExeImage.open(_write(tmp_path, "a.so", build_symtab_exe()))
     with pytest.raises(ExeError):
-        image.strip_section(".shstrtab")
+        _ = image.strip_section(".shstrtab")
     with pytest.raises(ExeError):
-        image.strip_section(".symtab")
+        _ = image.strip_section(".symtab")
 
 
 # ── strip (PE / Mach-O) ────────────────────────────────────────────────────

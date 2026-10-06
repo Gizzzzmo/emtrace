@@ -6,7 +6,13 @@ CLI side effects.
 """
 
 from .edit import nonload_binary, strip_binary
-from .engine import FormatInfoResult, RunReport, emtrace, load_format_info
+from .engine import (
+    FormatInfoResult,
+    RunReport,
+    TraceInfoFormat,
+    emtrace,
+    load_format_info,
+)
 from .errors import Issue, Report
 from .exemod import (
     ExeError,
@@ -45,6 +51,7 @@ __all__ = [
     "RunReport",
     "SectionNotFoundError",
     "StripReport",
+    "TraceInfoFormat",
     "check_section",
     "emtrace",
     "export_section",

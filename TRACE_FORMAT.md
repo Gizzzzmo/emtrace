@@ -236,3 +236,44 @@ record they belong to.
 Before the first trace record the program writes the runtime address of the
 `MGIC` record (also as an `emt_ptr_t`) so the parser can determine the ASLR
 offset.
+
+## Post-link processing
+
+The `emtrace strip` and `emtrace nonload` commands edit the `.emtrace` section
+of a linked binary (ELF, PE, or Mach-O for `strip`; ELF only for `nonload`).
+Both are implemented on top of LIEF, which fully rebuilds the binary — so no
+byte-offset or exact-size guarantees are made. The guarantees are behavioral:
+the section entry is gone, symbols bound to it are deleted, its content no
+longer parses, and the rebuilt binary still runs.
+
+`strip` refuses unlinked object files (relocations and symbol references would
+break), inputs that are not supported executables, sections that relocations or
+dynamic/external symbols reference, and binaries carrying code signatures or
+overlay data (any byte change would invalidate them). Only little-endian
+binaries are supported; big-endian inputs are refused explicitly (endianness
+detection is unreliable for them) unless `--experimental-be` is given, which
+unlocks them at the user's risk — rebuilding big-endian binaries is
+unverified and may produce corrupt output. With `--output`/`-o` the modified binary is
+written to a new file (preserving the file mode of the input); otherwise the
+input is replaced atomically.
+
+### `emtrace strip`
+
+Removes the section completely — the same outcome as `objcopy --remove-section`:
+the section entry is removed, symbols bound to the section are deleted from
+static symbol tables, and the section content is cleared, so the traces are gone
+and the binary keeps running (though its traces can no longer be parsed).
+
+### `emtrace nonload`
+
+Clears the `SHF_ALLOC` flag and the section address, keeping the section bytes
+in the file — the same effect as placing the section in an `(INFO)` region of a
+linker script. The traces remain parseable, but tools that load or flash the
+binary ignore non-ALLOC sections: the OS loader never maps the section, gdb and
+lldb treat it as file metadata, and `objcopy` excludes it from raw binary and
+ihex output, so the data is never written to a device.
+
+The command is idempotent: on an already non-loadable section it does nothing.
+
+Only implemented for ELF: neither PE nor Mach-O has an equivalent "loadable"
+section flag, so `nonload` refuses those formats (use `strip` there instead).

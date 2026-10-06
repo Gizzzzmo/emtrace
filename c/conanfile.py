@@ -24,8 +24,7 @@ class BasicConanfile(ConanFile):
     def build_requirements(self):
         # Each call to self.tool_requires() will add the corresponding build requirement
         # Uncommenting this line will add the cmake >=3.15 build dependency to your project
-        self.requires("cmake/[>=3.15]")
-        pass
+        self.requires("cmake/[>=3.15]")  # pyright: ignore[reportOptionalCall]  # untyped conan base
 
     # The purpose of generate() is to prepare the build, generating the necessary files, such as
     # Files containing information to locate the dependencies, environment activation scripts,

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Callable
 import struct
+from collections.abc import Callable
+from typing import Any, Literal
 
-from .format_types import SChar, Char, MyList
-from .format_info import TypeInfo, FmtInfo
+from .format_info import FmtInfo, TypeInfo
+from .format_types import Char, MyList, SChar
 
 
 class EndOfStreamException(Exception):
@@ -34,7 +35,6 @@ class Parser:
         self.ptr_size = ptr_size
         self.size_t_byteorder = size_t_byteorder
         self.ptr_byteorder = ptr_byteorder
-        pass
 
     def parse(self, id: str, info: TypeInfo):
         return self.translation[id](self, info)
@@ -81,7 +81,7 @@ class Parser:
 
 def signed_le(parser: Parser, info: TypeInfo) -> int:
     """Interpret bytes as a little-endian signed integer."""
-    assert not info.size.kind == "null_terminated"
+    assert info.size.kind != "null_terminated"
 
     if info.size.kind == "length_prefixed":
         size = parser.read_length_prefix(info.size.size)
@@ -94,7 +94,7 @@ def signed_le(parser: Parser, info: TypeInfo) -> int:
 
 def signed_be(parser: Parser, info: TypeInfo) -> int:
     """Interpret bytes as a big-endian signed integer."""
-    assert not info.size.kind == "null_terminated"
+    assert info.size.kind != "null_terminated"
 
     if info.size.kind == "length_prefixed":
         size = parser.read_length_prefix(info.size.size)
@@ -107,7 +107,7 @@ def signed_be(parser: Parser, info: TypeInfo) -> int:
 
 def unsigned_le(parser: Parser, info: TypeInfo) -> int:
     """Interpret bytes as a little-endian unsigned integer."""
-    assert not info.size.kind == "null_terminated"
+    assert info.size.kind != "null_terminated"
 
     if info.size.kind == "length_prefixed":
         size = parser.read_length_prefix(info.size.size)
@@ -120,7 +120,7 @@ def unsigned_le(parser: Parser, info: TypeInfo) -> int:
 
 def unsigned_be(parser: Parser, info: TypeInfo) -> int:
     """Interpret bytes as a big-endian unsigned integer."""
-    assert not info.size.kind == "null_terminated"
+    assert info.size.kind != "null_terminated"
 
     if info.size.kind == "length_prefixed":
         size = parser.read_length_prefix(info.size.size)
@@ -169,7 +169,7 @@ def float_le(parser: Parser, info: TypeInfo) -> float:
         case 8:
             return struct.unpack("<d", b)[0]
         case _:
-            assert False
+            assert False  # noqa: B011  # unreachable
 
 
 def float_be(parser: Parser, info: TypeInfo) -> float:
@@ -191,7 +191,7 @@ def float_be(parser: Parser, info: TypeInfo) -> float:
         case 8:
             return struct.unpack(">d", b)[0]
         case _:
-            assert False
+            assert False  # noqa: B011  # unreachable
 
 
 def signed_char(parser: Parser, info: TypeInfo):

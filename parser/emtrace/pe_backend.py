@@ -16,7 +16,7 @@ from typing import Any
 
 import lief
 
-from .exemod import ExeError
+from .errors import ExeError
 
 FORMAT = "pe"
 
@@ -92,7 +92,7 @@ def check_strippable(binary: Any, section: Any) -> list[Any]:
     return []
 
 
-def delete_symbols(binary: Any, symbols: list[Any]) -> int:
+def delete_symbols(binary: Any, _symbols: list[Any]) -> int:
     """Delete static *symbols*; the PE backend never has any (see above)."""
     _ = binary
     return 0

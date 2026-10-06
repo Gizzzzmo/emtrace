@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-import pytest
 from typing import Literal
 
+import pytest
+from emtrace.format_info import Size
 from emtrace.record_parser import (
-    RecordParser,
+    _FRAMING_SIZE,
+    _MAGIC_CONSTANT,
     RecordInfo,
+    RecordParser,
     RecordVersionError,
     detect_byteorder,
-    _MAGIC_CONSTANT,
-    _FRAMING_SIZE,
 )
-from emtrace.format_info import Size
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Binary record builders
@@ -406,7 +405,7 @@ def test_parse_mgic_payload_truncated():
     )
     truncated_parser = make_parser(truncated)
     with pytest.raises(AssertionError):
-        truncated_parser.parse_mgic_payload(truncated_info)
+        _ = truncated_parser.parse_mgic_payload(truncated_info)
 
 
 def test_parse_mgic_payload_bad_magic():
@@ -417,7 +416,7 @@ def test_parse_mgic_payload_bad_magic():
     parser = make_parser(bytes(data))
     info = framing_info(parser)
     with pytest.raises(AssertionError):
-        parser.parse_mgic_payload(info)
+        _ = parser.parse_mgic_payload(info)
 
 
 def test_parse_mgic_payload_ptr_size_zero():
@@ -427,7 +426,7 @@ def test_parse_mgic_payload_ptr_size_zero():
     parser = make_parser(bytes(data))
     info = framing_info(parser)
     with pytest.raises(AssertionError):
-        parser.parse_mgic_payload(info)
+        _ = parser.parse_mgic_payload(info)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -593,7 +592,7 @@ def test_parse_mgic_record_does_not_mutate_state():
     original_sz = parser.size_t_size
     original_bo = parser.byteorder
     original_ptr = parser.ptr_size
-    parser.parse_mgic_record(0)
+    _ = parser.parse_mgic_record(0)
     assert parser.size_t_size == original_sz
     assert parser.byteorder == original_bo
     assert parser.ptr_size == original_ptr
@@ -603,7 +602,7 @@ def test_parse_mgic_record_unsupported_major_version():
     data = build_mgic_record(magic_version=(2, 0))
     parser = make_parser(data)
     with pytest.raises(RecordVersionError) as exc_info:
-        parser.parse_mgic_record(0)
+        _ = parser.parse_mgic_record(0)
     assert exc_info.value.record_type == b"MGIC"
     assert (exc_info.value.major, exc_info.value.minor) == (2, 0)
 
@@ -612,7 +611,7 @@ def test_parse_trce_record_unsupported_major_version():
     data = build_trce_record(trace_version=(2, 1))
     parser = make_parser(data)
     with pytest.raises(RecordVersionError) as exc_info:
-        parser.parse_trace_record(0)
+        _ = parser.parse_trace_record(0)
     assert exc_info.value.record_type == b"TRCE"
     assert (exc_info.value.major, exc_info.value.minor) == (2, 1)
 
@@ -715,7 +714,7 @@ def test_find_and_parse_mgic_unsupported_major_version():
     data = build_mgic_record(magic_version=(3, 0))
     parser = RecordParser(memoryview(data))
     with pytest.raises(RecordVersionError):
-        parser.find_and_parse_mgic()
+        _ = parser.find_and_parse_mgic()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -921,7 +920,7 @@ def test_parse_trace_payload_overlong_consumption_rejected():
     )
     parser = make_parser(bytes(data))
     with pytest.raises(AssertionError):
-        parser.parse_trace_record(0)
+        _ = parser.parse_trace_record(0)
 
 
 def test_parse_trace_payload_multiple_args():

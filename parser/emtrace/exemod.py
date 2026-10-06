@@ -16,25 +16,28 @@ the rebuilt binary still runs.
 
 from __future__ import annotations
 
+import importlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .errors import Report
+from ._lief import HAS_LIEF
+from .errors import (
+    ExeError,
+    NotSupportedError,
+    Report,
+    SectionNotFoundError,
+)
 
-from . import _lief
-
-
-class ExeError(Exception):
-    """Raised when a file cannot be edited as a supported executable."""
-
-
-class SectionNotFoundError(ExeError):
-    """Raised when the requested section does not exist in the image."""
-
-
-class NotSupportedError(ExeError):
-    """Raised when an operation is not supported for the image or format."""
+# Re-exported for backward compatibility (import from .errors for new code).
+__all__ = [
+    "ExeError",
+    "ExeImage",
+    "NonloadReport",
+    "NotSupportedError",
+    "SectionNotFoundError",
+    "StripReport",
+]
 
 
 @dataclass
@@ -72,11 +75,11 @@ class ExeImage:
     """A linked executable image editable via its per-format backend."""
 
     def __init__(self, path: Path, format: str, binary: Any, backend: Any) -> None:
-        self._path = path
-        self._format = format
-        self._binary = binary
-        self._backend = backend
-        self._data = path.read_bytes()
+        self._path: Path = path
+        self._format: str = format
+        self._binary: Any = binary
+        self._backend: Any = backend
+        self._data: bytes = path.read_bytes()
 
     @staticmethod
     def open(path: str | Path, *, experimental_be: bool = False) -> ExeImage:
@@ -88,18 +91,22 @@ class ExeImage:
         Raises ExeError when LIEF is unavailable, the file is not a supported
         executable, or it is not linked (object files cannot be edited).
         """
-        if not _lief.HAS_LIEF:
+        if not HAS_LIEF:
             raise ExeError(
                 "editing binaries requires the 'lief' package, which is not installed"
             )
         resolved = Path(path)
         if not resolved.is_file():
             raise ExeError(f"{resolved} does not exist")
-        # Imported here to avoid a circular import (the backends import the
-        # exception types defined above).
-        from . import elf_backend, macho_backend, pe_backend
+        # Imported dynamically (and lazily, so importing emtrace stays
+        # lief-free): a static `from . import ...` here would form an import
+        # cycle with the package __init__.
+        backends = tuple(
+            importlib.import_module(f".{name}", __package__)
+            for name in ("elf_backend", "pe_backend", "macho_backend")
+        )
 
-        for backend in (elf_backend, pe_backend, macho_backend):
+        for backend in backends:
             binary = backend.try_parse(resolved, experimental_be=experimental_be)
             if binary is not None:
                 return ExeImage(resolved, backend.FORMAT, binary, backend)

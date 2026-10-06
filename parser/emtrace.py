@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-from emtrace.cli.main import main
 import sys
+
+from emtrace.cli.main import main
 
 if __name__ == "__main__":
     sys.exit(main())

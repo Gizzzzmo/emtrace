@@ -17,7 +17,7 @@ from typing import Any
 
 import lief
 
-from .exemod import ExeError
+from .errors import ExeError
 
 FORMAT = "elf"
 
@@ -133,7 +133,7 @@ def remove_section(binary: Any, section: Any) -> None:
     binary.remove(section, clear=True)
 
 
-def apply_nonload(binary: Any, section: Any) -> tuple[int, int, bool]:
+def apply_nonload(_binary: Any, section: Any) -> tuple[int, int, bool]:
     """Clear SHF_ALLOC and the section address; return (old_flags, old_addr, changed)."""
     old_flags = int(section.flags)
     old_addr = int(section.virtual_address)

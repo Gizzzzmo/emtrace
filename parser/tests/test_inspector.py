@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import struct
-import pytest
 from pathlib import Path
 
+import pytest
 from emtrace.cli import read_cmds
 from emtrace.inspector import (
     _check,
@@ -17,7 +17,6 @@ from emtrace.inspector import (
 from emtrace.record_parser import RecordParser, RecordVersionError
 
 from .test_record_parser import build_mgic_record, build_trce_record
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # _check

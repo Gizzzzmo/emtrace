@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from .format_info import TypeInfo, FmtInfo, Size
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Literal, Callable
+from typing import Any, Literal, cast
+
+from .format_info import FmtInfo, Size, TypeInfo
 
 # Per-argument flag values in TRCE record layout entries.
 _FLAG_STATIC = 0
@@ -68,10 +70,10 @@ class RecordVersionError(Exception):
         minor: int,
         known: tuple[int, int],
     ) -> None:
-        self.record_type = record_type
-        self.major = major
-        self.minor = minor
-        self.known = known
+        self.record_type: bytes = record_type
+        self.major: int = major
+        self.minor: int = minor
+        self.known: tuple[int, int] = known
         super().__init__(
             f"Unsupported {record_type.decode('ascii', 'replace')} record version "
             f"{major}.{minor} (parser knows {'.'.join(map(str, known))})."
@@ -139,7 +141,7 @@ def detect_byteorder(b: bytes) -> Literal["little", "big", "unknown"] | None:
         byteorder = "big"
     else:
         byteorder = "unknown"
-    for i, byte in enumerate(b):
+    for byte in b:
         if int(byte) >= len(b):
             return None
         if found[int(byte)]:
@@ -290,7 +292,10 @@ class RecordParser:
 
         assert info.record_type is not None
         if info.record_type in KNOWN_VERSIONS:
-            return info.record_type, info, info.record_end  # type: ignore[return-value]
+            # Membership in KNOWN_VERSIONS is the check; the checker cannot
+            # narrow bytes to RECORD_TYPE through dict keys.
+            record_type = cast("RECORD_TYPE", info.record_type)
+            return record_type, info, info.record_end
 
         self.debug_trace(
             f"Found record framing at offset {offset} with unknown type "
@@ -322,7 +327,9 @@ class RecordParser:
             info.payload_offset,
             info.record_end,
             size_t_size=info.size_t_size,
-            byteorder=info.byteorder,  # type: ignore[arg-type]
+            # Records that reach decoding have definitive framing; "unknown"
+            # framings are rejected earlier (see check/inspect).
+            byteorder=cast("Literal['little', 'big']", info.byteorder),
         )
         record_info.add_version(info.major, info.minor)
         return record_info, info.record_end
@@ -516,7 +523,8 @@ class RecordParser:
             record_start=info.record_start,
             magic_offset=magic_offset,
             size_t_size=info.size_t_size,
-            byteorder=info.byteorder,  # type: ignore[arg-type]
+            # A decodable MGIC record has definitive framing (see above).
+            byteorder=cast("Literal['little', 'big']", info.byteorder),
             version_major=info.major,
             version_minor=info.minor,
             ptr_size=ptr_size,

@@ -11,7 +11,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
 from emtrace.cli import edit_cmds, read_cmds, run_cmd
 
 from .test_inspector import aligned_section, build_archive, build_minimal_elf_o
@@ -78,7 +77,7 @@ def test_check_exe_format_requires_lief(
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("emtrace._lief.HAS_LIEF", False)
+    monkeypatch.setattr("emtrace.engine.HAS_LIEF", False)
     section = tmp_path / "section.bin"
     _ = section.write_bytes(aligned_section())
     assert read_cmds.cmd_check(_check_args(str(section), "exe")) == 1
@@ -90,7 +89,7 @@ def test_inspect_binary_requires_lief(
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("emtrace._lief.HAS_LIEF", False)
+    monkeypatch.setattr("emtrace.inspector.HAS_LIEF", False)
     obj = tmp_path / "test.o"
     _ = obj.write_bytes(build_minimal_elf_o(aligned_section(), sh_addralign=8))
     args = SimpleNamespace(input=str(obj), section_name=".emtrace")
@@ -103,7 +102,7 @@ def test_strip_requires_lief(
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("emtrace._lief.HAS_LIEF", False)
+    monkeypatch.setattr("emtrace.exemod.HAS_LIEF", False)
     blob = tmp_path / "blob.bin"
     _ = blob.write_bytes(b"not an executable" * 32)
     args = SimpleNamespace(

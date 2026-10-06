@@ -15,13 +15,13 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
-from . import _lief
-from ._lief import find_section_bytes, lief_missing_error, parse_binary
+from ._lief import HAS_LIEF, find_section_bytes, lief_missing_error, parse_binary
 from .cobs import cobs_get_frame
 from .errors import Report
 from .format_info import FmtInfo
@@ -33,10 +33,14 @@ from .record_parser import detect_byteorder as detect_byteorder
 __all__ = [
     "FormatInfoResult",
     "RunReport",
+    "TraceInfoFormat",
     "default_ostream",
     "detect_byteorder",
     "load_format_info",
 ]
+
+#: Accepted values for the ``file_format`` parameter of the entry points.
+TraceInfoFormat = Literal["auto", "exe", "elf", "pe", "macho", "oat", "json", "binary"]
 
 
 @dataclass
@@ -78,7 +82,7 @@ def _parse_callable(
 
 def load_format_info(
     trace_info_file: Path,
-    file_format: Literal["auto", "exe", "elf", "pe", "macho", "oat", "json", "binary"],
+    file_format: TraceInfoFormat,
     section_name: str,
 ) -> FormatInfoResult:
     """Load format information from *trace_info_file* (Tier 2).
@@ -104,7 +108,7 @@ def load_format_info(
             result.payload = section_bytes
             return result
         try:
-            result.payload = open(trace_info_file, "rb").read()
+            result.payload = trace_info_file.read_bytes()
             return result
         except FileNotFoundError:
             result.fail(
@@ -126,7 +130,7 @@ def load_format_info(
             return result
     elif file_format == "binary":
         try:
-            result.payload = open(trace_info_file, "rb").read()
+            result.payload = trace_info_file.read_bytes()
             return result
         except FileNotFoundError:
             result.fail(
@@ -139,7 +143,7 @@ def load_format_info(
         if parse is None:
             result.fail(f"Unknown format: {file_format}.")
             return result
-        if not _lief.HAS_LIEF:
+        if not HAS_LIEF:
             result.fail(lief_missing_error(f"reading {file_format} executables"))
             return result
         section_bytes = find_section_bytes(trace_info_file, section_name, parse)
@@ -151,7 +155,6 @@ def load_format_info(
             return result
         result.payload = section_bytes
         return result
-    return result
 
 
 def emtrace(
@@ -236,14 +239,21 @@ def emtrace(
         report.fail(f"Section '{test_section_name}' not found in {trace_info_file}")
         return report
 
+    size_t_size: int
+    ptr_size: int
+    alignment_power: int
+    byteorder: Literal["little", "big"]
+    encoding_id: int
+    record_start: int
+
     if isinstance(format_info, dict):
         j = format_info
-        size_t_size: int = j["size_t_size"]
-        ptr_size: int = j["ptr_size"]
-        alignment_power: int = j["alignment_power"]
+        size_t_size = j["size_t_size"]
+        ptr_size = j["ptr_size"]
+        alignment_power = j["alignment_power"]
         byteorder = j["byteorder"]
-        encoding_id: int = j["encoding_id"]
-        record_start: int = j["mgic_record_start"]
+        encoding_id = j["encoding_id"]
+        record_start = j["mgic_record_start"]
 
         record_parser = None
         record_cache: dict[int, FmtInfo] = {
@@ -262,12 +272,12 @@ def emtrace(
             report.fail("Failed to find or parse MGIC record in section data.")
             return report
 
-        size_t_size: int = mgic.size_t_size
-        ptr_size: int = mgic.ptr_size
-        alignment_power: int = mgic.alignment_power
+        size_t_size = mgic.size_t_size
+        ptr_size = mgic.ptr_size
+        alignment_power = mgic.alignment_power
         byteorder = mgic.byteorder
-        encoding_id: int = mgic.encoding_id
-        record_start: int = mgic.record_start
+        encoding_id = mgic.encoding_id
+        record_start = mgic.record_start
         trace(
             f"version={mgic.version_major}.{mgic.version_minor} {size_t_size=} {ptr_size=} "
             f"{alignment_power=} byteorder={byteorder} {encoding_id=} {record_start=}"
@@ -446,7 +456,7 @@ def emtrace(
             min_path_length - len(location_string)
         )
         if new_line_missing:
-            _ = ostream(f"{location_string}: ".encode("utf-8"))
+            _ = ostream(f"{location_string}: ".encode())
             location_missing = False
         else:
             location_missing = True
@@ -462,7 +472,7 @@ def emtrace(
             if i == 0:
                 pass
             elif location_missing and i == 1:
-                _ = ostream(f"\n{location_string}: ".encode("utf-8"))
+                _ = ostream(f"\n{location_string}: ".encode())
             else:
                 _ = ostream(("\n" + " " * (2 + min_path_length)).encode("utf-8"))
 

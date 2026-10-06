@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import socket
 from argparse import ArgumentTypeError
+from collections.abc import Callable
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import Any, Callable
+from typing import Any
 
 
 def get_input_stream(x: str, run_args: list[str]) -> Callable[[int], bytes]:
@@ -62,7 +63,7 @@ def get_input_stream(x: str, run_args: list[str]) -> Callable[[int], bytes]:
                     "Bad address for tcp type input stream: Needs to be <ip-address>:<port> (ip can be ipv4 or ipv6)"
                 )
         case _:
-            assert False
+            assert False  # noqa: B011  # unreachable
 
     s = socket.socket(family, socket.SOCK_STREAM)
     s.connect(address)
@@ -75,5 +76,5 @@ def dump_file(x: str | None) -> tuple[Callable[[bytes], Any], Callable[[], None]
     if x is None:
         return lambda _: None, lambda: None
 
-    f = Path(x).open("wb")
+    f = Path(x).open("wb")  # noqa: SIM115  # handle intentionally returned
     return f.write, f.close

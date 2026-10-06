@@ -18,8 +18,9 @@ This module is the only place that touches ``lief`` availability:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 try:
     import lief as _lief

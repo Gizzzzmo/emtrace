@@ -1,7 +1,7 @@
-from io import TextIOWrapper
 import subprocess
-from pathlib import Path
 from argparse import ArgumentParser
+from io import TextIOWrapper
+from pathlib import Path
 
 
 def build_recursive_macro(
@@ -19,7 +19,7 @@ def build_recursive_macro(
     assert depth > 0
     assert len(args) > 0
 
-    if global_args == None:
+    if global_args is None:
         global_args = []
 
     for arg in global_args:
@@ -87,10 +87,7 @@ def build_dispatch_macro(name: str, args: list[str], choices: dict[str, str]) ->
 
         generated += f"#define {name}_{tag}({arg_string}) {body}\n\n"
 
-    if len(args) > 0:
-        param_string = f"{arg_string}, _tag"
-    else:
-        param_string = "_tag"
+    param_string = f"{arg_string}, _tag" if len(args) > 0 else "_tag"
 
     generated += (
         f"#define {name}_HELPER({param_string}) {name}_##_tag({arg_string})\n\n"
@@ -297,7 +294,7 @@ if __name__ == "__main__":
         nolint_errors = "modernize-*,bugprone-casting-through-void"
         _ = output.write(f"// NOLINTBEGIN({nolint_errors})\n\n")
 
-        with open(template_path, "r") as template:
+        with open(template_path) as template:
             _ = output.write(template.read())
 
         generate_macros(output, max_args)

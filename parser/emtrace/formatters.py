@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 
 def py_formatter(fmt: str, args: list[Any]) -> str:

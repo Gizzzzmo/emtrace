@@ -1,11 +1,14 @@
-import pytest
+import contextlib
+import json
+import os
 import shutil
 import subprocess
 import sys
-import json
-import os
 import tempfile
 from pathlib import Path
+from typing import Any, cast
+
+import pytest
 
 # Add paths to test executables here.
 # These executables have to have a .emt_exp section
@@ -42,25 +45,30 @@ C_TEST_EXECUTABLES_EXPECT_CHECK_FAILURE = [
     "examples/test_too_many_records_cobs",
 ]
 
-C_BUILD_DIRS = [
+_DEFAULT_BUILD_DIRS = [
     "../c/build/clang/rel",
     "../c/build/clang/dbg",
     "../c/build/clang/opt-dbg",
 ]
+
+
+def _load_build_dirs() -> list[str]:
+    """Build dirs from build_dirs.json if present, else the default list."""
+    build_dir_file = Path(__file__).parent / "build_dirs.json"
+    if build_dir_file.is_file():
+        with open(build_dir_file) as fp, contextlib.suppress(Exception):
+            loaded: list[str] = json.load(fp)
+            return loaded
+    return _DEFAULT_BUILD_DIRS
+
+
+C_BUILD_DIRS = _load_build_dirs()
 
 # The strip/nonload tests edit the binaries themselves and are comparatively
 # slow, so they only run against one build directory (the compiled code is
 # identical across presets).
 EDIT_BUILD_DIR = "../c/build/clang/rel"
 EDIT_TEST_EXECUTABLES = [f"{EDIT_BUILD_DIR}/{exe}" for exe in C_TEST_EXECUTABLES]
-
-build_dir_file = Path(__file__).parent / "build_dirs.json"
-if build_dir_file.is_file():
-    with open(build_dir_file, "r") as fp:
-        try:
-            C_BUILD_DIRS = json.load(fp)
-        except:
-            pass
 
 RUST_TEST_EXECUTABLES: list[str] = [
     # "test_basic",
@@ -84,7 +92,7 @@ TEST_EXECUTABLES: list[Path] = []
 
 for build_dir in RUST_BUILD_DIRS:
     for test_exe in RUST_TEST_EXECUTABLES:
-        file: Path = Path(__file__).parent.resolve() / build_dir / test_exe
+        file = Path(__file__).parent.resolve() / build_dir / test_exe
         if os.name == "nt":
             file = file.with_suffix(".exe")
 
@@ -214,9 +222,8 @@ def test_emtrace_json_roundtrip(executable_path_str: str):
         import lief as _lief
     except ImportError:
         pytest.skip("lief not available")
-        return
     finally:
-        sys.path.pop(0)
+        _ = sys.path.pop(0)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         json_path = os.path.join(tmpdir, "format.json")
@@ -225,7 +232,7 @@ def test_emtrace_json_roundtrip(executable_path_str: str):
 
         # Step 1: export .emtrace section to JSON.
         try:
-            subprocess.run(
+            _ = subprocess.run(
                 [
                     sys.executable,
                     "-m",
@@ -269,25 +276,25 @@ def test_emtrace_json_roundtrip(executable_path_str: str):
             pytest.fail(f"Timeout running {executable_path_str}")
 
         with open(raw_path, "wb") as f:
-            f.write(run_result.stdout)
+            _ = f.write(run_result.stdout)
 
         # Step 3: extract .emt_exp section from the executable using lief.
-        exe = _lief.parse(str(executable))
+        # Cast to Any: lief's stubs type the generic parse result as the base
+        # Binary, which does not declare get_section.
+        exe = cast("Any", _lief.parse(str(executable)))
         if exe is None:
             pytest.skip(f"lief could not parse {executable_path_str}")
-            return
         exp_section = exe.get_section(".emt_exp")
         if exp_section is None:
             pytest.skip(f"No .emt_exp section in {executable_path_str}")
-            return
         expected_bytes = bytes(exp_section.content).rstrip(b"\x00")
 
         with open(expected_path, "wb") as f:
-            f.write(expected_bytes)
+            _ = f.write(expected_bytes)
 
         # Step 4: decode using emtrace run with JSON format info, raw input, and --test.
         try:
-            subprocess.run(
+            _ = subprocess.run(
                 [
                     sys.executable,
                     emtrace_script,
@@ -393,8 +400,7 @@ def test_nonload_on_executable(executable_path_str: str):
             f"Executable {executable_path_str} not found. Make sure it is built."
         )
 
-    parser_dir, env = _parser_env()
-
+    _parser_dir, env = _parser_env()
     with tempfile.TemporaryDirectory() as tmpdir:
         copy_path = os.path.join(tmpdir, "nonloaded")
 
@@ -443,7 +449,9 @@ def test_nonload_on_executable(executable_path_str: str):
 
         import lief
 
-        sec = lief.ELF.parse(copy_path).get_section(".emtrace")
+        parsed = lief.ELF.parse(copy_path)
+        assert parsed is not None
+        sec = parsed.get_section(".emtrace")
         assert not sec.has(lief.ELF.Section.FLAGS.ALLOC)
         assert int(sec.virtual_address) == 0
 
@@ -510,7 +518,9 @@ def test_strip_on_executable(executable_path_str: str):
 
         import lief
 
-        assert lief.ELF.parse(copy_path).get_section(".emtrace") is None
+        parsed = lief.ELF.parse(copy_path)
+        assert parsed is not None
+        assert parsed.get_section(".emtrace") is None
         assert b"MGIC" not in Path(copy_path).read_bytes()
 
 
@@ -571,7 +581,9 @@ def test_strip_experimental_be_on_real_binary():
 
         import lief
 
-        assert lief.ELF.parse(copy_path).get_section(".emtrace") is None
+        parsed = lief.ELF.parse(copy_path)
+        assert parsed is not None
+        assert parsed.get_section(".emtrace") is None
         assert b"TRACE_MARKER_" not in Path(copy_path).read_bytes()
 
         result = subprocess.run(
@@ -650,7 +662,9 @@ def test_strip_matches_objcopy(executable_path_str: str):
         import lief
 
         for path in (oc_path, em_path):
-            assert lief.ELF.parse(path).get_section(".emtrace") is None
+            parsed = lief.ELF.parse(path)
+            assert parsed is not None
+            assert parsed.get_section(".emtrace") is None
             assert b"MGIC" not in Path(path).read_bytes()
             run = subprocess.run([path], capture_output=True, timeout=5)
             assert run.returncode == 0, f"{path} does not run anymore"

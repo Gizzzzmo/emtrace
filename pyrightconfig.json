@@ -1,8 +1,21 @@
 {
-    "reportAny": false,
-    "reportExplicitAny": false,
-    "reportUnknownVariableType": false,
-    "reportUnknownMemberType": false,
-    "reportUnknownArgumentType": false,
-    "reportImplicitStringConcatenation": false,
+  "reportAny": false,
+  "reportExplicitAny": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownArgumentType": false,
+  "reportImplicitStringConcatenation": false,
+  "executionEnvironments": [
+    {
+      "root": "parser"
+    },
+    {
+      "root": "tests"
+    },
+    {
+      "root": "c/header-generator"
+    }
+  ],
+  "reportPrivateUsage": false,
+  "reportMissingTypeStubs": false
 }

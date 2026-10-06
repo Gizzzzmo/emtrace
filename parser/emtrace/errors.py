@@ -64,3 +64,15 @@ class Report:
     def warn(self, message: str) -> None:
         """Append a warning issue."""
         self.warnings.append(Issue.warning(message))
+
+
+class ExeError(Exception):
+    """Raised when a file cannot be edited as a supported executable."""
+
+
+class SectionNotFoundError(ExeError):
+    """Raised when the requested section does not exist in the image."""
+
+
+class NotSupportedError(ExeError):
+    """Raised when an operation is not supported for the image or format."""

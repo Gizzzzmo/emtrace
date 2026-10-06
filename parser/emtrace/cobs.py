@@ -1,5 +1,6 @@
-from typing import Callable, Any
 import sys
+from collections.abc import Callable
+from typing import Any
 
 
 def cobs_get_frame(
@@ -41,10 +42,7 @@ def cobs_get_frame(
     while True:
         block_prefix = data[0]
 
-        if block_prefix == 0xFF:
-            block_size = 254
-        else:
-            block_size = block_prefix - 1
+        block_size = 254 if block_prefix == 0xFF else block_prefix - 1
 
         data = istream(block_size)
         if 0 in data:
