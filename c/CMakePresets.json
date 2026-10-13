@@ -24,6 +24,15 @@
             }
         },
         {
+            "name": "min",
+            "displayName": "Optimized for Size",
+            "description": "Build demos and tests with debug info, assertions disabled, optimizing for size",
+            "inherits": "user-config",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "MinSizeRel"
+            }
+        },
+        {
             "name": "opt-dbg",
             "displayName": "Optimized with Debug",
             "description": "Build demos and tests with debug info, assertions enabled, optimizations enabled",
@@ -47,6 +56,12 @@
             "configurePreset": "rel"
         },
         {
+            "name": "min",
+            "displayName": "Optimized for size",
+            "description": "Build demos and tests with debug info, assertions disabled, optimizations enabled",
+            "configurePreset": "min"
+        },
+        {
             "name": "opt-dbg",
             "displayName": "Optimized with Debug",
             "description": "Build demos and tests with debug info, assertions enabled, optimizations enabled",
@@ -65,6 +80,12 @@
             "displayName": "Release",
             "description": "Test demos and tests with debug info, assertions disabled, optimizations enabled",
             "configurePreset": "rel"
+        },
+        {
+            "name": "min",
+            "displayName": "Optimized for size",
+            "description": "Test demos and tests with debug info, assertions disabled, optimized for size",
+            "configurePreset": "min"
         },
         {
             "name": "opt-dbg",
