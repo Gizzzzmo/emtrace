@@ -151,13 +151,19 @@ enum : size_t {
 #define EMT_ENCODING_COBS_PASSTHROUGH ((size_t) 2)
 #endif
 
+#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE || _BSD_SOURCE || _SVID_SOURCE
+#define EMT_FWRITE fwrite_unlocked
+#else
+#define EMT_FWRITE fwrite
+#endif
+
 static inline void emt_out_file(const void* data, size_t size, FILE* file) {
-    fwrite(data, 1, size, file);
+    EMT_FWRITE(data, 1, size, file);
 }
 
 static inline void emt_out_file_wrapper(const void* data, size_t size, void* extra_arg) {
     FILE* file = (FILE*) extra_arg;
-    fwrite(data, 1, size, file);
+    EMT_FWRITE(data, 1, size, file);
 }
 
 typedef struct {
@@ -385,8 +391,7 @@ static inline void emt_cobs_finalize(
 
 // for thread safety we want to lock stdout while writing a trace to it so that data from multiple
 // traces cannot interleave
-#if defined(unix) || defined(__unix) || defined(__unix__) ||                                       \
-    (defined(__APPLE__) && defined(__MACH__))
+#if _POSIX_C_SOURCE >= 199309L || _POSIX_C_SOURCE || _BSD_SOURCE || _SVID_SOURCE
 
 #define EMT_FLOCK_FILE(x, y, file)                                                                 \
     do {                                                                                           \
@@ -427,8 +432,8 @@ static inline void emt_cobs_finalize(
     EMT_FLOCK_FILE(x, y, file)
 
 #define EMT_LOCK_FILE_COBS_PASSTHROUGH(x, y, file)                                                 \
-    fwrite("", 1, 1, file);                                                                        \
-    EMT_LOCK_FILE_COBS(x, y, file);
+    EMT_LOCK_FILE_COBS(x, y, file);                                                                \
+    EMT_FWRITE("", 1, 1, file);
 
 #define EMT_UNLOCK_FILE_COBS(x, y, file)                                                           \
     emt_cobs_finalize(&state, emt_out_file_wrapper, file);                                         \
@@ -567,6 +572,7 @@ static inline void emtrace_init(void) {
     // this prevents byte `0xa` from being replaced with the sequence `0xd` `0xa` (carriage return)
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
+    setvbuf(stdout, NULL, _IOFBF, 0);
     EMT_INIT(
         &g_emt_default_magic, emt_default_serialize_pointer, emt_default_out, emt_default_begin,
         emt_default_finish, stdout
