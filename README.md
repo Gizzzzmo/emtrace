@@ -24,10 +24,11 @@ produces. Either directly use
 pip install emtrace
 ```
 
-Now you can choose the language you want to use below. Once you have a compiled
-binary (regardless of source language) you can run it, and pipe its output into
-`emtrace run`, to which you also have to supply the path to the same binary.
-E.g. something like this (assuming your executable is a.out):
+Now you can choose the language you want to use below (either [C/C++](#in-c) or
+[Rust](#in-rust)). Once you have a compiled binary (regardless of source
+language) you can run it, and pipe its output into `emtrace run`, to which you
+also have to supply the path to the same binary. E.g. something like this
+(assuming your executable is a.out):
 
 ```bash
 emtrace run a.out
@@ -36,50 +37,6 @@ emtrace run a.out
 `emtrace` also has `check`, `export`, and `inspect` subcommands for validating
 and examining the emtrace data of binaries, object files, and static archives
 (see `emtrace --help`).
-
-### Production binaries
-
-The `strip` and `nonload` commands prepare linked binaries for shipping (`strip`
-works on ELF, PE, and Mach-O; `nonload` is ELF-only):
-
-```bash
-emtrace strip a.out     # remove the .emtrace section completely
-emtrace nonload a.out   # mark it non-loadable, like an (INFO) linker script section
-```
-
-`nonload` clears the section's `SHF_ALLOC` flag and its address — the same
-effect as placing the section in an `(INFO)` region of a linker script. The
-trace data stays in the binary (so the traces remain parseable), but tools that
-load or flash the binary ignore non-ALLOC sections: the OS loader never maps it,
-gdb/lldb treat it as file metadata, and `objcopy` leaves it out of raw binary
-and ihex output, so it never ends up on a device. `strip` removes the section
-completely, like `objcopy --remove-section`: the section entry is removed, its
-symbols are deleted, and its content is cleared. Both commands rebuild the
-binary with LIEF, so the guarantees are behavioral (section gone, traces
-unparseable, binary still runs) rather than byte-exact.
-
-### As a Python library
-
-The `emtrace` package is also usable as a pure-Python library — the CLI in
-`emtrace.cli` is just a thin wrapper around it:
-
-```python
-from pathlib import Path
-from emtrace import check_section, inspect_path, strip_binary
-
-report = inspect_path(Path("a.out"), ".emtrace")
-if not report.ok:
-    for issue in report.errors:
-        print("error:", issue.message)
-
-stripped = strip_binary("a.out", ".emtrace")  # stripped.data holds the new bytes
-```
-
-Fallible calls return either `None` ("not found", for simple lookups) or a
-report object carrying `errors`/`warnings` lists — the library never prints and
-never exits. Without the optional `lief` dependency (e.g. installed with
-`pip install --no-deps emtrace`), anything that parses executables reports a
-clear error, while raw `binary`/`json` inputs keep working.
 
 ### In C
 
@@ -127,6 +84,69 @@ fn main() {
 }
 ```
 
+### Postprocessing Executables
+
+The `strip` and `nonload` commands can manipulate linked binaries (`strip` works
+on ELF, PE, and Mach-O; `nonload` is ELF-only):
+
+```bash
+emtrace strip a.out     # remove the .emtrace section completely
+emtrace nonload a.out   # mark it non-loadable, like an (INFO) linker script section
+```
+
+Marking the `.emtrace` section of an ELF file nonload is mainly useful for
+embedded programs, where usually these sections are omitted when flashing the
+binary to a microcontroller, or converting it to a hex or binary file with tools
+like `objcopy`. Since the section's content is only relevant for decoding the
+raw output, and has no purpose at runtime this is safe to do.
+
+Removing it completely, however, means the output can't be directly decoded
+anymore. This is why there is also an `export` command that allows you to
+extract the information present in the section, and save it in json form which,
+in turn, emtrace can also consume to decode the program's output:
+
+```bash
+emtrace export a.out > trace_data.json
+emtrace strip a.out
+./a.out | emtrace run trace_data.json -i stdin
+```
+
+`-i stdin` tells emtrace not to run the given file `trace_data.json` directly as
+an executable, but instead read the raw trace output of the program from stdin,
+and use the json file only for decoding purposes. If a.out hadn't been stripped
+one could have just as well supplied the original file, since emtrace
+auto-detects the file format:
+
+```bash
+./a.out | emtrace run a.out -i stdin
+```
+
+Beyond stdin emtrace can also read from files, and sockets:
+
+```bash
+emtrace export a.out > trace_data.json
+./a.out > raw_trace
+emtrace run trace_data.json -i raw_trace
+
+# assuming tracing_server is a program listening for tcp connections,
+# and sending trace data to clients when connecting
+./tracing_server &
+emtrace run tracing_server -i 127.0.0.1:8000
+```
+
+### As a Python library
+
+The `emtrace` package is also usable as a pure-Python library — the CLI in
+`emtrace.cli` is just a thin wrapper around it:
+
+```python
+from pathlib import Path
+from emtrace.engine import emtrace
+
+path_to_exe = Path("/path/to/a.out")
+emtrace(path_to_exe)
+```
+
 ## Format string syntax
 
 By default the format string syntax uses (and also extends in some ways)
@@ -137,12 +157,12 @@ function which is similar to rust's `print` and `println` functions.
 ## How it works
 
 All information needed to display the trace is written, at compile time, to a
-dedicated section of the output binary (`.emtrace` section by default, currently
-only supports ELF executables). Only data that can change at runtime is actually
-(barely) processed then, and sent out along with a pointer to associate it to
-the right piece of format information in this dedicated section. The section can
-be completely removed (or made no-load) from the final binary (e.g. with
-objcopy), and the program will still run.
+dedicated section of the output binary (`.emtrace` section by default). Only
+data that can change at runtime is actually (barely) processed then, and sent
+out along with a pointer to associate it to the right piece of format
+information in this dedicated section. The section can be completely removed (or
+made no-load) from the final binary (e.g. with objcopy), and the program will
+still run.
 
 The [parser](./emtrace) takes the data output by the program while running and
 the data from the special `.emtrace` section, and produces the log.
@@ -211,3 +231,6 @@ comparison to those I know, and have tried:
 - [ ] add sinks for common embedded transports (ARM SWO, RTT, etc.)
 - [x] add compound EMTRACE_F macros to C version where both object with known
   size, and variable-size ones can be logged in a single call
+
+```
+```
