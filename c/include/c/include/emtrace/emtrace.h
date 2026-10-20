@@ -4,6 +4,10 @@
 #define EMTRACE_EMTRACE_H
 // NOLINTBEGIN(modernize-*,bugprone-casting-through-void)
 
+#define EMTRACE_VERSION_MAJOR 0
+#define EMTRACE_VERSION_MINOR 2
+#define EMTRACE_VERSION_minor 0
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>

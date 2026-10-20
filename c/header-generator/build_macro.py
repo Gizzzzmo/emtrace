@@ -279,6 +279,11 @@ if __name__ == "__main__":
     _ = parser.add_argument("--max-args", nargs="?", default=32, type=int)
     args = parser.parse_args()
 
+    with open(Path(__file__).parent.parent / "VERSION", "r") as version_file:
+        version = version_file.read()
+
+    major, minor, patch = version.strip().split(".")
+
     max_args: int = args.max_args
     output_path: Path = args.output
     template_path = (Path(__file__).parent / "emtrace_template.h").resolve()
@@ -293,6 +298,9 @@ if __name__ == "__main__":
         _ = output.write("#define EMTRACE_EMTRACE_H\n")
         nolint_errors = "modernize-*,bugprone-casting-through-void"
         _ = output.write(f"// NOLINTBEGIN({nolint_errors})\n\n")
+        _ = output.write(f"#define EMTRACE_VERSION_MAJOR {major}\n")
+        _ = output.write(f"#define EMTRACE_VERSION_MINOR {minor}\n")
+        _ = output.write(f"#define EMTRACE_VERSION_minor {patch}\n\n")
 
         with open(template_path) as template:
             _ = output.write(template.read())

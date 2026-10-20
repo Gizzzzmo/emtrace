@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.27)
 
 set(EMTRACE_ENABLE_EXAMPLES ON CACHE BOOL "Build examples")
 set(EMTRACE_ENABLE_TESTS ON CACHE BOOL "Build tests")
-set(EMTRACE_ENABLE_CXX ON CACHE BOOL "Enable dedicated C++ integration")
+set(EMTRACE_ENABLE_CXX OFF CACHE BOOL "Enable dedicated C++ integration")
 
 set(LANGUAGES C)
 if(EMTRACE_ENABLE_CXX)
@@ -16,7 +16,10 @@ if(NOT EMTRACE_ENABLE_EXAMPLES AND NOT EMTRACE_ENABLE_TESTS)
     set(LANGUAGES "")
 endif()
 
-project(emtrace LANGUAGES ${LANGUAGES} VERSION 0.1.0)
+file(READ ${CMAKE_CURRENT_LIST_DIR}/VERSION emtrace_version)
+string(STRIP ${emtrace_version} emtrace_version)
+
+project(emtrace LANGUAGES ${LANGUAGES} VERSION ${emtrace_version})
 
 if(EMTRACE_ENABLE_CXX OR EMTRACE_ENABLE_EXAMPLES)
     set(CMAKE_CXX_STANDARD 20)
