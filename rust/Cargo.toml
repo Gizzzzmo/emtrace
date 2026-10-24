@@ -8,37 +8,41 @@ readme = "README.md"
 repository = "https://github.com/Gizzzzmo/emtrace"
 license = "Apache-2.0"
 
+[dependencies]
+
 [features]
-alignment_power_0 = []
-alignment_power_1 = []
-alignment_power_2 = []
-alignment_power_3 = []
-alignment_power_4 = []
-alignment_power_5 = []
-alignment_power_6 = []
-alignment_power_7 = []
-alignment_power_8 = []
-alignment_power_9 = []
-alignment_power_10 = []
-
-ptr_u128 = []
-ptr_u64 = []
-ptr_u32 = []
-ptr_u16 = []
-ptr_u8 = []
-
-size_u128 = []
-size_u64 = []
-size_u32 = []
-size_u16 = []
-size_u8 = []
+# The minimum record alignment of this build: the strongest enabled minimum wins.
+# Note that all lower minimum powers would be no-ops: the default_alignment_1
+# feature can select the floor, so a 1-byte minimum would raise nothing.
+minimum_alignment_2 = []
+minimum_alignment_4 = []
+minimum_alignment_8 = []
+minimum_alignment_16 = []
+minimum_alignment_32 = []
+minimum_alignment_64 = []
+minimum_alignment_128 = []
+minimum_alignment_256 = []
+minimum_alignment_512 = []
+minimum_alignment_1024 = []
+# The base alignment in effect when no minimum forces it higher. At most one of
+# these may be enabled - enabling two or more is a compile error. Without any of
+# them, the base alignment is 2^8 = 256 bytes.
+default_alignment_1 = []
+default_alignment_2 = []
+default_alignment_4 = []
+default_alignment_8 = []
+default_alignment_16 = []
+default_alignment_32 = []
+default_alignment_64 = []
+default_alignment_128 = []
+default_alignment_256 = []
+default_alignment_512 = []
+default_alignment_1024 = []
 
 [[bench]]
 name = "basic"
 harness = false
 
-[dependencies]
-cfg-if = "1.0.3"
 
 [dev-dependencies]
 criterion = "0.7.0"

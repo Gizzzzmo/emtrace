@@ -1,5 +1,7 @@
 use emtrace::{init, traceln};
 
+emtrace::magic!();
+
 fn main() {
     init(&mut std::io::stdout().lock()).unwrap();
     traceln!("Hello World!");

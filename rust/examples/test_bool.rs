@@ -3,6 +3,8 @@ use emtrace::{C_STYLE_FORMAT, expect, init, trace};
 fn main() {
     expect!("True FalseTrue False");
 
+    emtrace::magic!();
+
     init(&mut std::io::stdout().lock()).unwrap();
     trace!("{} {}", bool: true, bool: false);
     trace!("%r %r", bool: true, bool: false, .formatter=C_STYLE_FORMAT);

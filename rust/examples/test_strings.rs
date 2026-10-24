@@ -8,6 +8,8 @@ fn main() {
          Multiple strings: first second third\n"
     );
 
+    emtrace::magic!();
+
     init(&mut std::io::stdout().lock()).unwrap();
 
     // Test basic string

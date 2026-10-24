@@ -9,6 +9,8 @@ fn main() {
           C format: test\n"
     );
 
+    emtrace::magic!();
+
     init(&mut std::io::stdout().lock()).unwrap();
 
     traceln!("Edge cases:");

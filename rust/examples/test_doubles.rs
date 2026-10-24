@@ -7,6 +7,8 @@ fn main() {
           Extreme values: 1.7976931348623157e+308 2.2250738585072014e-308\n"
     );
 
+    emtrace::magic!();
+
     init(&mut std::io::stdout().lock()).unwrap();
 
     // Test asic double values (use exact values to avoid clippy warnings)

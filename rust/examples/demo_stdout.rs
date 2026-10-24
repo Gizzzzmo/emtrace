@@ -1,6 +1,8 @@
 use emtrace::{C_STYLE_FORMAT, init, trace, traceln};
 
 fn main() {
+    emtrace::magic!();
+
     init(&mut std::io::stdout().lock()).unwrap();
 
     trace!("{}", i32: 0);

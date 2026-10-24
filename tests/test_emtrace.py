@@ -71,16 +71,17 @@ EDIT_BUILD_DIR = "../c/build/clang/rel"
 EDIT_TEST_EXECUTABLES = [f"{EDIT_BUILD_DIR}/{exe}" for exe in C_TEST_EXECUTABLES]
 
 RUST_TEST_EXECUTABLES: list[str] = [
-    # "test_basic",
-    # "test_bool",
-    # "test_f32",
-    # "test_integers",
-    # "test_strings",
-    # "test_doubles",
-    # "test_mixed",
-    # "test_edge_cases",
-    # "test_large_numbers",
-    # "test_vec",
+    "test_basic",
+    "test_bool",
+    "test_f32",
+    "test_integers",
+    "test_strings",
+    "test_doubles",
+    "test_mixed",
+    "test_edge_cases",
+    "test_large_numbers",
+    "test_vec",
+    "demo_cobs",
 ]
 
 RUST_BUILD_DIRS = [

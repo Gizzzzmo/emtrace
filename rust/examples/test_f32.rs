@@ -6,6 +6,8 @@ fn main() {
           1.000000 0.500000 nan inf -inf\n"
     );
 
+    emtrace::magic!();
+
     init(&mut std::io::stdout().lock()).unwrap();
 
     traceln!("{} {} {} {} {}", f32: 1.0, f32: 0.5, f32: f32::NAN, f32: f32::INFINITY, f32: f32::NEG_INFINITY);

@@ -21,6 +21,8 @@ fn main() {
          "
     );
 
+    emtrace::magic!();
+
     init(&mut std::io::stdout().lock()).unwrap();
     let v = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     traceln!("{}\n{}", Vec<i32>: v, [i32]: v);

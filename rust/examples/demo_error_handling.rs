@@ -1,4 +1,4 @@
-use emtrace::{Error, Sink, trace};
+use emtrace::{Sink, trace};
 
 const CAPACITY: usize = 32;
 struct StaticVec {
@@ -23,7 +23,6 @@ struct OverflowError;
 
 impl Sink for StaticVec {
     type OutError = OverflowError;
-    type BeginError = OverflowError;
     fn out(&mut self, b: &[u8]) -> core::result::Result<(), Self::OutError> {
         if b.len() > CAPACITY - self.size {
             return Err(OverflowError {});
@@ -35,25 +34,21 @@ impl Sink for StaticVec {
     }
     fn begin(
         &mut self,
-        _info_addr: emtrace::PointerT,
-        total_size: emtrace::SizeT,
-    ) -> core::result::Result<(), Self::BeginError> {
-        if total_size as usize > CAPACITY - self.size {
+        _info_addr: *const u8,
+        total_size: usize,
+    ) -> core::result::Result<(), Self::OutError> {
+        if total_size > CAPACITY - self.size {
             return Err(OverflowError {});
         }
         Ok(())
     }
 }
 
-fn show_result(result: core::result::Result<(), Error<OverflowError, OverflowError>>) {
+fn show_result(result: core::result::Result<(), OverflowError>) {
     match result {
-        // This branch is matched if the call to `begin` succeeded, but a later call to `out` failed.
-        Err(Error::Out(OverflowError)) => {
-            println!("An overflow error occurred during serialization.");
-        }
-        // This branch is matched if the call to `begin` failed, no to calls to `out` were performed.
-        Err(Error::Begin(OverflowError)) => {
-            println!("An overflow error occurred while calling `begin`.");
+        // This branch is matched if an error occurred while tracing.
+        Err(OverflowError) => {
+            println!("An overflow error occurred while tracing.");
         }
         // This branch is matched if everything went well
         Ok(()) => {
@@ -67,10 +62,11 @@ fn main() {
     let mut vec = StaticVec::new();
 
     // Specifying `.no_panic` means the macro invocation returns a
-    // `Result<(), Result<Sink::OutError, Sink::BeginError>>`
+    // `Result<(), Sink::OutError>`
     let result = trace!(
         "Just a static string. This call produces a single pointer, which will fit into our empty static vector.",
         .sink=vec,
+        .ptr_serializer = emtrace::ShiftPtrSerializer::new(),
         .no_panic
     );
     show_result(result);
@@ -80,6 +76,7 @@ fn main() {
         "Lots of data, where we can tell that it won't fit before starting to serialize: {}.",
         [u8; CAPACITY]: [0; CAPACITY],
         .sink=vec,
+        .ptr_serializer = emtrace::ShiftPtrSerializer::new(),
         .no_panic
     );
     show_result(result);
@@ -89,6 +86,7 @@ fn main() {
         "{}",
         str: "A dynamic string that is too long to be stored in our static vector.",
         .sink=vec,
+        .ptr_serializer = emtrace::ShiftPtrSerializer::new(),
         .no_panic
     );
     show_result(result);
@@ -96,5 +94,5 @@ fn main() {
 
     // The vector is full now, so this will still fail, and panic because we didn't specify
     // `.no_panic`
-    trace!("Panic!", .sink=vec);
+    trace!("Panic!", .sink=vec, .ptr_serializer = emtrace::ShiftPtrSerializer::new());
 }

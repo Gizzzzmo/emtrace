@@ -6,6 +6,8 @@ fn main() {
          An integer: 42\n\
          A string: a string\n"
     );
+    emtrace::magic!();
+
     init(&mut std::io::stdout().lock()).unwrap();
 
     traceln!("Hello from the basic test!");

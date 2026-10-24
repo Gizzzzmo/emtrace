@@ -1,3 +1,4 @@
+#![allow(clippy::excessive_precision)]
 use emtrace::{expect, init, traceln};
 
 fn main() {
@@ -6,6 +7,8 @@ fn main() {
           Complex format: Value=100, Name=test, Active=False, Ratio=0.5\n\
           Numbers: \x01 \x02 \x03 \x04 \x05\n"
     );
+
+    emtrace::magic!();
 
     init(&mut std::io::stdout().lock()).unwrap();
 

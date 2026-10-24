@@ -7,6 +7,8 @@ fn main() {
           Size integers: 42 -42\n"
     );
 
+    emtrace::magic!();
+
     init(&mut std::io::stdout().lock()).unwrap();
 
     // Test various signed integer types

@@ -8,6 +8,8 @@ fn main() {
           Negative i128: -170141183460469231731687303715884105728\n"
     );
 
+    emtrace::magic!();
+
     init(&mut std::io::stdout().lock()).unwrap();
 
     traceln!("Large integers:");
