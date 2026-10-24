@@ -183,7 +183,6 @@ comparison to those I know, and have tried:
 - [defmt](https://github.com/knurling-rs/defmt)
 
   - \+ more mature
-  - \+ supports different kinds of encodings
   - \+ more efficient packing of format info into ELF (unfortunately I don't see
     how the mechanism they use could be workable in the C version)
   - \- always requires a custom linker script
@@ -192,17 +191,15 @@ comparison to those I know, and have tried:
 - [trice](https://github.com/rokath/trice)
 
   - \+ more mature
-  - \+ supports different kinds of encodings
-  - \- preprocessing of source files is a required step
   - \- only works in C/C++
 
 ## TODO
 
 - [x] add basic documentation
 - [x] add license
-- [ ] make rust's init function + magic_bytes variable into a macro to support
-  different section names
-- [ ] in the rust version, clarify / rework the role of the `total_size` given
+- [x] make rust's magic_bytes variable into a macro to support different section
+  names
+- [x] in the rust version, clarify / rework the role of the `total_size` given
   to the Sink's `begin`-function
 - [x] complete adding support for tracing nested types (lists, tuples, etc.) on
   post-processing side
@@ -225,13 +222,12 @@ comparison to those I know, and have tried:
 - [ ] add nix build recipe for rust version
 - [ ] publish to nixpkgs
 - [x] make CMake version installable
-- [ ] add conan recipe, and publish to conan center
-- [ ] add compatibility with other binary formats (mach-o and pe)
+- [ ] add testing for compatibility with other binary formats (macho and pe)
 - [x] add COBS encoding support
 - [ ] add interning support
 - [ ] add sinks for common embedded transports (ARM SWO, RTT, etc.)
 - [x] add compound EMTRACE_F macros to C version where both object with known
   size, and variable-size ones can be logged in a single call
-
-```
-```
+- [ ] add rust proc macro the deduce `Trace` trait on types whose fields' types
+  all implement `Trace` already
+- [ ] ? maybe refactor rust version to use proc macros instead of macro_rules! ?
