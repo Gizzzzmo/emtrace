@@ -679,3 +679,114 @@ def test_strip_matches_objcopy(executable_path_str: str):
                 env=env,
             )
             assert check.returncode == 1, f"check passed on {path}"
+
+
+# Must match the `.section` of rust/examples/test_section.rs.
+CUSTOM_SECTION = ".emtsec"
+
+
+@pytest.mark.parametrize("profile", ["debug", "release"])
+def test_custom_section(profile: str):
+    """Verifies `magic!`'s `.section` option end to end.
+
+    ``test_section`` hosts its single magic with ``.section = ".emtsec"`` and passes
+    the matching ``.section`` to every ``traceln!``: the MGIC record and the TRCE
+    statics land in ``.emtsec``. This binary is therefore deliberately NOT in the
+    generic executable lists (those read the default ``.emtrace`` section); this test
+    drives the parser with ``--section-name`` instead, exercising that flag's
+    non-default path.
+    """
+    pytest_dir = Path(__file__).parent
+    rust_dir = pytest_dir.parent / "rust"
+    parser_dir = str(pytest_dir.parent / "parser")
+    emtrace_script = str(pytest_dir.parent / "parser/emtrace.py")
+    env = os.environ.copy()
+    env["PYTHONPATH"] = parser_dir + os.pathsep + env.get("PYTHONPATH", "")
+
+    profile_dir = "release" if profile == "release" else "debug"
+    example_binary = rust_dir / "target" / profile_dir / "examples" / "test_section"
+
+    cmd = ["cargo", "run", "--example", "test_section"]
+    if profile == "release":
+        cmd.append("--release")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        raw_path = os.path.join(tmpdir, "raw.bin")
+        with open(raw_path, "wb") as raw:
+            # Byte capture: the stream is binary, not text.
+            proc = subprocess.run(
+                cmd,
+                stdout=raw,
+                stderr=subprocess.PIPE,
+                timeout=120,
+                cwd=rust_dir,
+            )
+        assert proc.returncode == 0, f"example failed: {proc.stderr.decode()}"
+
+        # The default section name finds no `.emtrace` section here - and still
+        # succeeds: load_format_info degrades to scanning the whole file for the
+        # MGIC record when the named section is absent. Locks in that fallback.
+        default_export = subprocess.run(
+            [sys.executable, emtrace_script, "export", str(example_binary)],
+            capture_output=True,
+            timeout=30,
+            env=env,
+        )
+        assert default_export.returncode == 0, (
+            f"whole-file fallback export failed: {default_export.stderr.decode()}"
+        )
+
+        fmt_json = os.path.join(tmpdir, "format.json")
+        try:
+            _ = subprocess.run(
+                [
+                    sys.executable,
+                    emtrace_script,
+                    "export",
+                    "--section-name",
+                    CUSTOM_SECTION,
+                    str(example_binary),
+                    "--output",
+                    fmt_json,
+                ],
+                capture_output=True,
+                check=True,
+                timeout=30,
+                env=env,
+            )
+        except subprocess.CalledProcessError as e:
+            pytest.fail(f"emtrace export failed: {e.stderr}", pytrace=False)
+
+        decoded = subprocess.run(
+            [
+                sys.executable,
+                emtrace_script,
+                "run",
+                fmt_json,
+                "--input",
+                "file://" + raw_path,
+            ],
+            capture_output=True,
+            check=True,
+            timeout=30,
+            env=env,
+        )
+        assert decoded.stdout.decode() == (
+            "Custom section works: 7\nCustom section works: done\n"
+        )
+
+        # And the custom section passes conformance checking under its own name.
+        check = subprocess.run(
+            [
+                sys.executable,
+                emtrace_script,
+                "check",
+                "--section-name",
+                CUSTOM_SECTION,
+                str(example_binary),
+            ],
+            capture_output=True,
+            timeout=30,
+            env=env,
+        )
+        assert check.returncode == 0, f"check failed: {check.stderr.decode()}"

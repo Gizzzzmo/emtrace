@@ -1166,66 +1166,66 @@ unsafe extern "C" {
 #[macro_export]
 macro_rules! __magic_munch {
     // All options consumed: dispatch to validation and emission.
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_emit!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [$($a)*]);
+    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_emit!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*]);
     };
 
     // ---- sink configuration (mutually exclusive) ----
-    ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] .cobs $($rest:tt)*) => {
-        $crate::__magic_munch!([COBS] [$($e)*] [$($p)*] [$($w)*] [$($a)*] $($rest)*);
+    ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] .cobs $($rest:tt)*) => {
+        $crate::__magic_munch!([COBS] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
-    ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*]
+    ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]
      .sink_guard: $t:ty = $v:expr, $($rest:tt)*) => {
-        $crate::__magic_munch!([GUARD $t $v] [$($e)*] [$($p)*] [$($w)*] [$($a)*] $($rest)*);
+        $crate::__magic_munch!([GUARD $t $v] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
-    ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] .sink_guard: $t:ty = $v:expr) => {
-        $crate::__magic_munch!([GUARD $t $v] [$($e)*] [$($p)*] [$($w)*] [$($a)*]);
+    ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] .sink_guard: $t:ty = $v:expr) => {
+        $crate::__magic_munch!([GUARD $t $v] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*]);
     };
-    ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*]
+    ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]
      .no_global_sink $($rest:tt)*) => {
-        $crate::__magic_munch!([NOSINK] [$($e)*] [$($p)*] [$($w)*] [$($a)*] $($rest)*);
+        $crate::__magic_munch!([NOSINK] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
 
     // Option separator: consumed between options, so the individual option arms can
     // match without touching their separators (expr-valued options must still require
     // the comma explicitly, per the fragment-follower rules).
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] , $($rest:tt)*) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [$($a)*] $($rest)*);
+    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] , $($rest:tt)*) => {
+        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
 
     // ---- encoding override (custom or record-only offerings) ----
     // Note: options ending in `$v:expr` need two forms each, since Rust's macro
     // fragment rules only allow `=>`, `,` or `;` to follow an `expr` fragment -
     // a comma for the mid-list form, and an exact-match form for the trailing option.
-    ([$($s:tt)*] [] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] .encoding = $v:expr, $($rest:tt)*) => {
-        $crate::__magic_munch!([$($s)*] [EX $v] [$($p)*] [$($w)*] [$($a)*] $($rest)*);
+    ([$($s:tt)*] [] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] .encoding = $v:expr, $($rest:tt)*) => {
+        $crate::__magic_munch!([$($s)*] [EX $v] [$($p)*] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
-    ([$($s:tt)*] [] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] .encoding = $v:expr) => {
-        $crate::__magic_munch!([$($s)*] [EX $v] [$($p)*] [$($w)*] [$($a)*]);
+    ([$($s:tt)*] [] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] .encoding = $v:expr) => {
+        $crate::__magic_munch!([$($s)*] [EX $v] [$($p)*] [$($w)*] [$($a)*] [$($sec)*]);
     };
 
     // ---- pointer serializer configuration (mutually exclusive) ----
-    ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*]
+    ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]
      .ptr_serializer: $t:ty = $v:expr, $($rest:tt)*) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [CUSTOM $t $v] [$($w)*] [$($a)*] $($rest)*);
+        $crate::__magic_munch!([$($s)*] [$($e)*] [CUSTOM $t $v] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
-    ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] .ptr_serializer: $t:ty = $v:expr) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [CUSTOM $t $v] [$($w)*] [$($a)*]);
+    ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] .ptr_serializer: $t:ty = $v:expr) => {
+        $crate::__magic_munch!([$($s)*] [$($e)*] [CUSTOM $t $v] [$($w)*] [$($a)*] [$($sec)*]);
     };
-    ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*]
+    ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]
      .no_global_ptr_serializer $($rest:tt)*) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [NONE] [$($w)*] [$($a)*] $($rest)*);
+        $crate::__magic_munch!([$($s)*] [$($e)*] [NONE] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
 
     // ---- record-only pointer dimensions (`.no_global_ptr_serializer` only) ----
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [] [$($a:tt)*]
+    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [] [$($a:tt)*] [$($sec:tt)*]
      .ptr_width = $v:expr, $($rest:tt)*) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [EX $v] [$($a)*] $($rest)*);
+        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [EX $v] [$($a)*] [$($sec)*] $($rest)*);
     };
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [] [$($a:tt)*] .ptr_width = $v:expr) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [EX $v] [$($a)*]);
+    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [] [$($a:tt)*] [$($sec:tt)*] .ptr_width = $v:expr) => {
+        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [EX $v] [$($a)*] [$($sec)*]);
     };
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] []
+    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [] [$($sec:tt)*]
      .alignment_power = $v:expr, $($rest:tt)*) => {
         $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [EX $v] $($rest)*);
     };
@@ -1233,9 +1233,21 @@ macro_rules! __magic_munch {
         $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [EX $v]);
     };
 
+    // ---- section override (MGIC + record placement) ----
+    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] []
+     .section = $sec:literal, $($rest:tt)*) => {
+        $crate::__magic_munch!(
+            [$($s)*] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [EX $sec] $($rest)*
+        );
+    };
+    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] []
+     .section = $sec:literal) => {
+        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [EX $sec]);
+    };
+
     // Unrecognized or duplicated option (any state slot is non-empty on a repeat), or
     // syntactically broken input; reports the full accepted surface.
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] $($rest:tt)+) => {
+    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] $($rest:tt)+) => {
         ::core::compile_error!(
             concat!(
                 "invalid `magic!` configuration. Valid options: `.cobs`, ",
@@ -1243,7 +1255,9 @@ macro_rules! __magic_munch {
                 "(only for a custom sink or with `.no_global_sink`), ",
                 "`.ptr_serializer: <type> = <expr>`, `.no_global_ptr_serializer`, ",
                 "`.ptr_width = <usize>`, `.alignment_power = <u8>` ",
-                "(both only with `.no_global_ptr_serializer`); each at most once"
+                "(both only with `.no_global_ptr_serializer`), ",
+                "`.section = <&str literal>` (must match the `.section` of the `trace!` ",
+                "calls whose records should live in the same section); each at most once"
             )
         );
     };
@@ -1257,12 +1271,12 @@ macro_rules! __magic_emit {
     // ----- invalid combinations -----
     // `.encoding` overrides a fixed advertisement of the built-in sink arms (they
     // cannot be made to honor a different encoding).
-    ([STDOUT] [EX $($e:tt)+] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*]) => {
+    ([STDOUT] [EX $($e:tt)+] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
         ::core::compile_error!(
             "`.encoding` cannot be set for the default `magic!` stdout sink"
         );
     };
-    ([COBS] [EX $($e:tt)+] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*]) => {
+    ([COBS] [EX $($e:tt)+] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
         ::core::compile_error!(
             "`.encoding` cannot be set for the `magic!` `.cobs` sink"
         );
@@ -1270,22 +1284,22 @@ macro_rules! __magic_emit {
     // `.ptr_width`/`.alignment_power` describe a stream without a host serializer;
     // with a linked one, the linked serializer owns both values (the MGIC record must
     // not contradict it).
-    ([$($s:tt)*] [$($e:tt)*] [] [EX $($w:tt)+] [$($a:tt)*]) => {
+    ([$($s:tt)*] [$($e:tt)*] [] [EX $($w:tt)+] [$($a:tt)*] [$($sec:tt)*]) => {
         ::core::compile_error!(
             "`.ptr_width` can only be used with `.no_global_ptr_serializer`"
         );
     };
-    ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [EX $($a:tt)+]) => {
+    ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [EX $($a:tt)+] [$($sec:tt)*]) => {
         ::core::compile_error!(
             "`.alignment_power` can only be used with `.no_global_ptr_serializer`"
         );
     };
-    ([$($s:tt)*] [$($e:tt)*] [CUSTOM $($p:tt)+] [EX $($w:tt)+] [$($a:tt)*]) => {
+    ([$($s:tt)*] [$($e:tt)*] [CUSTOM $($p:tt)+] [EX $($w:tt)+] [$($a:tt)*] [$($sec:tt)*]) => {
         ::core::compile_error!(
             "`<ty>::PTR_WIDTH` of a `.ptr_serializer` cannot be overridden with `.ptr_width`"
         );
     };
-    ([$($s:tt)*] [$($e:tt)*] [CUSTOM $($p:tt)+] [$($w:tt)*] [EX $($a:tt)+]) => {
+    ([$($s:tt)*] [$($e:tt)*] [CUSTOM $($p:tt)+] [$($w:tt)*] [EX $($a:tt)+] [$($sec:tt)*]) => {
         ::core::compile_error!(
             "`<ty>::ALIGNMENT_POWER` of a `.ptr_serializer` cannot be overridden with \
              `.alignment_power`"
@@ -1293,8 +1307,8 @@ macro_rules! __magic_emit {
     };
 
     // ----- stdout sink (the default) -----
-    ([STDOUT] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([STDOUT] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             $crate::EMT_ENCODING_NONE,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
@@ -1305,8 +1319,8 @@ macro_rules! __magic_emit {
         );
         $crate::__magic_ser_fn!();
     };
-    ([STDOUT] [$($e:tt)*] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([STDOUT] [$($e:tt)*] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             $crate::EMT_ENCODING_NONE,
             <$t as $crate::PtrSerializer>::PTR_WIDTH,
             <$t as $crate::PtrSerializer>::ALIGNMENT_POWER
@@ -1317,8 +1331,8 @@ macro_rules! __magic_emit {
         );
         $crate::__magic_ser_fn!($t, $v);
     };
-    ([STDOUT] [$($e:tt)*] [NONE] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record_noser!($crate::EMT_ENCODING_NONE, [$($w)*], [$($a)*]);
+    ([STDOUT] [$($e:tt)*] [NONE] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record_noser!([$($sec)*], $crate::EMT_ENCODING_NONE, [$($w)*], [$($a)*]);
         $crate::__magic_host!(
             [::std::option::Option<::std::io::StdoutLock<'static>>],
             [::std::io::stdout().lock()]
@@ -1326,8 +1340,8 @@ macro_rules! __magic_emit {
     };
 
     // ----- COBS-encoded stdout sink -----
-    ([COBS] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([COBS] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             $crate::EMT_ENCODING_COBS,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
@@ -1342,8 +1356,8 @@ macro_rules! __magic_emit {
         );
         $crate::__magic_ser_fn!();
     };
-    ([COBS] [$($e:tt)*] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([COBS] [$($e:tt)*] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             $crate::EMT_ENCODING_COBS,
             <$t as $crate::PtrSerializer>::PTR_WIDTH,
             <$t as $crate::PtrSerializer>::ALIGNMENT_POWER
@@ -1358,8 +1372,8 @@ macro_rules! __magic_emit {
         );
         $crate::__magic_ser_fn!($t, $v);
     };
-    ([COBS] [$($e:tt)*] [NONE] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record_noser!($crate::EMT_ENCODING_COBS, [$($w)*], [$($a)*]);
+    ([COBS] [$($e:tt)*] [NONE] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record_noser!([$($sec)*], $crate::EMT_ENCODING_COBS, [$($w)*], [$($a)*]);
         $crate::__magic_host!(
             [
                 ::std::option::Option<
@@ -1371,8 +1385,8 @@ macro_rules! __magic_emit {
     };
 
     // ----- custom sink (thread-local slot), encoding from the sink trait -----
-    ([GUARD $gt:tt $gv:tt] [] [] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([GUARD $gt:tt $gv:tt] [] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             <$gt as $crate::Sink>::ENCODING_ID,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
@@ -1383,8 +1397,8 @@ macro_rules! __magic_emit {
         );
         $crate::__magic_ser_fn!();
     };
-    ([GUARD $gt:tt $gv:tt] [] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([GUARD $gt:tt $gv:tt] [] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             <$gt as $crate::Sink>::ENCODING_ID,
             <$t as $crate::PtrSerializer>::PTR_WIDTH,
             <$t as $crate::PtrSerializer>::ALIGNMENT_POWER
@@ -1395,8 +1409,8 @@ macro_rules! __magic_emit {
         );
         $crate::__magic_ser_fn!($t, $v);
     };
-    ([GUARD $gt:tt $gv:tt] [] [NONE] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record_noser!(
+    ([GUARD $gt:tt $gv:tt] [] [NONE] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record_noser!([$($sec)*],
             <$gt as $crate::Sink>::ENCODING_ID, [$($w)*], [$($a)*]
         );
         $crate::__magic_host!(
@@ -1406,8 +1420,8 @@ macro_rules! __magic_emit {
     };
 
     // ----- custom sink, explicit `.encoding` override -----
-    ([GUARD $gt:tt $gv:tt] [EX $ge:tt] [] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([GUARD $gt:tt $gv:tt] [EX $ge:tt] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             $ge,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
@@ -1418,8 +1432,8 @@ macro_rules! __magic_emit {
         );
         $crate::__magic_ser_fn!();
     };
-    ([GUARD $gt:tt $gv:tt] [EX $ge:tt] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([GUARD $gt:tt $gv:tt] [EX $ge:tt] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             $ge,
             <$t as $crate::PtrSerializer>::PTR_WIDTH,
             <$t as $crate::PtrSerializer>::ALIGNMENT_POWER
@@ -1430,8 +1444,8 @@ macro_rules! __magic_emit {
         );
         $crate::__magic_ser_fn!($t, $v);
     };
-    ([GUARD $gt:tt $gv:tt] [EX $ge:tt] [NONE] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record_noser!($ge, [$($w)*], [$($a)*]);
+    ([GUARD $gt:tt $gv:tt] [EX $ge:tt] [NONE] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record_noser!([$($sec)*], $ge, [$($w)*], [$($a)*]);
         $crate::__magic_host!(
             [::std::option::Option<$gt>],
             [$gv]
@@ -1439,54 +1453,70 @@ macro_rules! __magic_emit {
     };
 
     // ----- no global sink (record-only configurations) -----
-    ([NOSINK] [] [] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([NOSINK] [] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             $crate::EMT_ENCODING_NONE,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
         );
         $crate::__magic_ser_fn!();
     };
-    ([NOSINK] [] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([NOSINK] [] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             $crate::EMT_ENCODING_NONE,
             <$t as $crate::PtrSerializer>::PTR_WIDTH,
             <$t as $crate::PtrSerializer>::ALIGNMENT_POWER
         );
         $crate::__magic_ser_fn!($t, $v);
     };
-    ([NOSINK] [] [NONE] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record_noser!($crate::EMT_ENCODING_NONE, [$($w)*], [$($a)*]);
+    ([NOSINK] [] [NONE] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record_noser!([$($sec)*], $crate::EMT_ENCODING_NONE, [$($w)*], [$($a)*]);
     };
-    ([NOSINK] [EX $ge:tt] [] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([NOSINK] [EX $ge:tt] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             $ge,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
             <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
         );
         $crate::__magic_ser_fn!();
     };
-    ([NOSINK] [EX $ge:tt] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record!(
+    ([NOSINK] [EX $ge:tt] [CUSTOM $t:tt $v:tt] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record!([$($sec)*],
             $ge,
             <$t as $crate::PtrSerializer>::PTR_WIDTH,
             <$t as $crate::PtrSerializer>::ALIGNMENT_POWER
         );
         $crate::__magic_ser_fn!($t, $v);
     };
-    ([NOSINK] [EX $ge:tt] [NONE] [$($w:tt)*] [$($a:tt)*]) => {
-        $crate::__magic_record_noser!($ge, [$($w)*], [$($a)*]);
+    ([NOSINK] [EX $ge:tt] [NONE] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+        $crate::__magic_record_noser!([$($sec)*], $ge, [$($w)*], [$($a)*]);
     };
 
     // Provably unreachable: `_` keeps future state drift a loud compile error.
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*]) => {
+    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
         ::core::compile_error!("internal error: `magic!` state machine fell through");
     };
 }
 
-/// The MGIC record half of [`magic!`](crate::magic) - C parity with `EMT_MAGIC`: the
-/// record encodes the pipeline's encoding id, pointer payload width and alignment
-/// power, so that a parser can decode every other record in the binary.
+/// The MGIC record dispatcher of [`magic!`](crate::magic): resolves the `.section`
+/// state to the literal for the record's `link_section` attribute. Attributes accept
+/// only literals, so the default (`.emtrace`) must be filled in *here* rather than at
+/// the attribute site.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __magic_record {
+    ([], $enc:expr, $ptr_width:expr, $alignment_power:expr) => {
+        $crate::__magic_record_sec!(".emtrace", $enc, $ptr_width, $alignment_power);
+    };
+    ([EX $sec:tt], $enc:expr, $ptr_width:expr, $alignment_power:expr) => {
+        $crate::__magic_record_sec!($sec, $enc, $ptr_width, $alignment_power);
+    };
+}
+
+/// The MGIC record emitter behind [`__magic_record!`](crate::__magic_record) - C parity
+/// with `EMT_MAGIC`: the record encodes the pipeline's encoding id, pointer payload
+/// width and alignment power, so that a parser can decode every other record in the
+/// binary, and lands in the section named by `.section` (default `.emtrace`).
 ///
 /// `ptr_width` and `alignment_power` are recorded verbatim: a custom host serializer
 /// (`.ptr_serializer`) declares both via its [`PtrSerializer`] impl; record-only hosts
@@ -1494,11 +1524,11 @@ macro_rules! __magic_emit {
 /// crate's built-in dimensions.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! __magic_record {
-    ($enc:expr, $ptr_width:expr, $alignment_power:expr) => {
+macro_rules! __magic_record_sec {
+    ($sec:literal, $enc:expr, $ptr_width:expr, $alignment_power:expr) => {
         #[used]
         #[unsafe(no_mangle)]
-        #[unsafe(link_section = ".emtrace")]
+        #[unsafe(link_section = $sec)]
         pub static g_emt_default_magic: $crate::FormatInfo<{ $crate::record::MAGIC_SIZE }> = {
             let mut bytes = [0u8; $crate::record::MAGIC_SIZE];
             $crate::record::write_frame(
@@ -1516,25 +1546,26 @@ macro_rules! __magic_record {
 
 /// The MGIC record for record-only hosts (`.no_global_ptr_serializer`): resolves the
 /// pointer-width/alignment-power options, defaulting either to the built-in
-/// dimensions (`usize` payload, the crate's alignment power) when left unset.
+/// dimensions (`usize` payload, the crate's alignment power) when left unset. The
+/// `.section` state passes through unchanged.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __magic_record_noser {
-    ($enc:expr, [], []) => {
-        $crate::__magic_record!(
+    ([$($sec:tt)*], $enc:expr, [], []) => {
+        $crate::__magic_record!([$($sec)*],
             $enc,
             ::core::mem::size_of::<usize>(),
             $crate::ALIGNMENT_POWER
         );
     };
-    ($enc:expr, [EX $w:tt], []) => {
-        $crate::__magic_record!($enc, $w, $crate::ALIGNMENT_POWER);
+    ([$($sec:tt)*], $enc:expr, [EX $w:tt], []) => {
+        $crate::__magic_record!([$($sec)*], $enc, $w, $crate::ALIGNMENT_POWER);
     };
-    ($enc:expr, [], [EX $a:tt]) => {
-        $crate::__magic_record!($enc, ::core::mem::size_of::<usize>(), $a);
+    ([$($sec:tt)*], $enc:expr, [], [EX $a:tt]) => {
+        $crate::__magic_record!([$($sec)*], $enc, ::core::mem::size_of::<usize>(), $a);
     };
-    ($enc:expr, [EX $w:tt], [EX $a:tt]) => {
-        $crate::__magic_record!($enc, $w, $a);
+    ([$($sec:tt)*], $enc:expr, [EX $w:tt], [EX $a:tt]) => {
+        $crate::__magic_record!([$($sec)*], $enc, $w, $a);
     };
 }
 
@@ -1729,10 +1760,20 @@ macro_rules! __magic_host {
 ///   `ALIGNMENT_POWER`). The record's *physical* `.emtrace` alignment is unaffected -
 ///   records are aligned by this crate's feature configuration, which must therefore
 ///   be at least as strong as the advertised power.
+///
+/// **Section** (default: `.emtrace`):
+///
+/// - **`.section = "name"`**: places the MGIC record in this section instead of
+///   `.emtrace` (C parity with overriding `EMT_DEFAULT_SEC_ATTR`). Trace calls whose
+///   records should be decodable must pass the *same* `.section = "name"` (see
+///   [`trace!`]): the parser resolves record pointers as offsets within one section,
+///   so a record static in a different section than the MGIC record breaks decoding.
+///   `emtrace --section-name` selects which section to read; when the named section
+///   is absent, the parser falls back to scanning the whole file for the MGIC record.
 #[macro_export]
 macro_rules! magic {
     ($($opts:tt)*) => {
-        $crate::__magic_munch!([STDOUT] [] [] [] [] $($opts)*);
+        $crate::__magic_munch!([STDOUT] [] [] [] [] [] $($opts)*);
     };
 }
 
@@ -2501,9 +2542,13 @@ mod tests {
     static TEST_GUARD: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
     // The MGIC record and the `emt_default_*` symbol implementations of this test
-    // binary: exactly one host, exactly like a real binary's host.
+    // binary: exactly one host, exactly like a real binary's host. `.section` also
+    // rides along here (combined with `.sink_guard`), placing the MGIC record in
+    // `.emtsec` - the end-to-end counterpart (parser `--section-name` roundtrip)
+    // lives in tests/test_emtrace.py::test_custom_section.
     crate::magic!(
-        .sink_guard: std::sync::MutexGuard<'static, Vec<u8>> = CAPTURED.lock().unwrap()
+        .sink_guard: std::sync::MutexGuard<'static, Vec<u8>> = CAPTURED.lock().unwrap(),
+        .section = ".emtsec"
     );
 
     #[test]
