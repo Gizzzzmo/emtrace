@@ -174,8 +174,22 @@ deep, allowing e.g. lists of lists of numbers .
 Each type is thus described by:
 
 - its type identifier, an ASCII-string
-- its size, including a flag whether this size depends on runtime values
+- a `size` field together with a *size flag*; what the `size` field holds
+  depends on the flag (see below)
 - a description of all its children
+
+The size flag determines the interpretation of the `size` field and the shape of
+the corresponding runtime data:
+
+- `EMT_FLAG_STATIC`: the runtime stream contains exactly `size` bytes.
+- `EMT_FLAG_NULL_TERMINATED`: the runtime stream consists of the value's bytes
+  followed by the number of consecutive null bytes given by `size`. A single
+  null byte (`size = 1`) terminates a string; other values make null-delimited
+  terminators possible for non-byte-aligned types (e.g. `size = 8` for a
+  sequence of pointers terminated by a null pointer).
+- `EMT_FLAG_LENGTH_PREFIXED`: the runtime stream begins with an element count
+  stored with `size` bytes, followed by the streams of that many elements
+  (`size` gives the byte-width of the count, not the element count itself).
 
 The `TRCE` record's payload serializes all this information as follows (all
 "pointers" are really offsets relative to the start of the record, *not the
@@ -223,8 +237,11 @@ At runtime, each time a trace point fires it writes:
    - For `EMT_FLAG_STATIC` list arguments: the concatenation of the streams of
      `size` elements, where each element is encoded as described by the type's
      child (i.e. `size` is an element count, not a byte count).
-   - For `EMT_FLAG_NULL_TERMINATED` arguments: bytes up to and including the
-     terminating `\0`.
+   - For `EMT_FLAG_NULL_TERMINATED` arguments: the value's bytes, up to and
+     including the terminator. The terminator is the number of consecutive null
+     bytes given by the type's `size` field (so `size = 1` terminates strings as
+     usual; any other terminator length is possible, see the size flag
+     description above).
    - For `EMT_FLAG_LENGTH_PREFIXED` arguments: an element count, whose
      byte-width is given by the type's `size` field, followed by the
      concatenation of the streams of that many elements (for static, fixed-size
@@ -252,8 +269,8 @@ dynamic/external symbols reference, and binaries carrying code signatures or
 overlay data (any byte change would invalidate them). Only little-endian
 binaries are supported; big-endian inputs are refused explicitly (endianness
 detection is unreliable for them) unless `--experimental-be` is given, which
-unlocks them at the user's risk — rebuilding big-endian binaries is
-unverified and may produce corrupt output. With `--output`/`-o` the modified binary is
+unlocks them at the user's risk — rebuilding big-endian binaries is unverified
+and may produce corrupt output. With `--output`/`-o` the modified binary is
 written to a new file (preserving the file mode of the input); otherwise the
 input is replaced atomically.
 
