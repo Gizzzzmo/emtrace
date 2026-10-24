@@ -6,12 +6,42 @@
 
 #define EMTRACE_VERSION_MAJOR 0
 #define EMTRACE_VERSION_MINOR 2
-#define EMTRACE_VERSION_minor 0
+#define EMTRACE_VERSION_PATCH 0
 
+#ifndef EMT_NO_LIBC
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#define EMT_OFFSETOF offsetof
+#define EMT_STRLEN strlen
+typedef size_t emt_size_t;
+#else
+
+#ifndef EMT_SIZE_T
+typedef unsigned long emt_size_t;
+#else
+typedef EMT_SIZE_T emt_size_t;
+#endif // EMT_SIZE_T
+
+#ifndef EMT_STRLEN
+static inline emt_size_t emt_strlen(const char* str) {
+    emt_size_t len = 0;
+    while (*str != '\0') {
+        str++;
+        len++;
+    }
+    return len;
+}
+#define EMT_STRLEN emt_strlen
+#endif // EMT_STRLEN
+
+#ifndef EMT_OFFSETOF
+#error                                                                                             \
+    "With EMT_NO_LIBC you have to supply your own definition of EMT_OFFSETOF before including emtrace.h"
+#endif // EMT_OFFSETOF
+#endif // EMT_NO_LIBC
 
 // to switch stdout to binary mode in `emtrace_init()`
 #ifdef _WIN32
@@ -48,20 +78,21 @@ extern "C" {
 #define EMT_TRACE_VERSION_MAJOR 1
 #define EMT_TRACE_VERSION_MINOR 0
 
-/// Endianness probe value stored in every record (truncated to sizeof(size_t)).
-#define EMT_ENDIANNESS_PROBE ((size_t) 0x0706050403020100)
+/// Endianness probe value stored in every record (truncated to sizeof(emt_size_t)).
+#define EMT_ENDIANNESS_PROBE ((emt_size_t) 0x0706050403020100)
 
 /// MGIC record: 'EMT' prefix (3) + metadata bytes (7) + 'MGIC' type (4).
-/// Followed by record_size (size_t), endianness_probe (size_t), meta[35].
+/// Followed by record_size (emt_size_t), endianness_probe (emt_size_t), meta[35].
 ///
 /// Byte layout of framing[14]:
 ///   [0..2]  = 'E', 'M', 'T'
 ///   [3]     = offset from record start to type string      = 10
-///   [4]     = offset from record start to record_size      = offsetof(emt_magic_t, record_size)
-///   [5]     = offset from record start to payload          = offsetof(emt_magic_t, meta)
-///   [6]     = offset from record start to endianness probe = offsetof(emt_magic_t,
+///   [4]     = offset from record start to record_size      = EMT_OFFSETOF(emt_magic_t,
+///   record_size) [5]     = offset from record start to payload          =
+///   EMT_OFFSETOF(emt_magic_t, meta) [6]     = offset from record start to endianness probe =
+///   EMT_OFFSETOF(emt_magic_t,
 ///                                                             endianness_probe)
-///   [7]     = sizeof(size_t)
+///   [7]     = sizeof(emt_size_t)
 ///   [8]     = EMT_MAGIC_VERSION_MAJOR
 ///   [9]     = EMT_MAGIC_VERSION_MINOR
 ///   [10..13] = 'M', 'G', 'I', 'C'
@@ -72,19 +103,21 @@ extern "C" {
 ///   [33]    = EMT_ALIGNMENT_POWER
 ///   [34]    = encoding id
 typedef struct {
-    uint8_t framing[14];     ///< 'E','M','T' + 7 metadata bytes + 'M','G','I','C'
-    size_t record_size;      ///< total size of this record in bytes
-    size_t endianness_probe; ///< endianness probe value (see TRACE_FORMAT.md)
-    uint8_t meta[35];        ///< magic(32) + sizeof_emt_ptr_t(1) + alignment_power(1) +
-                             ///<   encoding_id(1)
+    unsigned char framing[14];   ///< 'E','M','T' + 7 metadata bytes + 'M','G','I','C'
+    emt_size_t record_size;      ///< total size of this record in bytes
+    emt_size_t endianness_probe; ///< endianness probe value (see TRACE_FORMAT.md)
+    unsigned char meta[35];      ///< magic(32) + sizeof_emt_ptr_t(1) + alignment_power(1) +
+                                 ///<   encoding_id(1)
 } emt_magic_t;
 
-void emt_default_begin(const void* info, size_t total_size, void* extra_arg);
-void emt_default_out(const void* data, size_t size, void* extra_arg);
+void emt_default_begin(const void* info, emt_size_t total_size, void* extra_arg);
+void emt_default_out(const void* data, emt_size_t size, void* extra_arg);
 void emt_default_serialize_pointer(
-    const void* ptr, void (*out)(const void* data, size_t size, void* extra_arg), void* extra_arg
+    const void* ptr,
+    void (*out)(const void* data, emt_size_t size, void* extra_arg),
+    void* extra_arg
 );
-void emt_default_finish(const void* info, size_t total_size, void* extra_arg);
+void emt_default_finish(const void* info, emt_size_t total_size, void* extra_arg);
 extern const emt_magic_t g_emt_default_magic;
 
 #ifndef EMT_DEFAULT_LENGTH_TYPE
@@ -110,13 +143,13 @@ extern const emt_magic_t g_emt_default_magic;
 // from C23 and C++11 onwards we can use enum class with fixed underlying types instead of macros
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) ||                                  \
     (defined(__cplusplus) && __cplusplus >= 201103L)
-enum : size_t {
+enum : emt_size_t {
     // In the TRCE record format info, per-argument flag indicating whether dynamically sized data
     // is static (fixed size), null-terminated, or length-prefixed.
     EMT_FLAG_STATIC = 0,          ///< associated bytes have a fixed size
     EMT_FLAG_NULL_TERMINATED = 1, ///< associated bytes are variable in length and null-terminated
     EMT_FLAG_LENGTH_PREFIXED = 2, ///< associated bytes are variable in length, prefixed by a
-                                  ///< size_t element count in the output stream
+                                  ///< emt_size_t element count in the output stream
 
     // In the TRCE record format info, signals what formatter to use.
     EMT_PY_FORMAT = 0,      ///< Use python's str.format function for formatting.
@@ -134,67 +167,70 @@ enum : size_t {
 #else
 
 /// In TRCE record format info: associated bytes have a fixed size.
-#define EMT_FLAG_STATIC ((size_t) 0)
+#define EMT_FLAG_STATIC ((emt_size_t) 0)
 /// In TRCE record format info: associated bytes are variable in length and null-terminated.
-#define EMT_FLAG_NULL_TERMINATED ((size_t) 1)
-/// In TRCE record format info: associated bytes are variable in length, prefixed by a size_t
+#define EMT_FLAG_NULL_TERMINATED ((emt_size_t) 1)
+/// In TRCE record format info: associated bytes are variable in length, prefixed by a emt_size_t
 /// element count in the output stream.
-#define EMT_FLAG_LENGTH_PREFIXED ((size_t) 2)
+#define EMT_FLAG_LENGTH_PREFIXED ((emt_size_t) 2)
 
 /// Use python's str.format function for formatting.
-#define EMT_PY_FORMAT ((size_t) 0)
+#define EMT_PY_FORMAT ((emt_size_t) 0)
 /// Do not use any formatter; print the string as-is. All additional arguments are discarded.
-#define EMT_NO_FORMAT ((size_t) 1)
+#define EMT_NO_FORMAT ((emt_size_t) 1)
 /// Use python's C-style formatter
-#define EMT_C_STYLE_FORMAT ((size_t) 2)
+#define EMT_C_STYLE_FORMAT ((emt_size_t) 2)
 
 /// Send raw bytestream without any formatting.
-#define EMT_ENCODING_NONE ((size_t) 0)
+#define EMT_ENCODING_NONE ((emt_size_t) 0)
 /// Use COBS encoding for the bytestream.
-#define EMT_ENCODING_COBS ((size_t) 1)
-#define EMT_ENCODING_COBS_PASSTHROUGH ((size_t) 2)
+#define EMT_ENCODING_COBS ((emt_size_t) 1)
+#define EMT_ENCODING_COBS_PASSTHROUGH ((emt_size_t) 2)
 #endif
 
-#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE || _BSD_SOURCE || _SVID_SOURCE
+#ifndef EMT_NO_LIBC
+
+#if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE || _BSD_SOURCE || _SVID_SOURCE)
 #define EMT_FWRITE fwrite_unlocked
 #else
 #define EMT_FWRITE fwrite
 #endif
 
-static inline void emt_out_file(const void* data, size_t size, FILE* file) {
+static inline void emt_out_file(const void* data, emt_size_t size, FILE* file) {
     EMT_FWRITE(data, 1, size, file);
 }
 
-static inline void emt_out_file_wrapper(const void* data, size_t size, void* extra_arg) {
+static inline void emt_out_file_wrapper(const void* data, emt_size_t size, void* extra_arg) {
     FILE* file = (FILE*) extra_arg;
     EMT_FWRITE(data, 1, size, file);
 }
+#endif // EMT_NO_LIBC
 
 typedef struct {
-    uint8_t buffer[254];
-    uint8_t pos;
+    unsigned char buffer[254];
+    unsigned char pos;
 } emt_cobs_state_t;
 
 static inline void emt_cobs_init(emt_cobs_state_t* cobs_state) { cobs_state->pos = 0; }
 
 static inline void emt_cobs_encode(
     const void* data,
-    size_t size,
+    emt_size_t size,
     emt_cobs_state_t* cobs_state,
-    void (*out_fn)(const void*, size_t, void*),
+    void (*out_fn)(const void*, emt_size_t, void*),
     void* extra_arg
 ) {
-    for (size_t i = 0; i < size; i++) {
-        uint8_t byte = ((const uint8_t*) data)[i];
+    for (emt_size_t i = 0; i < size; i++) {
+        unsigned char byte = ((const unsigned char*) data)[i];
         if (byte == 0) {
-            uint8_t ptr = cobs_state->pos + 1;
+            unsigned char ptr = cobs_state->pos + 1;
             out_fn(&ptr, 1, extra_arg);
             out_fn(cobs_state->buffer, cobs_state->pos, extra_arg);
             cobs_state->pos = 0;
             continue;
         }
         if (cobs_state->pos == 254) {
-            uint8_t ptr = 0xff;
+            unsigned char ptr = 0xff;
             out_fn(&ptr, 1, extra_arg);
             out_fn(cobs_state->buffer, 254, extra_arg);
             cobs_state->pos = 0;
@@ -205,17 +241,17 @@ static inline void emt_cobs_encode(
 }
 
 static inline void emt_cobs_finalize(
-    emt_cobs_state_t* cobs_state, void (*out_fn)(const void*, size_t, void*), void* extra_arg
+    emt_cobs_state_t* cobs_state, void (*out_fn)(const void*, emt_size_t, void*), void* extra_arg
 ) {
     if (cobs_state->pos > 0) {
-        uint8_t ptr = cobs_state->pos + 1;
+        unsigned char ptr = cobs_state->pos + 1;
         out_fn(&ptr, 1, extra_arg);
         out_fn(cobs_state->buffer, cobs_state->pos, extra_arg);
     } else {
-        uint8_t ptr = 1;
+        unsigned char ptr = 1;
         out_fn(&ptr, 1, extra_arg);
     }
-    uint8_t zero = 0;
+    unsigned char zero = 0;
     out_fn(&zero, 1, extra_arg);
 }
 
@@ -259,12 +295,12 @@ static inline void emt_cobs_finalize(
 #define EMT_REST_ARGS(a, ...) __VA_ARGS__
 
 // clang-format off
-#define EMT_VAL(type, x)                    type,        x, sizeof(type),             ,            EMT_TAG_VAL
-#define EMT_ARR(type, x)                    type,        x, sizeof(x) / sizeof(type), ,            EMT_TAG_ARR
-#define EMT_STS(type, x, len)               type,        x, len,                      ,            EMT_TAG_STS
-#define EMT_SLC(type, x, len)               type,        x, len,                      ,            EMT_TAG_SLC
+#define EMT_VAL(type, x)                    type,        x, sizeof(type),                        , EMT_TAG_VAL
+#define EMT_ARR(type, x)                    type,        x, sizeof(x) / sizeof(type),            , EMT_TAG_ARR
+#define EMT_STS(type, x, len)               type,        x, len,                                 , EMT_TAG_STS
+#define EMT_SLC(type, x, len)               type,        x, len,                                 , EMT_TAG_SLC
 #define EMT_ESLC(type, x, length_type, len) type,        x, len,                      length_type, EMT_TAG_ESLC
-#define EMT_STR(x)                          const char*, x, strlen(x) + 1,            ,            EMT_TAG_STR
+#define EMT_STR(x)                          const char*, x, EMT_STRLEN(x) + 1,                   , EMT_TAG_STR
 // clang-format on
 
 #ifndef EMT_NO_SIMPLE_MACROS
@@ -285,10 +321,10 @@ static inline void emt_cobs_finalize(
     do {                                                                                           \
                                                                                                    \
         struct emt_info_unlikely_to_shadow_t {                                                     \
-            uint8_t framing[14];                                                                   \
-            size_t record_size;                                                                    \
-            size_t endianness_probe;                                                               \
-            size_t layout                                                                          \
+            unsigned char framing[14];                                                             \
+            emt_size_t record_size;                                                                \
+            emt_size_t endianness_probe;                                                           \
+            emt_size_t layout                                                                      \
                 [5 + EMT_F_LAYOUT_SIZE(                                                            \
                          EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)             \
                      )];                                                                           \
@@ -299,19 +335,20 @@ static inline void emt_cobs_finalize(
         static fmt_info_attributes struct emt_info_unlikely_to_shadow_t                            \
             emt_info_unlikely_to_shadow = {                                                        \
                 {'E', 'M', 'T', 10,                                                                \
-                 (uint8_t) offsetof(struct emt_info_unlikely_to_shadow_t, record_size),            \
-                 (uint8_t) offsetof(struct emt_info_unlikely_to_shadow_t, layout),                 \
-                 (uint8_t) offsetof(struct emt_info_unlikely_to_shadow_t, endianness_probe),       \
-                 (uint8_t) sizeof(size_t), EMT_TRACE_VERSION_MAJOR, EMT_TRACE_VERSION_MINOR, 'T',  \
-                 'R', 'C', 'E'},                                                                   \
+                 (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, record_size),  \
+                 (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, layout),       \
+                 (unsigned char)                                                                   \
+                     EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, endianness_probe),         \
+                 (unsigned char) sizeof(emt_size_t), EMT_TRACE_VERSION_MAJOR,                      \
+                 EMT_TRACE_VERSION_MINOR, 'T', 'R', 'C', 'E'},                                     \
                 sizeof(struct emt_info_unlikely_to_shadow_t),                                      \
                 EMT_ENDIANNESS_PROBE,                                                              \
                 {EMT_NUM_ARGS_REST(__VA_ARGS__) / 5,                                               \
-                 offsetof(struct emt_info_unlikely_to_shadow_t, fmt),                              \
+                 EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, fmt),                          \
                  EMT_F_LAYOUT(                                                                     \
                      length_type, EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)    \
                  ) formatter,                                                                      \
-                 offsetof(struct emt_info_unlikely_to_shadow_t, file), __LINE__},                  \
+                 EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, file), __LINE__},              \
                 EMT_FIRST_ARG(__VA_ARGS__, 0) postfix,                                             \
                 EMT_F_INFO(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))          \
                     __FILE__,                                                                      \
@@ -341,10 +378,10 @@ static inline void emt_cobs_finalize(
             'M',                                                                                   \
             'T',                                                                                   \
             10,                                                                                    \
-            (uint8_t) offsetof(emt_magic_t, record_size),                                          \
-            (uint8_t) offsetof(emt_magic_t, meta),                                                 \
-            (uint8_t) offsetof(emt_magic_t, endianness_probe),                                     \
-            (uint8_t) sizeof(size_t),                                                              \
+            (unsigned char) EMT_OFFSETOF(emt_magic_t, record_size),                                \
+            (unsigned char) EMT_OFFSETOF(emt_magic_t, meta),                                       \
+            (unsigned char) EMT_OFFSETOF(emt_magic_t, endianness_probe),                           \
+            (unsigned char) sizeof(emt_size_t),                                                    \
             EMT_MAGIC_VERSION_MAJOR,                                                               \
             EMT_MAGIC_VERSION_MINOR,                                                               \
             'M',                                                                                   \
@@ -387,11 +424,13 @@ static inline void emt_cobs_finalize(
             0x5d,                                                                                  \
             0x9e,                                                                                  \
             0xc7,                                                                                  \
-            (uint8_t) sizeof(emt_ptr_t),                                                           \
+            (unsigned char) sizeof(emt_ptr_t),                                                     \
             alignment_power,                                                                       \
-            (uint8_t) (encoding),                                                                  \
+            (unsigned char) (encoding),                                                            \
         },                                                                                         \
     }
+
+#ifndef EMT_NO_LIBC
 
 // for thread safety we want to lock stdout while writing a trace to it so that data from multiple
 // traces cannot interleave
@@ -428,12 +467,15 @@ static inline void emt_cobs_finalize(
 
 #endif
 
+#define EMT_OUT_FILE_COBS(ptr, size, file)                                                         \
+    emt_cobs_encode((ptr), (size), &state, emt_out_file_wrapper, file)
+
 #if defined(EMT_FLOCK_FILE) && defined(EMT_FUNLOCK_FILE)
 
 #define EMT_LOCK_FILE_COBS(x, y, file)                                                             \
     emt_cobs_state_t state;                                                                        \
-    emt_cobs_init(&state);                                                                         \
-    EMT_FLOCK_FILE(x, y, file)
+    EMT_FLOCK_FILE(x, y, file)                                                                     \
+    emt_cobs_init(&state);
 
 #define EMT_LOCK_FILE_COBS_PASSTHROUGH(x, y, file)                                                 \
     EMT_LOCK_FILE_COBS(x, y, file);                                                                \
@@ -443,91 +485,102 @@ static inline void emt_cobs_finalize(
     emt_cobs_finalize(&state, emt_out_file_wrapper, file);                                         \
     EMT_FUNLOCK_FILE(x, y, file)
 
-#endif // EMT_FLOCK_FILE && EMT_FUNLOCK_FILE
-
-#define EMT_OUT_FILE_COBS(ptr, size, file)                                                         \
-    emt_cobs_encode((ptr), (size), &state, emt_out_file_wrapper, file)
-
 #define EMT_FILE_COBS_PASSTHROUGH(attrs, emt_ptr_t, alignment_power, fp)                           \
     static emt_cobs_state_t emt_cobs_state;                                                        \
-    void emt_default_begin(const void* info, size_t total_size, void* extra_arg) {                 \
+    static int emt_record_in_flight;                                                               \
+    void emt_default_begin(const void* info, emt_size_t total_size, void* extra_arg) {             \
         (void) extra_arg; /* unused */                                                             \
-        emt_cobs_init(&emt_cobs_state);                                                            \
+        assert(!emt_record_in_flight && "emtrace: nested or concurrent trace record in flight");   \
+        emt_record_in_flight = 1;                                                                  \
         EMT_FLOCK_FILE(info, total_size, (fp));                                                    \
+        emt_cobs_init(&emt_cobs_state);                                                            \
         emt_out_file("", 1, (fp));                                                                 \
     }                                                                                              \
     void emt_default_serialize_pointer(                                                            \
-        const void* ptr, void (*out)(const void* data, size_t size, void* extra_arg),              \
+        const void* ptr, void (*out)(const void* data, emt_size_t size, void* extra_arg),          \
         void* extra_arg                                                                            \
     ) {                                                                                            \
         (void) extra_arg;                                                                          \
         emt_ptr_t serialized_ptr = (emt_ptr_t) ((uintptr_t) ptr >> (alignment_power));             \
         out((const void*) &serialized_ptr, sizeof(emt_ptr_t), extra_arg);                          \
     }                                                                                              \
-    void emt_default_out(const void* data, size_t total_size, void* extra_arg) {                   \
+    void emt_default_out(const void* data, emt_size_t total_size, void* extra_arg) {               \
         (void) extra_arg; /* unused */                                                             \
         emt_cobs_encode(data, total_size, &emt_cobs_state, emt_out_file_wrapper, (fp));            \
     }                                                                                              \
-    void emt_default_finish(const void* info, size_t total_size, void* extra_arg) {                \
+    void emt_default_finish(const void* info, emt_size_t total_size, void* extra_arg) {            \
         (void) extra_arg; /* unused */                                                             \
         emt_cobs_finalize(&emt_cobs_state, emt_out_file_wrapper, (fp));                            \
         EMT_FUNLOCK_FILE(info, total_size, (fp));                                                  \
+        emt_record_in_flight = 0;                                                                  \
     }                                                                                              \
     attrs emt_magic_t g_emt_default_magic =                                                        \
         EMT_MAGIC(EMT_ENCODING_COBS_PASSTHROUGH, emt_ptr_t, alignment_power)
 
 #define EMT_FILE_COBS(attrs, emt_ptr_t, alignment_power, fp)                                       \
     static emt_cobs_state_t emt_cobs_state;                                                        \
-    void emt_default_begin(const void* info, size_t total_size, void* extra_arg) {                 \
+    static int emt_record_in_flight;                                                               \
+    void emt_default_begin(const void* info, emt_size_t total_size, void* extra_arg) {             \
         (void) extra_arg; /* unused */                                                             \
-        emt_cobs_init(&emt_cobs_state);                                                            \
+        assert(!emt_record_in_flight && "emtrace: nested or concurrent trace record in flight");   \
+        emt_record_in_flight = 1;                                                                  \
         EMT_FLOCK_FILE(info, total_size, (fp));                                                    \
+        emt_cobs_init(&emt_cobs_state);                                                            \
     }                                                                                              \
     void emt_default_serialize_pointer(                                                            \
-        const void* ptr, void (*out)(const void* data, size_t size, void* extra_arg),              \
+        const void* ptr, void (*out)(const void* data, emt_size_t size, void* extra_arg),          \
         void* extra_arg                                                                            \
     ) {                                                                                            \
         (void) extra_arg;                                                                          \
         emt_ptr_t serialized_ptr = (emt_ptr_t) ((uintptr_t) ptr >> (alignment_power));             \
         out((const void*) &serialized_ptr, sizeof(emt_ptr_t), extra_arg);                          \
     }                                                                                              \
-    void emt_default_out(const void* data, size_t total_size, void* extra_arg) {                   \
+    void emt_default_out(const void* data, emt_size_t total_size, void* extra_arg) {               \
         (void) extra_arg; /* unused */                                                             \
         emt_cobs_encode(data, total_size, &emt_cobs_state, emt_out_file_wrapper, (fp));            \
     }                                                                                              \
-    void emt_default_finish(const void* info, size_t total_size, void* extra_arg) {                \
+    void emt_default_finish(const void* info, emt_size_t total_size, void* extra_arg) {            \
         (void) extra_arg; /* unused */                                                             \
         emt_cobs_finalize(&emt_cobs_state, emt_out_file_wrapper, (fp));                            \
         EMT_FUNLOCK_FILE(info, total_size, (fp));                                                  \
+        emt_record_in_flight = 0;                                                                  \
     }                                                                                              \
     attrs emt_magic_t g_emt_default_magic = EMT_MAGIC(EMT_ENCODING_COBS, emt_ptr_t, alignment_power)
 
 #define EMT_FILE(attrs, emt_ptr_t, alignment_power, fp)                                            \
-    void emt_default_begin(const void* info, size_t total_size, void* extra_arg) {                 \
+    static int emt_record_in_flight;                                                               \
+    void emt_default_begin(const void* info, emt_size_t total_size, void* extra_arg) {             \
         (void) info;                                                                               \
         (void) total_size;                                                                         \
         (void) extra_arg; /* unused */                                                             \
+        assert(!emt_record_in_flight && "emtrace: nested or concurrent trace record in flight");   \
+        emt_record_in_flight = 1;                                                                  \
         EMT_FLOCK_FILE(info, total_size, (fp));                                                    \
     }                                                                                              \
     void emt_default_serialize_pointer(                                                            \
-        const void* ptr, void (*out)(const void* data, size_t size, void* extra_arg),              \
+        const void* ptr, void (*out)(const void* data, emt_size_t size, void* extra_arg),          \
         void* extra_arg                                                                            \
     ) {                                                                                            \
         (void) extra_arg;                                                                          \
         emt_ptr_t serialized_ptr = (emt_ptr_t) ((uintptr_t) ptr >> (alignment_power));             \
         out((const void*) &serialized_ptr, sizeof(emt_ptr_t), extra_arg);                          \
     }                                                                                              \
-    void emt_default_out(const void* data, size_t total_size, void* extra_arg) {                   \
+    void emt_default_out(const void* data, emt_size_t total_size, void* extra_arg) {               \
         (void) extra_arg; /* unused */                                                             \
         emt_out_file(data, total_size, (fp));                                                      \
     }                                                                                              \
-    void emt_default_finish(const void* info, size_t total_size, void* extra_arg) {                \
+    void emt_default_finish(const void* info, emt_size_t total_size, void* extra_arg) {            \
         (void) info;                                                                               \
         (void) total_size;                                                                         \
         (void) extra_arg; /* unused */                                                             \
         EMT_FUNLOCK_FILE(info, total_size, (fp));                                                  \
+        emt_record_in_flight = 0;                                                                  \
     }                                                                                              \
     attrs emt_magic_t g_emt_default_magic = EMT_MAGIC(EMT_ENCODING_NONE, emt_ptr_t, alignment_power)
+
+#endif // EMT_FLOCK_FILE && EMT_FUNLOCK_FILE
+
+#endif // EMT_NO_LIBC
 
 #define EMT_INIT(magic_ptr, serialize_ptr, out_fn, begin, finish, extra_arg)                       \
     do {                                                                                           \
@@ -562,15 +615,22 @@ static inline void emt_cobs_finalize(
         emt_default_serialize_pointer, emt_default_begin, emt_default_finish, NULL, "", str "\n"   \
     )
 
+#ifdef EMT_FILE
 #define EMTRACE_MAGIC(emt_ptr_t)                                                                   \
     EMT_FILE(EMT_DEFAULT_SEC_ATTR, emt_ptr_t, EMT_DEFAULT_ALIGNMENT_POWER, stdout)
+#endif
 
+#ifdef EMT_FILE_COBS
 #define EMTRACE_MAGIC_COBS(emt_ptr_t)                                                              \
     EMT_FILE_COBS(EMT_DEFAULT_SEC_ATTR, emt_ptr_t, EMT_DEFAULT_ALIGNMENT_POWER, stdout)
+#endif
 
+#ifdef EMT_FILE_COBS_PASSTHROUGH
 #define EMTRACE_MAGIC_COBS_PASSTHROUGH(emt_ptr_t)                                                  \
     EMT_FILE_COBS_PASSTHROUGH(EMT_DEFAULT_SEC_ATTR, emt_ptr_t, EMT_DEFAULT_ALIGNMENT_POWER, stdout)
+#endif
 
+#ifndef EMT_NO_LIBC
 static inline void emtrace_init(void) {
 #ifdef _WIN32
     // this prevents byte `0xa` from being replaced with the sequence `0xd` `0xa` (carriage return)
@@ -582,6 +642,7 @@ static inline void emtrace_init(void) {
         emt_default_finish, stdout
     );
 }
+#endif // EMT_NO_LIBC
 
 #endif // EMT_DEFAULT_SEC_ATTR
 
@@ -1712,35 +1773,36 @@ static inline void emtrace_init(void) {
 #define EMT_F_INFO_MEMBER(x, ...) EMT_F_INFO_MEMBER_HELPER(x, __VA_ARGS__)
 #define EMT_F_INFO_MEMBER_HELPER(x, ...) EMT_F_INFO_MEMBER_##x(__VA_ARGS__)
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_VAL(name, len, type, length_type, default_length_type)       \
-    offsetof(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_STR(name, len, type, length_type, default_length_type)       \
-    offsetof(struct emt_info_unlikely_to_shadow_t, name), (size_t) 1, EMT_FLAG_NULL_TERMINATED, 0,
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1,                      \
+        EMT_FLAG_NULL_TERMINATED, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_ARR(name, len, type, length_type, default_length_type)       \
-    offsetof(struct emt_info_unlikely_to_shadow_t, name), (size_t) 1 * (len), EMT_FLAG_STATIC, 1,  \
-        offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_name),                         \
-        offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),        \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1 * (len),              \
+        EMT_FLAG_STATIC, 1, EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
         EMT_FLAG_STATIC, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_STS(name, len, type, length_type, default_length_type)       \
-    offsetof(struct emt_info_unlikely_to_shadow_t, name), (size_t) 1 * (len), EMT_FLAG_STATIC, 1,  \
-        offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_name),                         \
-        offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),        \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1 * (len),              \
+        EMT_FLAG_STATIC, 1, EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
         EMT_FLAG_STATIC, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_SLC(name, len, type, length_type, default_length_type)       \
-    offsetof(struct emt_info_unlikely_to_shadow_t, name), sizeof(default_length_type),             \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(default_length_type),         \
         EMT_FLAG_LENGTH_PREFIXED, 1,                                                               \
-        offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_name),                         \
-        offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),        \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
         EMT_FLAG_STATIC, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_ESLC(name, len, type, length_type, default_length_type)      \
-    offsetof(struct emt_info_unlikely_to_shadow_t, name), sizeof(length_type),                     \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(length_type),                 \
         EMT_FLAG_LENGTH_PREFIXED, 1,                                                               \
-        offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_name),                         \
-        offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),        \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
         EMT_FLAG_STATIC, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_HELPER(name, len, type, length_type, default_length_type, _tag)      \

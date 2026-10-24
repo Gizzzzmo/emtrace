@@ -157,25 +157,25 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
             "EMT_F_LAYOUT_DISPATCH",
             ["name", "len", "type", "length_type", "default_length_type"],
             {
-                "EMT_TAG_VAL": "offsetof(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_STR": "offsetof(struct emt_info_unlikely_to_shadow_t, name), (size_t)1, EMT_FLAG_NULL_TERMINATED, 0,",
+                "EMT_TAG_VAL": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,",
+                "EMT_TAG_STR": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1, EMT_FLAG_NULL_TERMINATED, 0,",
                 # Top-level type entry: [type_id_offset, size, flag, num_children].
                 # Child entry: [name_offset, type_id_offset, size, flag, num_children=0].
-                "EMT_TAG_ARR": "offsetof(struct emt_info_unlikely_to_shadow_t, name), (size_t)1*(len), EMT_FLAG_STATIC, 1, "
-                + "offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
-                + "offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
+                "EMT_TAG_ARR": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1*(len), EMT_FLAG_STATIC, 1, "
+                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
+                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
                 + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_STS": "offsetof(struct emt_info_unlikely_to_shadow_t, name), (size_t)1*(len), EMT_FLAG_STATIC, 1, "
-                + "offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
-                + "offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
+                "EMT_TAG_STS": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1*(len), EMT_FLAG_STATIC, 1, "
+                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
+                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
                 + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_SLC": "offsetof(struct emt_info_unlikely_to_shadow_t, name), sizeof(default_length_type), EMT_FLAG_LENGTH_PREFIXED, 1, "
-                + "offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
-                + "offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
+                "EMT_TAG_SLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(default_length_type), EMT_FLAG_LENGTH_PREFIXED, 1, "
+                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
+                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
                 + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_ESLC": "offsetof(struct emt_info_unlikely_to_shadow_t, name), sizeof(length_type), EMT_FLAG_LENGTH_PREFIXED, 1, "
-                + "offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
-                + "offsetof(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
+                "EMT_TAG_ESLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(length_type), EMT_FLAG_LENGTH_PREFIXED, 1, "
+                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
+                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
                 + "sizeof(type), EMT_FLAG_STATIC, 0,",
             },
         )
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         _ = output.write(f"// NOLINTBEGIN({nolint_errors})\n\n")
         _ = output.write(f"#define EMTRACE_VERSION_MAJOR {major}\n")
         _ = output.write(f"#define EMTRACE_VERSION_MINOR {minor}\n")
-        _ = output.write(f"#define EMTRACE_VERSION_minor {patch}\n\n")
+        _ = output.write(f"#define EMTRACE_VERSION_PATCH {patch}\n\n")
 
         with open(template_path) as template:
             _ = output.write(template.read())
