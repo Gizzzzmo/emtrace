@@ -7,6 +7,7 @@ One entry point with subcommands:
   inspect  summarize the emtrace data of an executable, object file, or archive
   strip    remove the emtrace section from a linked ELF binary completely
   nonload  make the emtrace section non-loadable ((INFO) linker-script effect)
+  version  print the emtrace version and the commit it was built from
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from __future__ import annotations
 import sys
 from argparse import ArgumentParser, _SubParsersAction
 
-from . import edit_cmds, read_cmds, run_cmd
+from . import edit_cmds, read_cmds, run_cmd, version_cmd
 from .streams import dump_file
 
 
@@ -82,6 +83,12 @@ def build_parser() -> ArgumentParser:
     parser = ArgumentParser(
         "emtrace",
         description="Parse and format emtrace data: run, check, export, inspect, strip, nonload.",
+    )
+    _ = parser.add_argument(
+        "--version",
+        action="version",
+        version=version_cmd.version_text(),
+        help="Print the emtrace version and the commit it was built from, then exit.",
     )
     subs: _SubParsersAction[ArgumentParser] = parser.add_subparsers(
         dest="command", metavar="<command>"
@@ -271,6 +278,19 @@ def build_parser() -> ArgumentParser:
     )
     _add_edit_args(nonload_parser)
     nonload_parser.set_defaults(func=edit_cmds.cmd_nonload)
+
+    # ── version ────────────────────────────────────────────────────────────
+    version_parser = subs.add_parser(
+        "version",
+        help="Print the emtrace version and the commit it was built from.",
+        description=(
+            "Print the emtrace version and the git commit it was built from. "
+            "For a wheel this is the commit baked in at build time; when "
+            "running from a git checkout it is the checkout's current HEAD, "
+            "suffixed ' (dirty)' when the tree has uncommitted changes."
+        ),
+    )
+    version_parser.set_defaults(func=version_cmd.cmd_version)
 
     return parser
 

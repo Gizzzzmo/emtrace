@@ -7,11 +7,14 @@ parse real executables skip themselves when lief is unavailable.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from emtrace.cli import edit_cmds, read_cmds, run_cmd
+from emtrace import __version__
+from emtrace.cli import edit_cmds, read_cmds, run_cmd, version_cmd
+from emtrace.cli.main import build_parser
 
 from .test_inspector import aligned_section, build_archive, build_minimal_elf_o
 
@@ -164,3 +167,53 @@ def test_strip_output_flag_leaves_input_untouched(tmp_path: Path) -> None:
 
     assert exe.read_bytes() == original  # original untouched when -o is used
     assert not ExeImage.open(out).has_section(".emtrace")
+
+
+def test_version_prefers_checkout_commit(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(version_cmd, "_git_commit", lambda: ("a" * 40, True))
+    monkeypatch.setattr(version_cmd, "_baked_commit", lambda: ("b" * 40, False))
+    assert version_cmd.cmd_version(SimpleNamespace()) == 0
+    out = capsys.readouterr().out
+    assert f"emtrace {__version__}" in out
+    assert "a" * 40 in out and "(dirty)" in out
+    assert "b" * 40 not in out
+
+
+def test_version_falls_back_to_baked_commit(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(version_cmd, "_git_commit", lambda: None)
+    monkeypatch.setattr(version_cmd, "_baked_commit", lambda: ("b" * 40, False))
+    assert version_cmd.cmd_version(SimpleNamespace()) == 0
+    out = capsys.readouterr().out
+    assert "b" * 40 in out
+    assert "(dirty)" not in out
+
+
+def test_version_unknown_without_commit_info(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(version_cmd, "_git_commit", lambda: None)
+    monkeypatch.setattr(version_cmd, "_baked_commit", lambda: None)
+    assert version_cmd.cmd_version(SimpleNamespace()) == 0
+    out = capsys.readouterr().out
+    assert f"emtrace {__version__}" in out
+    assert "commit:           unknown" in out
+
+
+def test_version_live_output_shape(capsys: pytest.CaptureFixture[str]) -> None:
+    """In a checkout the commit is the real HEAD (possibly dirty), else unknown."""
+    assert version_cmd.cmd_version(SimpleNamespace()) == 0
+    out = capsys.readouterr().out
+    commit_line = next(line for line in out.splitlines() if line.startswith("commit:"))
+    value = commit_line.removeprefix("commit:").strip()
+    assert value == "unknown" or re.fullmatch(r"[0-9a-f]{40}( \(dirty\))?", value)
+
+
+def test_dash_version_flag(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        _ = build_parser().parse_args(["--version"])
+    assert excinfo.value.code == 0
+    assert f"emtrace {__version__}" in capsys.readouterr().out
