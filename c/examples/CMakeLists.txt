@@ -20,6 +20,54 @@ if(EMTRACE_ENABLE_CXX)
     target_link_libraries(demo_threads PRIVATE emtrace::emtrace)
 endif()
 
+# Cross-language interop demos. In all of them the executable that owns the
+# entry point contains the emtrace magic (a single `magic!()`/`EMTRACE_MAGIC` per
+# binary), and every statically linked library - in either language - has its
+# trace calls resolve the default symbols against the extern C `emtest_default_`
+# definitions.
+#
+# Demo 1: this static library is the C guest; the Rust executables
+# ../rust/examples/interop_rust_host.rs and ../rust/examples/interop_combined.rs
+# host the magic and link it, with the link search path supplied by rust/build.rs.
+add_library(interop_c_guest STATIC interop_c_guest.c)
+target_link_libraries(interop_c_guest PRIVATE emtrace::emtrace)
+# The Rust hosts link this archive with rust-lld and -nodefaultlibs, which
+# provide no sanitizer runtime: keep the demo library sanitizer-free regardless
+# of the configured profile (the profiles add -fsanitize=undefined to the Debug
+# and RelWithDebInfo flags).
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(interop_c_guest PRIVATE -fno-sanitize=address,undefined)
+endif()
+
+# Demo 2: this executable supplies the magic and links with a Rust static library:
+# ../rust/examples/interop_rust_guest.rs is linked in as the guest. the target is
+# skipped until the archive exists (cd rust && cargo build --example interop_rust_guest).
+set(EMTRACE_RUST_EXAMPLES_DIR
+    "${CMAKE_SOURCE_DIR}/../rust/target/debug/examples"
+    CACHE PATH
+    "Directory containing cargo-built example artifacts"
+)
+set(INTEROP_RUST_LIB "${EMTRACE_RUST_EXAMPLES_DIR}/libinterop_rust_guest.a")
+if(EMTRACE_ENABLE_TESTS AND EXISTS "${INTEROP_RUST_LIB}")
+    add_executable(interop_c_host interop_c_host.c)
+    target_link_libraries(
+        interop_c_host
+        PRIVATE
+            emtrace::emtrace
+            "${INTEROP_RUST_LIB}"
+            # Companion libraries expected behind a Rust staticlib on GNU targets.
+            pthread
+            dl
+            m
+    )
+    target_include_directories(interop_c_host PRIVATE include)
+elseif(EMTRACE_ENABLE_TESTS)
+    message(
+        STATUS
+        "Skipping interop_c_guest: ${INTEROP_RUST_LIB} not found (build: cargo build --example interop_rust_host)"
+    )
+endif()
+
 # End-to-end tests are part of examples,
 # because the ctest configuration doesn't actually test anything about them.
 # They are executable that simply have embedded in them a string containing the expected result

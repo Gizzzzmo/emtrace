@@ -32,6 +32,7 @@ C_TEST_EXECUTABLES = [
     "examples/test_large_numbers_cobs",
     "examples/test_arr",
     "examples/test_arr_cobs",
+    "examples/interop_c_host",
 ]
 
 # Executables that are expected to FAIL `emtrace check`: they deliberately
@@ -82,6 +83,8 @@ RUST_TEST_EXECUTABLES: list[str] = [
     "test_large_numbers",
     "test_vec",
     "demo_cobs",
+    "interop_rust_host",
+    "interop_combined",
 ]
 
 RUST_BUILD_DIRS = [

@@ -43,6 +43,13 @@ default_alignment_1024 = []
 name = "basic"
 harness = false
 
+# The interop demo's Rust guest is built as a static archive, linked into the C
+# host executable c/examples/interop_c_host.c and the Rust host executable
+# rust/examples/interop_combined.rs (see the example's doc comment).
+[[example]]
+name = "interop_rust_guest"
+crate-type = ["staticlib"]
 
 [dev-dependencies]
 criterion = "0.7.0"
+

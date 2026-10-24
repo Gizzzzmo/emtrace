@@ -61,6 +61,36 @@ test_parser *ARGS:
 
 eetest: (pytest "-rs" "-n" "auto")
 
+# Build and run the cross-language interop demos (rust/examples/interop_*,
+# c/examples/interop_*): the executable owning the entry point always hosts the
+# magic - demo 1: Rust executable + C guest library, demo 2: C executable +
+# Rust guest staticlib, demo 3: Rust executable + BOTH guest libraries. Each
+# demo's decoded trace stream is printed. Needs one prior `just conf` for the C
+# build directory.
+interop:
+    #!/bin/sh
+    set -eu
+    just cb
+    just cargo build --example interop_rust_host
+    just cargo build --example interop_rust_guest
+    just cargo build --example interop_combined
+    just cb
+    work="$(mktemp -d)"
+    trap 'rm -rf "$work"' EXIT
+    export PYTHONPATH=parser
+    echo "== demo 1: Rust executable hosts the magic, C static library is the guest =="
+    rust/target/debug/examples/interop_rust_host > "$work/host.bin"
+    python3 parser/emtrace.py export rust/target/debug/examples/interop_rust_host --output "$work/host.json" > /dev/null
+    python3 parser/emtrace.py run "$work/host.json" --input "file://$work/host.bin"
+    echo "== demo 2: C executable hosts the magic, Rust static library is the guest =="
+    "{{current_build_dir}}/examples/interop_c_host" > "$work/chost.bin"
+    python3 parser/emtrace.py export "{{current_build_dir}}/examples/interop_c_host" --output "$work/chost.json" > /dev/null
+    python3 parser/emtrace.py run "$work/chost.json" --input "file://$work/chost.bin"
+    echo "== demo 3: one Rust executable hosts the magic for BOTH guest libraries =="
+    rust/target/debug/examples/interop_combined > "$work/combined.bin"
+    python3 parser/emtrace.py export rust/target/debug/examples/interop_combined --output "$work/combined.json" > /dev/null
+    python3 parser/emtrace.py run "$work/combined.json" --input "file://$work/combined.bin"
+
 cmake *ARGS:
     cd c && cmake {{ARGS}}
 
