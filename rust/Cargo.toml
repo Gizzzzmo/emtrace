@@ -1,7 +1,7 @@
 [package]
 name = "emtrace"
 description = "Minimal overhead tracing/logging library for embedded, and resource constrained projects."
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["Jonas Beyer"]
 readme = "README.md"
