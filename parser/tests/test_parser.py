@@ -17,19 +17,19 @@ def make_parser(data: bytes) -> Parser:
 
 def nested_static_list(depth: int, leaf_size: int = 4) -> TypeInfo:
     """A static list tree of the given depth whose leaves are fixed-size ints."""
-    leaf = TypeInfo(Size(kind="fixed", size=leaf_size))
+    leaf = TypeInfo(Size(kind="fixed", size=leaf_size), 1, 0)
     node = leaf
     for i in range(depth):
         # The innermost wrapper's child is the int leaf; every wrapper above
         # it wraps a list.
         child_id = "int" if i == 0 else "list"
-        node = TypeInfo(Size(kind="fixed", size=2), {"": (child_id, node)})
+        node = TypeInfo(Size(kind="fixed", size=2), 1, 0, {"": (child_id, node)})
     return node
 
 
 def test_nested_static_lists_two_levels():
     """list of list of int, 2 outer x 2 inner elements."""
-    info = FmtInfo("{0}")
+    info = FmtInfo("{0}", 1, 0)
     info.add_param("list", nested_static_list(depth=2))
     stream = struct.pack("<4i", 1, 2, 3, 4)
     formatted = make_parser(stream).format(info, FORMATTERS)
@@ -38,7 +38,7 @@ def test_nested_static_lists_two_levels():
 
 def test_nested_static_lists_three_levels():
     """list of list of list of int, 2 x 2 x 2 elements."""
-    info = FmtInfo("{0}")
+    info = FmtInfo("{0}", 1, 0)
     info.add_param("list", nested_static_list(depth=3))
     stream = struct.pack("<8i", 1, 2, 3, 4, 5, 6, 7, 8)
     formatted = make_parser(stream).format(info, FORMATTERS)
@@ -47,10 +47,10 @@ def test_nested_static_lists_three_levels():
 
 def test_length_prefixed_outer_list():
     """A length-prefixed outer list of static inner lists."""
-    leaf = TypeInfo(Size(kind="fixed", size=4))
-    inner = TypeInfo(Size(kind="fixed", size=2), {"": ("int", leaf)})
-    outer = TypeInfo(Size(kind="length_prefixed", size=4), {"": ("list", inner)})
-    info = FmtInfo("{0}")
+    leaf = TypeInfo(Size(kind="fixed", size=4), 1, 0)
+    inner = TypeInfo(Size(kind="fixed", size=2), 1, 0, {"": ("int", leaf)})
+    outer = TypeInfo(Size(kind="length_prefixed", size=4), 1, 0, {"": ("list", inner)})
+    info = FmtInfo("{0}", 1, 0)
     info.add_param("list", outer)
     stream = struct.pack("<I", 3) + struct.pack("<6i", 1, 2, 3, 4, 5, 6)
     formatted = make_parser(stream).format(info, FORMATTERS)
@@ -59,10 +59,10 @@ def test_length_prefixed_outer_list():
 
 def test_length_prefixed_inner_lists():
     """A static outer list whose inner lists are length-prefixed."""
-    leaf = TypeInfo(Size(kind="fixed", size=4))
-    inner = TypeInfo(Size(kind="length_prefixed", size=4), {"": ("int", leaf)})
-    outer = TypeInfo(Size(kind="fixed", size=2), {"": ("list", inner)})
-    info = FmtInfo("{0}")
+    leaf = TypeInfo(Size(kind="fixed", size=4), 1, 0)
+    inner = TypeInfo(Size(kind="length_prefixed", size=4), 1, 0, {"": ("int", leaf)})
+    outer = TypeInfo(Size(kind="fixed", size=2), 1, 0, {"": ("list", inner)})
+    info = FmtInfo("{0}", 1, 0)
     info.add_param("list", outer)
     stream = (
         struct.pack("<I", 2)
@@ -76,7 +76,7 @@ def test_length_prefixed_inner_lists():
 
 def test_nested_lists_with_separator_format():
     """Nested lists honor the '*' separator format spec at each level."""
-    info = FmtInfo("{0}")
+    info = FmtInfo("{0}", 1, 0)
     info.add_param("list", nested_static_list(depth=2))
     stream = struct.pack("<4i", 1, 2, 3, 4)
     parser = make_parser(stream)

@@ -11,7 +11,6 @@ from emtrace.record_parser import (
     _MAGIC_CONSTANT,
     RecordInfo,
     RecordParser,
-    RecordVersionError,
     detect_byteorder,
 )
 
@@ -369,7 +368,7 @@ def test_parse_mgic_payload_fields(
 
     parser = make_parser(data, size_t_size=size_t_size, byteorder=byteorder)
     info = framing_info(parser)
-    mgic = parser.parse_mgic_payload(info)
+    mgic = parser.parse_mgic_payload(info, 1, 0)
 
     assert mgic.record_start == record_start
     assert mgic.magic_offset == payload_offset_for(size_t_size)
@@ -405,7 +404,7 @@ def test_parse_mgic_payload_truncated():
     )
     truncated_parser = make_parser(truncated)
     with pytest.raises(AssertionError):
-        _ = truncated_parser.parse_mgic_payload(truncated_info)
+        _ = truncated_parser.parse_mgic_payload(truncated_info, 1, 0)
 
 
 def test_parse_mgic_payload_bad_magic():
@@ -416,7 +415,7 @@ def test_parse_mgic_payload_bad_magic():
     parser = make_parser(bytes(data))
     info = framing_info(parser)
     with pytest.raises(AssertionError):
-        _ = parser.parse_mgic_payload(info)
+        _ = parser.parse_mgic_payload(info, 1, 0)
 
 
 def test_parse_mgic_payload_ptr_size_zero():
@@ -426,7 +425,7 @@ def test_parse_mgic_payload_ptr_size_zero():
     parser = make_parser(bytes(data))
     info = framing_info(parser)
     with pytest.raises(AssertionError):
-        _ = parser.parse_mgic_payload(info)
+        _ = parser.parse_mgic_payload(info, 1, 0)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -562,7 +561,7 @@ def test_parse_mgic_record_valid():
     data = build_mgic_record(encoding_id=2, magic_version=(1, 3))
     parser = make_parser(data)
     mgic, record_end = parser.parse_mgic_record(0)
-    assert mgic is not None
+    assert not isinstance(mgic, str)
     assert mgic.encoding_id == 2
     assert mgic.version == (1, 3)
     assert record_end == len(data)
@@ -573,7 +572,7 @@ def test_parse_mgic_record_wrong_type_returns_none():
     data = build_trce_record()
     parser = make_parser(data)
     mgic, record_end = parser.parse_mgic_record(0)
-    assert mgic is None
+    assert mgic == "record type is b'TRCE', not MGIC"
     assert record_end == len(data)
 
 
@@ -581,7 +580,7 @@ def test_parse_mgic_record_no_emt_prefix():
     data = b"\x00" * 32
     parser = make_parser(data)
     mgic, next_offset = parser.parse_mgic_record(0)
-    assert mgic is None
+    assert isinstance(mgic, str)
     assert next_offset == 1
 
 
@@ -599,21 +598,19 @@ def test_parse_mgic_record_does_not_mutate_state():
 
 
 def test_parse_mgic_record_unsupported_major_version():
-    data = build_mgic_record(magic_version=(2, 0))
+    data = build_mgic_record(magic_version=(255, 0))
     parser = make_parser(data)
-    with pytest.raises(RecordVersionError) as exc_info:
-        _ = parser.parse_mgic_record(0)
-    assert exc_info.value.record_type == b"MGIC"
-    assert (exc_info.value.major, exc_info.value.minor) == (2, 0)
+    mgic, _ = parser.parse_mgic_record(0)
+    assert isinstance(mgic, str)
+    assert mgic == "unsupported MGIC record version"
 
 
 def test_parse_trce_record_unsupported_major_version():
-    data = build_trce_record(trace_version=(2, 1))
+    data = build_trce_record(trace_version=(255, 1))
     parser = make_parser(data)
-    with pytest.raises(RecordVersionError) as exc_info:
-        _ = parser.parse_trace_record(0)
-    assert exc_info.value.record_type == b"TRCE"
-    assert (exc_info.value.major, exc_info.value.minor) == (2, 1)
+    info, _ = parser.parse_trace_record(0)
+    assert isinstance(info, str)
+    assert info == "unsupported TRCE record version"
 
 
 def test_parse_trce_record_higher_minor_version_accepted():
@@ -621,9 +618,8 @@ def test_parse_trce_record_higher_minor_version_accepted():
     data = build_trce_record(fmt_string="minor bump", trace_version=(1, 5))
     parser = make_parser(data)
     info, record_end = parser.parse_trace_record(0)
-    assert info is not None
+    assert not isinstance(info, str)
     assert info.fmt_string == "minor bump"
-    assert info.version == (1, 5)
     assert record_end == len(data)
 
 
@@ -711,10 +707,10 @@ def test_find_and_parse_mgic_with_leading_garbage():
 
 
 def test_find_and_parse_mgic_unsupported_major_version():
-    data = build_mgic_record(magic_version=(3, 0))
+    data = build_mgic_record(magic_version=(255, 0))
     parser = RecordParser(memoryview(data))
-    with pytest.raises(RecordVersionError):
-        _ = parser.find_and_parse_mgic()
+    mgic = parser.find_and_parse_mgic()
+    assert mgic is None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -727,7 +723,7 @@ def test_parse_trace_payload_no_args():
         fmt_string="hello world", formatter_id=0, file="src/a.c", line=10
     )
     parser = make_parser(data)
-    info = parser.parse_trace_payload(0, payload_offset_for(8))
+    info = parser.parse_trace_payload(0, payload_offset_for(8), 1, 0)
     assert info.fmt_string == "hello world"
     assert info.formatter == 0
     assert info.file == "src/a.c"
@@ -741,7 +737,7 @@ def test_parse_trace_payload_one_leaf_arg_static():
         args=[("int", 4, 0, [])],  # flag=0 => EMT_FLAG_STATIC
     )
     parser = make_parser(data)
-    info = parser.parse_trace_payload(0, payload_offset_for(8))
+    info = parser.parse_trace_payload(0, payload_offset_for(8), 1, 0)
     assert len(info.type_infos) == 1
     type_id, type_info = info.type_infos[0]
     assert type_id == "int"
@@ -755,7 +751,7 @@ def test_parse_trace_payload_null_terminated_arg():
         args=[("char*", 0, 1, [])],  # flag=1 => EMT_FLAG_NULL_TERMINATED
     )
     parser = make_parser(data)
-    info = parser.parse_trace_payload(0, payload_offset_for(8))
+    info = parser.parse_trace_payload(0, payload_offset_for(8), 1, 0)
     _, type_info = info.type_infos[0]
     assert type_info.size == Size(kind="null_terminated", size=0)
 
@@ -766,7 +762,7 @@ def test_parse_trace_payload_length_prefixed_arg():
         args=[("uint8[]", 0, 2, [])],  # flag=2 => EMT_FLAG_LENGTH_PREFIXED
     )
     parser = make_parser(data)
-    info = parser.parse_trace_payload(0, payload_offset_for(8))
+    info = parser.parse_trace_payload(0, payload_offset_for(8), 1, 0)
     _, type_info = info.type_infos[0]
     assert type_info.size == Size(kind="length_prefixed", size=0)
 
@@ -781,7 +777,7 @@ def test_parse_trace_payload_compound_arg_with_children():
         args=[("vec2", 8, 0, children)],
     )
     parser = make_parser(data)
-    info = parser.parse_trace_payload(0, payload_offset_for(8))
+    info = parser.parse_trace_payload(0, payload_offset_for(8), 1, 0)
     _, type_info = info.type_infos[0]
     assert set(type_info.children.keys()) == {"x", "y"}
     assert type_info.children["x"][0] == "float"
@@ -794,7 +790,9 @@ def test_parse_trace_payload_nested_list_two_levels():
     args = [("list", 2, 0, [("", "list", 2, 0, [("", "int", 4, 0, [])])])]
     data = build_trce_record(fmt_string="{0}", args=args)
     parser = make_parser(data)
-    info = parser.parse_trace_payload(0, payload_offset_for(8), record_end=len(data))
+    info = parser.parse_trace_payload(
+        0, payload_offset_for(8), 1, 0, record_end=len(data)
+    )
     _, outer = info.type_infos[0]
     assert outer.size == Size(kind="fixed", size=2)
     inner_id, inner = outer.children[""]
@@ -818,7 +816,9 @@ def test_parse_trace_payload_nested_list_three_levels():
     ]
     data = build_trce_record(fmt_string="{0}", args=args)
     parser = make_parser(data)
-    info = parser.parse_trace_payload(0, payload_offset_for(8), record_end=len(data))
+    info = parser.parse_trace_payload(
+        0, payload_offset_for(8), 1, 0, record_end=len(data)
+    )
     _, l1 = info.type_infos[0]
     l2_id, l2 = l1.children[""]
     l3_id, l3 = l2.children[""]
@@ -839,7 +839,9 @@ def test_parse_trace_payload_nested_arg_then_sibling():
         fmt_string="{0} {1}", formatter_id=2, file="nested.c", line=7, args=args
     )
     parser = make_parser(data)
-    info = parser.parse_trace_payload(0, payload_offset_for(8), record_end=len(data))
+    info = parser.parse_trace_payload(
+        0, payload_offset_for(8), 1, 0, record_end=len(data)
+    )
     assert len(info.type_infos) == 2
     arg0_id, arg0 = info.type_infos[0]
     assert arg0_id == "list"
@@ -870,7 +872,9 @@ def test_parse_trace_payload_wide_and_deep():
     ]
     data = build_trce_record(fmt_string="{0}", args=args)
     parser = make_parser(data)
-    info = parser.parse_trace_payload(0, payload_offset_for(8), record_end=len(data))
+    info = parser.parse_trace_payload(
+        0, payload_offset_for(8), 1, 0, record_end=len(data)
+    )
     _, parent = info.type_infos[0]
     assert set(parent.children.keys()) == {"i", "d"}
     i_id, i = parent.children["i"]
@@ -895,7 +899,7 @@ def test_parse_trace_payload_nested_4byte_size_t_big_endian():
     # The per-record context (4-byte size_t, big endian) comes from the
     # framing; the parser's global state is irrelevant.
     info, record_end = parser.parse_trace_record(0)
-    assert info is not None
+    assert not isinstance(info, str)
     _, l1 = info.type_infos[0]
     _, l2 = l1.children[""]
     assert l2.children[""][0] == "uint16_t"
@@ -935,7 +939,7 @@ def test_parse_trace_payload_multiple_args():
         line=99,
     )
     parser = make_parser(data)
-    info = parser.parse_trace_payload(0, payload_offset_for(8))
+    info = parser.parse_trace_payload(0, payload_offset_for(8), 1, 0)
     assert len(info.type_infos) == 2
     assert info.type_infos[0][0] == "int"
     assert info.type_infos[1][0] == "double"
@@ -947,19 +951,18 @@ def test_parse_trace_record_valid():
     data = build_trce_record(fmt_string="test", line=7)
     parser = make_parser(data)
     info, record_end = parser.parse_trace_record(0)
-    assert info is not None
+    assert not isinstance(info, str)
     assert info.fmt_string == "test"
     assert info.line == 7
-    assert info.version == (1, 0)
     assert record_end == len(data)
 
 
 def test_parse_trace_record_on_mgic_returns_none():
-    """parse_trace_record returns None when encountering a MGIC record."""
+    """parse_trace_record returns string when encountering a MGIC record."""
     data = build_mgic_record()
     parser = make_parser(data)
     info, record_end = parser.parse_trace_record(0)
-    assert info is None
+    assert info == "not a trace record"
     assert record_end == len(data)
 
 
@@ -972,7 +975,7 @@ def test_parse_trace_record_4byte_size_t():
     )
     parser = make_parser(data)
     info, record_end = parser.parse_trace_record(0)
-    assert info is not None
+    assert not isinstance(info, str)
     assert info.fmt_string == "sz4"
     assert record_end == len(data)
 
@@ -986,7 +989,7 @@ def test_parse_trace_record_big_endian():
     )
     parser = make_parser(data)
     info, _ = parser.parse_trace_record(0)
-    assert info is not None
+    assert not isinstance(info, str)
     assert info.fmt_string == "be"
     assert info.type_infos[0][0] == "int"
 

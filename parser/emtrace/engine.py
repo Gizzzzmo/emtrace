@@ -398,14 +398,15 @@ def emtrace(
                 if encoding != "cobs":
                     return report
                 continue
-            if info is None:
+            if isinstance(info, str):
                 report.fail(
-                    f"No trace point found for address={address:#x} (section_offset={section_offset})."
+                    f"No trace point found for address={address:#x} (section_offset={section_offset}), {info}."
                 )
                 if encoding != "cobs":
                     return report
                 continue
             record_cache[section_offset] = info
+        trace(f"formatter id: {info.formatter}")
 
         trace(hex(address))
         formatted = parser.format(info, FORMATTERS)

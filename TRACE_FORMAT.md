@@ -1,7 +1,7 @@
 # Trace Format
 
 This document described the format of the binary data in `.emtrace` sections of
-executables.
+executables, and the format of the runtime-emitted trace stream.
 
 The trace format consists of multiple records. Each record starts with the
 ascii-encoded string `EMT`, followed by seven single-byte numbers. The first
@@ -36,7 +36,6 @@ hexadecimal:          454d 540a 0e16 1204 0100 424c 5542 1f00 0000 0001 0203 4d7
 ASCII (where appl.):   E M  T                   B L  U B                      M y  P a  y l  o a  d
                              ^^ ^^^^ ^^                  ^^^^ ^^^^         
    pointers to type, size, payload, and endianness      total size of the record, 0x1f bytes
-                                                            
 ```
 
 This record has type `BLUB`, and contains the ASCII-encoded payload `MyPayload`.
@@ -161,10 +160,10 @@ in the final binary. The inspection tools detect this mismatch.
 
 ### Trace Record `TRCE`
 
-Each `TRCE` record describes a single trace point in the program. It contains a
-format string, a formatter id, and a tree-like description of the types of all
-values that are later emitted at runtime when `EMTRACE()` is invoked, thus
-enabling decoding the runtime stream.
+Each `TRCE` record describes a single trace in the program. It contains a format
+string, a formatter id, and a tree-like description of the types of all values
+that are later emitted at runtime when `EMTRACE()` is invoked, thus enabling
+decoding the runtime stream.
 
 The type information takes the form of a tree because types can be nested. For
 example to decode a sequence (`list`-type) of values we also need to know what
@@ -188,17 +187,20 @@ the corresponding runtime data:
   terminators possible for non-byte-aligned types (e.g. `size = 8` for a
   sequence of pointers terminated by a null pointer).
 - `EMT_FLAG_LENGTH_PREFIXED`: the runtime stream begins with an element count
-  stored with `size` bytes, followed by the streams of that many elements
-  (`size` gives the byte-width of the count, not the element count itself).
+  encoded as an unsigned LEB128 varint (the value of `size` is irrelevant here).
 
 The `TRCE` record's payload serializes all this information as follows (all
 "pointers" are really offsets relative to the start of the record, *not the
 start of the payload*!!):
 
-- it begins with two `size_t` values:
-  - the first describes the number of types (without their children) whose type
+- it begins with four `size_t` values:
+  - the least significant byte of the first describes the major version of the
+    format of the data emitted at runtime for this trace
+  - the least significant byte of the second describes the minor version of the
+    format of the data emitted at runtime for this trace
+  - the third describes the number of types (without their children) whose type
     description follows
-  - the second is a pointer to the format string
+  - the fourth is a pointer to the format string
 - more `size_t` values follow that describe all types and their children; any
   single type consists of four or five `size_t` values:
   - *only for types that have a parent*: a pointer to the name of the child
@@ -220,7 +222,7 @@ width and endianness, as described above.
 
 #### Runtime stream format
 
-At runtime, each time a trace point fires it writes:
+At runtime, each time a trace is emitted it writes:
 
 1. An `emt_ptr_t` containing the address of the corresponding `TRCE` record,
    right-shifted by `EMT_ALIGNMENT_POWER` bits. The parser recovers the section
@@ -233,8 +235,8 @@ At runtime, each time a trace point fires it writes:
    at or above this bound lose bits when shifted and can no longer be
    distinguished from other records.
 2. For each argument, the raw bytes of the argument value:
-   - For `EMT_FLAG_STATIC` scalar arguments: exactly `size` bytes.
-   - For `EMT_FLAG_STATIC` list arguments: the concatenation of the streams of
+   - For `EMT_FLAG_STATIC` arguments without children: exactly `size` bytes.
+   - For `EMT_FLAG_STATIC` with children: the concatenation of the streams of
      `size` elements, where each element is encoded as described by the type's
      child (i.e. `size` is an element count, not a byte count).
    - For `EMT_FLAG_NULL_TERMINATED` arguments: the value's bytes, up to and
@@ -242,10 +244,10 @@ At runtime, each time a trace point fires it writes:
      bytes given by the type's `size` field (so `size = 1` terminates strings as
      usual; any other terminator length is possible, see the size flag
      description above).
-   - For `EMT_FLAG_LENGTH_PREFIXED` arguments: an element count, whose
-     byte-width is given by the type's `size` field, followed by the
-     concatenation of the streams of that many elements (for static, fixed-size
-     elements this is `count × child_size` bytes).
+   - For `EMT_FLAG_LENGTH_PREFIXED` arguments: an element count, serialized as
+     an LEB128 varint, followed by the concatenation of the streams of that many
+     elements (for static, fixed-size elements this is `count × child_size`
+     bytes).
 
 Argument values in the stream are stored with the endianness of the `TRCE`
 record they belong to.
@@ -253,44 +255,3 @@ record they belong to.
 Before the first trace record the program writes the runtime address of the
 `MGIC` record (also as an `emt_ptr_t`) so the parser can determine the ASLR
 offset.
-
-## Post-link processing
-
-The `emtrace strip` and `emtrace nonload` commands edit the `.emtrace` section
-of a linked binary (ELF, PE, or Mach-O for `strip`; ELF only for `nonload`).
-Both are implemented on top of LIEF, which fully rebuilds the binary — so no
-byte-offset or exact-size guarantees are made. The guarantees are behavioral:
-the section entry is gone, symbols bound to it are deleted, its content no
-longer parses, and the rebuilt binary still runs.
-
-`strip` refuses unlinked object files (relocations and symbol references would
-break), inputs that are not supported executables, sections that relocations or
-dynamic/external symbols reference, and binaries carrying code signatures or
-overlay data (any byte change would invalidate them). Only little-endian
-binaries are supported; big-endian inputs are refused explicitly (endianness
-detection is unreliable for them) unless `--experimental-be` is given, which
-unlocks them at the user's risk — rebuilding big-endian binaries is unverified
-and may produce corrupt output. With `--output`/`-o` the modified binary is
-written to a new file (preserving the file mode of the input); otherwise the
-input is replaced atomically.
-
-### `emtrace strip`
-
-Removes the section completely — the same outcome as `objcopy --remove-section`:
-the section entry is removed, symbols bound to the section are deleted from
-static symbol tables, and the section content is cleared, so the traces are gone
-and the binary keeps running (though its traces can no longer be parsed).
-
-### `emtrace nonload`
-
-Clears the `SHF_ALLOC` flag and the section address, keeping the section bytes
-in the file — the same effect as placing the section in an `(INFO)` region of a
-linker script. The traces remain parseable, but tools that load or flash the
-binary ignore non-ALLOC sections: the OS loader never maps the section, gdb and
-lldb treat it as file metadata, and `objcopy` excludes it from raw binary and
-ihex output, so the data is never written to a device.
-
-The command is idempotent: on an already non-loadable section it does nothing.
-
-Only implemented for ELF: neither PE nor Mach-O has an equivalent "loadable"
-section flag, so `nonload` refuses those formats (use `strip` there instead).

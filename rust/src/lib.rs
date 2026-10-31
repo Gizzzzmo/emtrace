@@ -6,6 +6,7 @@ use core::mem::size_of;
 use core::ops::DerefMut;
 use core::result::Result;
 use core::slice;
+use core::slice::from_raw_parts;
 use std::io::StdoutLock;
 use std::io::Write;
 use std::mem::MaybeUninit;
@@ -129,6 +130,12 @@ pub const ALIGNMENT_POWER: u8 = if DEFAULT_ALIGNMENT_POWER > MIN_ALIGNMENT_POWER
     MIN_ALIGNMENT_POWER
 } as u8;
 
+/// The pointer payload width the built-in `magic!` pipeline serializes record
+/// addresses with: the [`ShiftPtrSerializer`] `N_BYTES` default, backed by the
+/// built-in link-time serializer (the inlined `out_ptr` of the default
+/// instantiation) and advertised verbatim in its MGIC record.
+pub const DEFAULT_PTR_WIDTH: usize = 3;
+
 /// In the TRCE record layout, per-argument size flag: the argument stream has a fixed
 /// byte size (given by the record's `size` field).
 pub const EMT_FLAG_STATIC: usize = 0;
@@ -158,7 +165,8 @@ pub const EMT_ENCODING_COBS_PASSTHROUGH: u8 = 2;
 pub const MAGIC_LAYOUT_VERSION: (u8, u8) = (1, 0);
 
 /// The version of the layout of a TRCE record
-pub const TRACE_LAYOUT_VERSION: (u8, u8) = (1, 0);
+pub const TRACE_LAYOUT_VERSION: (u8, u8) = (2, 0);
+pub const TRACE_RUNTIME_FORMAT_VERSION: (u8, u8) = (2, 0);
 
 // Compatibility aliases for the pre-record-format names.
 
@@ -246,6 +254,12 @@ impl Descendant {
 
 /// A trait implemented by every traceable type.
 pub trait Trace {
+    /// A Trace implementation is SIMPLE, if its native in-memory representation is equivalent to
+    /// its serialization.
+    ///
+    /// When marking a Trace implementation as SIMPLE you do not need to implement `serialize()`.
+    /// If it also has NUM_CHILDREN == 0 you further don't need to implement `size()`.
+    const SIMPLE: bool = false;
     /// the runtime stream layout of this type's values (see [`Size`])
     const SIZE: Size;
     /// the type id recorded in the TRCE record (e.g. `"signed"`, `"string"`)
@@ -256,69 +270,112 @@ pub trait Trace {
     /// [`Descendant`]
     const DESCENDANTS: &'static [Descendant];
 
-    /// number of TRCE layout entries this type requires as a *top-level* argument:
-    /// 4 for itself plus 5 per descendant
-    const NUM_LAY: usize = {
-        let mut n = 4usize;
-        let mut remaining = Self::NUM_CHILDREN;
-        let mut i = 0;
-        while remaining > 0 {
-            let d = Self::DESCENDANTS[i];
-            n += 5;
-            remaining += d.num_children;
-            remaining -= 1;
-            i += 1;
-        }
-        n
-    };
-
-    /// number of string bytes this type contributes to the record's string area:
-    /// its own id plus every descendant's name and id, all NUL terminated
-    const STR_SIZE: usize = {
-        let mut len = Self::ID.len() + 1;
-        let mut remaining = Self::NUM_CHILDREN;
-        let mut i = 0;
-        while remaining > 0 {
-            let d = Self::DESCENDANTS[i];
-            len += d.name.len() + 1;
-            len += d.id.len() + 1;
-            remaining += d.num_children;
-            remaining -= 1;
-            i += 1;
-        }
-        len
-    };
-
-    /// number of descendants of this type (excluding itself)
-    const NUM_DESC: usize = {
-        let mut n = 0usize;
-        let mut remaining = Self::NUM_CHILDREN;
-        let mut i = 0;
-        while remaining > 0 {
-            let d = Self::DESCENDANTS[i];
-            remaining += d.num_children;
-            remaining -= 1;
-            i += 1;
-            n += 1;
-        }
-        n
-    };
-
     /// serialize the *content* of `self`'s runtime stream into the sink.
     ///
     /// Length prefixes and terminators are written by [`emit_args`] (and by list
     /// serialization, which wraps each element).
-    fn serialize<S: Sink>(&self, f: &mut S) -> Result<(), S::OutError>;
-    /// For lists: the element count. For other types: irrelevant.
-    fn size(&self) -> usize;
+    ///
+    /// NOTE: The default implementation is only valid when Trace::SIMPLE is true
+    #[inline]
+    fn serialize<S: Sink>(&self, f: &mut S) -> Result<(), S::OutError> {
+        const {
+            assert!(
+                Self::SIMPLE,
+                "When implementing non-SIMPLE Trace for a type, a non-default `serialize()` implementation is required."
+            );
+        }
+        f.out(unsafe {
+            from_raw_parts(
+                self as *const Self as *const u8,
+                core::mem::size_of_val(self),
+            )
+        })
+    }
+
+    /// For types with NUM_CHILDREN == 0: the number of bytes required to serialize it without any
+    ///     (possibly necessary) length prefix or zero delimiter.
+    /// For types with NUM_CHILDREN > 0:  
+    ///
+    /// NOTE: The default implementation is only valid when the Trace::SIMPLE is true, and
+    /// Trace::NUM_CHILDREN == 0.
+    #[inline]
+    fn size(&self) -> usize {
+        const {
+            assert!(
+                Self::SIMPLE && Self::NUM_CHILDREN == 0,
+                "When implementing non-SIMPLE or NUM_CHILDREN > 0 Trace for a type, a non-default `size()` implementation is required."
+            );
+        }
+        core::mem::size_of_val(self)
+    }
+}
+
+/// number of string bytes T contributes to a record's string area:
+/// its own id plus every descendant's name and id, all NUL terminated
+pub const fn trace_string_size<T>() -> usize
+where
+    T: Trace,
+    T: ?Sized,
+{
+    let mut len = T::ID.len() + 1;
+    let mut remaining = T::NUM_CHILDREN;
+    let mut i = 0;
+    while remaining > 0 {
+        let d = T::DESCENDANTS[i];
+        len += d.name.len() + 1;
+        len += d.id.len() + 1;
+        remaining += d.num_children;
+        remaining -= 1;
+        i += 1;
+    }
+    len
+}
+
+/// number of descendants of T (excluding itself)
+pub const fn trace_num_descendants<T>() -> usize
+where
+    T: Trace,
+    T: ?Sized,
+{
+    let mut n = 0usize;
+    let mut remaining = T::NUM_CHILDREN;
+    let mut i = 0;
+    while remaining > 0 {
+        let d = T::DESCENDANTS[i];
+        remaining += d.num_children;
+        remaining -= 1;
+        i += 1;
+        n += 1;
+    }
+    n
+}
+
+/// number of TRCE layout entries T requires as a *top-level* argument:
+/// 4 for itself plus 5 per descendant
+pub const fn trace_num_layout_entries<T>() -> usize
+where
+    T: Trace,
+    T: ?Sized,
+{
+    let mut n = 4usize;
+    let mut remaining = T::NUM_CHILDREN;
+    let mut i = 0;
+    while remaining > 0 {
+        let d = T::DESCENDANTS[i];
+        n += 5;
+        remaining += d.num_children;
+        remaining -= 1;
+        i += 1;
+    }
+    n
 }
 
 /// Write an argument's runtime stream: length prefix (for length-prefixed types), the
 /// value's content, and a terminator (for null-terminated types).
+#[inline]
 pub fn emit_args<T: Trace + ?Sized, S: Sink>(x: &T, f: &mut S) -> Result<(), S::OutError> {
     if let Size::LengthPrefixed(_) = <T as Trace>::SIZE {
-        let n = x.size();
-        Trace::serialize(&n, f)?;
+        serialize_to_varint(f, x.size())?;
     }
     Trace::serialize(x, f)?;
     if let Size::NullTerminated(count) = <T as Trace>::SIZE {
@@ -327,6 +384,7 @@ pub fn emit_args<T: Trace + ?Sized, S: Sink>(x: &T, f: &mut S) -> Result<(), S::
     Ok(())
 }
 
+#[inline]
 fn out_terminator<S: Sink>(f: &mut S, count: u8) -> Result<(), S::OutError> {
     let mut i = 0;
     while i < count {
@@ -370,25 +428,8 @@ impl<T: Trace> Trace for Box<T> {
     }
 }
 
-impl<T: Trace, const N: usize> Trace for [T; N] {
-    const SIZE: Size = Size::Static(N);
-    const ID: &'static str = "list";
-    const NUM_CHILDREN: usize = 1;
-    const DESCENDANTS: &'static [Descendant] = <[T] as Trace>::DESCENDANTS;
-
-    fn serialize<S: Sink>(&self, f: &mut S) -> Result<(), S::OutError> {
-        for el in self {
-            emit_args(el, f)?;
-        }
-        Ok(())
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        N
-    }
-}
-
 impl<T: Trace> Trace for [T] {
+    const SIMPLE: bool = T::SIMPLE;
     const SIZE: Size = Size::LengthPrefixed(size_of::<usize>());
     const ID: &'static str = "list";
     const NUM_CHILDREN: usize = 1;
@@ -404,14 +445,20 @@ impl<T: Trace> Trace for [T] {
             num_children: T::NUM_CHILDREN,
         };
         let mut i = 0;
-        while i < T::NUM_DESC {
+        while i < trace_num_descendants::<T>() {
             all[i + 1] = T::DESCENDANTS[i];
             i += 1;
         }
         all
     };
 
+    #[inline]
     fn serialize<S: Sink>(&self, f: &mut S) -> Result<(), S::OutError> {
+        if T::SIMPLE && matches!(T::SIZE, Size::Static(_)) {
+            return f.out(unsafe {
+                from_raw_parts(self.as_ptr() as *const u8, size_of::<T>() * self.size())
+            });
+        }
         for el in self {
             emit_args(el, f)?;
         }
@@ -420,6 +467,23 @@ impl<T: Trace> Trace for [T] {
     #[inline]
     fn size(&self) -> usize {
         self.len()
+    }
+}
+
+impl<T: Trace, const N: usize> Trace for [T; N] {
+    const SIMPLE: bool = T::SIMPLE;
+    const SIZE: Size = Size::Static(N);
+    const ID: &'static str = "list";
+    const NUM_CHILDREN: usize = 1;
+    const DESCENDANTS: &'static [Descendant] = <[T] as Trace>::DESCENDANTS;
+
+    #[inline]
+    fn serialize<S: Sink>(&self, f: &mut S) -> Result<(), S::OutError> {
+        (self as &[T]).serialize(f)
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        N
     }
 }
 
@@ -440,19 +504,11 @@ impl<T: Trace> Trace for Vec<T> {
 }
 
 impl Trace for str {
+    const SIMPLE: bool = true;
     const SIZE: Size = Size::NullTerminated(1);
     const ID: &'static str = "string";
     const NUM_CHILDREN: usize = 0;
     const DESCENDANTS: &'static [Descendant] = &[];
-
-    #[inline]
-    fn serialize<S: Sink>(&self, f: &mut S) -> Result<(), S::OutError> {
-        f.out(self.as_bytes())
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.len()
-    }
 }
 
 impl Trace for String {
@@ -474,19 +530,11 @@ impl Trace for String {
 macro_rules! impl_trace_for_primitive {
     ($type:ty, $id:expr) => {
         impl Trace for $type {
+            const SIMPLE: bool = true;
             const SIZE: Size = Size::Static(size_of::<Self>());
             const ID: &'static str = $id;
             const NUM_CHILDREN: usize = 0;
             const DESCENDANTS: &'static [Descendant] = &[];
-
-            #[inline]
-            fn serialize<S: Sink>(&self, f: &mut S) -> Result<(), S::OutError> {
-                f.out(&self.to_ne_bytes())
-            }
-            #[inline]
-            fn size(&self) -> usize {
-                size_of::<Self>()
-            }
         }
     };
 }
@@ -509,14 +557,13 @@ impl_trace_for_primitive!(f32, "float");
 impl_trace_for_primitive!(f64, "double");
 
 impl Trace for bool {
+    const SIMPLE: bool = true;
     const SIZE: Size = Size::Static(size_of::<u8>());
     const ID: &'static str = "bool";
     const NUM_CHILDREN: usize = 0;
     const DESCENDANTS: &'static [Descendant] = &[];
 
-    fn serialize<S: Sink>(&self, f: &mut S) -> Result<(), S::OutError> {
-        f.out(&[*self as u8])
-    }
+    #[inline]
     fn size(&self) -> usize {
         size_of::<u8>()
     }
@@ -526,9 +573,9 @@ impl Trace for bool {
 pub trait Sink {
     /// The error type of this sink's operations.
     type OutError;
-    /// The MGIC encoding id (see `TRACE_FORMAT.md`) that describes the byte stream this
-    /// sink produces when used as the sink wrapped by the [`magic!`](crate::magic)
-    /// macro. Defaults to `EMT_ENCODING_NONE` (raw stream); COBS sinks override this.
+    /// The MGIC encoding id  that describes the byte stream this sink produces when
+    /// used as the sink wrapped by the [`magic!`](crate::magic) macro. Defaults to
+    /// `EMT_ENCODING_NONE` (raw stream); COBS sinks override this.
     const ENCODING_ID: u8 = EMT_ENCODING_NONE;
     /// Called before a trace is emitted.
     ///
@@ -636,6 +683,24 @@ impl<T: Sink> Sink for MutexGuard<'_, T> {
     }
 }
 
+#[inline]
+fn serialize_to_varint<T: Sink>(sink: &mut T, len: usize) -> Result<(), T::OutError> {
+    const MAX_BYTES: usize = (usize::BITS as usize).div_ceil(7);
+    let mut bytes: [u8; MAX_BYTES] = [0; MAX_BYTES];
+
+    let mut remaining = len;
+    for (i, b) in bytes.iter_mut().enumerate() {
+        *b = 0x80 | remaining as u8;
+        remaining >>= 7;
+
+        if remaining == 0 {
+            *b &= 0x7F;
+            return sink.out(&bytes[..i + 1]);
+        }
+    }
+    unreachable!()
+}
+
 /// Shims a sink as the `extra_arg` of `emt_default_serialize_pointer`'s `out`
 /// callback.
 ///
@@ -644,7 +709,7 @@ impl<T: Sink> Sink for MutexGuard<'_, T> {
 unsafe extern "C" fn sink_out_shim<S: Sink>(data: *const u8, size: usize, extra: *mut c_void) {
     let sink: *mut S = extra.cast();
     unsafe {
-        let bytes = core::slice::from_raw_parts(data, size);
+        let bytes = from_raw_parts(data, size);
         let _ = (*sink).out(bytes);
     }
 }
@@ -690,7 +755,7 @@ impl Sink for OutFnSink {
 /// Determines how to serialize the address of a record into a byte stream.
 ///
 /// In principle the `out_ptr` function could serialize the `record` pointer it receives in any way
-/// it wants as long as from the serialization the actual record it pointed to can be uniquely determined.
+/// it wants as long as, from the serialization, the actual record it pointed to can be uniquely determined.
 ///
 /// Realistically this means it will shift the address to the right by some number of bits, and then
 /// output some number of the least significant bytes through the provided `sink`.
@@ -718,10 +783,14 @@ pub struct DefaultPtrSerializer;
 // The record pointer is only forwarded across the ABI, never dereferenced here.
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 impl PtrSerializer for DefaultPtrSerializer {
-    /// The host's built-in serializer (see [`magic!`](crate::magic)) shifts by this
-    /// crate's alignment power and emits a `usize`-width payload.
-    const ALIGNMENT_POWER: u8 = ALIGNMENT_POWER;
-    const PTR_WIDTH: usize = size_of::<usize>();
+    /// The host's built-in serializer (see [`magic!`](crate::magic)) is the crate's
+    /// default [`ShiftPtrSerializer`] instantiation: it shifts by this crate's
+    /// alignment power and emits `N_BYTES` least-significant little-endian payload
+    /// bytes. Since [`DefaultPtrSerializer`] is only a *link-time delegate* to it, the
+    /// actual dimensions are unknowable at compile time and both consts here are
+    /// meaningless placeholders (they must never be inserted into an MGIC record).
+    const ALIGNMENT_POWER: u8 = 0;
+    const PTR_WIDTH: usize = 0;
 
     fn out_ptr<S: Sink>(&mut self, record: *const u8, sink: &mut S) -> Result<(), S::OutError> {
         unsafe {
@@ -739,7 +808,7 @@ impl PtrSerializer for DefaultPtrSerializer {
 /// and then emits the `N_BYTES` least significant bytes of what's left through the provided sink
 /// in its `out_ptr` implementation.
 pub struct ShiftPtrSerializer<
-    const N_BYTES: usize = { size_of::<usize>() },
+    const N_BYTES: usize = DEFAULT_PTR_WIDTH,
     const SHIFT: u8 = ALIGNMENT_POWER,
 >;
 
@@ -762,14 +831,11 @@ impl<const N_BYTES: usize, const SHIFT: u8> PtrSerializer for ShiftPtrSerializer
     const ALIGNMENT_POWER: u8 = SHIFT;
     const PTR_WIDTH: usize = N_BYTES;
 
+    #[inline]
     fn out_ptr<S: Sink>(&mut self, record: *const u8, sink: &mut S) -> Result<(), S::OutError> {
         let ptr = (record as usize) >> (SHIFT as usize);
-        let bytes = if cfg!(target_endian = "big") {
-            &ptr.to_ne_bytes()[size_of::<usize>() - N_BYTES..]
-        } else {
-            &ptr.to_ne_bytes()[..N_BYTES]
-        };
-        sink.out(bytes)
+        let bytes = ptr.to_le_bytes();
+        sink.out(&bytes[..N_BYTES])
     }
 }
 
@@ -1165,8 +1231,10 @@ unsafe extern "C" {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __magic_munch {
-    // All options consumed: dispatch to validation and emission.
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
+    // Options fully consumed (`magic!` appends a terminator so every option - even
+    // a trailing one - ends mid-list, sidestepping the `expr`-fragment follower
+    // restriction): dispatch to validation and emission.
+    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] __emt_end) => {
         $crate::__magic_emit!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*]);
     };
 
@@ -1178,39 +1246,27 @@ macro_rules! __magic_munch {
      .sink_guard: $t:ty = $v:expr, $($rest:tt)*) => {
         $crate::__magic_munch!([GUARD $t $v] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
-    ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] .sink_guard: $t:ty = $v:expr) => {
-        $crate::__magic_munch!([GUARD $t $v] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*]);
-    };
     ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]
      .no_global_sink $($rest:tt)*) => {
         $crate::__magic_munch!([NOSINK] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
 
     // Option separator: consumed between options, so the individual option arms can
-    // match without touching their separators (expr-valued options must still require
-    // the comma explicitly, per the fragment-follower rules).
+    // match without touching their separators. Consecutive commas (e.g. a trailing
+    // comma before the terminator) are consumed one at a time.
     ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] , $($rest:tt)*) => {
         $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
 
     // ---- encoding override (custom or record-only offerings) ----
-    // Note: options ending in `$v:expr` need two forms each, since Rust's macro
-    // fragment rules only allow `=>`, `,` or `;` to follow an `expr` fragment -
-    // a comma for the mid-list form, and an exact-match form for the trailing option.
     ([$($s:tt)*] [] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] .encoding = $v:expr, $($rest:tt)*) => {
-        $crate::__magic_munch!([$($s)*] [EX $v] [$($p)*] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
-    };
-    ([$($s:tt)*] [] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] .encoding = $v:expr) => {
-        $crate::__magic_munch!([$($s)*] [EX $v] [$($p)*] [$($w)*] [$($a)*] [$($sec)*]);
+        $crate::__magic_munch!([$($s)*] [EX ($v)] [$($p)*] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
     };
 
     // ---- pointer serializer configuration (mutually exclusive) ----
-    ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]
+    ([STDOUT] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]
      .ptr_serializer: $t:ty = $v:expr, $($rest:tt)*) => {
         $crate::__magic_munch!([$($s)*] [$($e)*] [CUSTOM $t $v] [$($w)*] [$($a)*] [$($sec)*] $($rest)*);
-    };
-    ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*] .ptr_serializer: $t:ty = $v:expr) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [CUSTOM $t $v] [$($w)*] [$($a)*] [$($sec)*]);
     };
     ([$($s:tt)*] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]
      .no_global_ptr_serializer $($rest:tt)*) => {
@@ -1220,17 +1276,11 @@ macro_rules! __magic_munch {
     // ---- record-only pointer dimensions (`.no_global_ptr_serializer` only) ----
     ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [] [$($a:tt)*] [$($sec:tt)*]
      .ptr_width = $v:expr, $($rest:tt)*) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [EX $v] [$($a)*] [$($sec)*] $($rest)*);
-    };
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [] [$($a:tt)*] [$($sec:tt)*] .ptr_width = $v:expr) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [EX $v] [$($a)*] [$($sec)*]);
+        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [EX ($v)] [$($a)*] [$($sec)*] $($rest)*);
     };
     ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [] [$($sec:tt)*]
      .alignment_power = $v:expr, $($rest:tt)*) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [EX $v] $($rest)*);
-    };
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [] .alignment_power = $v:expr) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [EX $v]);
+        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [EX ($v)] [$($sec)*] $($rest)*);
     };
 
     // ---- section override (MGIC + record placement) ----
@@ -1239,10 +1289,6 @@ macro_rules! __magic_munch {
         $crate::__magic_munch!(
             [$($s)*] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [EX $sec] $($rest)*
         );
-    };
-    ([$($s:tt)*] [$($e:tt)*] [$($p:tt)*] [$($w:tt)*] [$($a:tt)*] []
-     .section = $sec:literal) => {
-        $crate::__magic_munch!([$($s)*] [$($e)*] [$($p)*] [$($w)*] [$($a)*] [EX $sec]);
     };
 
     // Unrecognized or duplicated option (any state slot is non-empty on a repeat), or
@@ -1255,7 +1301,7 @@ macro_rules! __magic_munch {
                 "(only for a custom sink or with `.no_global_sink`), ",
                 "`.ptr_serializer: <type> = <expr>`, `.no_global_ptr_serializer`, ",
                 "`.ptr_width = <usize>`, `.alignment_power = <u8>` ",
-                "(both only with `.no_global_ptr_serializer`), ",
+                "(both *required* with `.no_global_ptr_serializer`), ",
                 "`.section = <&str literal>` (must match the `.section` of the `trace!` ",
                 "calls whose records should live in the same section); each at most once"
             )
@@ -1310,8 +1356,8 @@ macro_rules! __magic_emit {
     ([STDOUT] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
         $crate::__magic_record!([$($sec)*],
             $crate::EMT_ENCODING_NONE,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
         );
         $crate::__magic_host!(
             [::std::option::Option<::std::io::StdoutLock<'static>>],
@@ -1343,8 +1389,8 @@ macro_rules! __magic_emit {
     ([COBS] [$($e:tt)*] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
         $crate::__magic_record!([$($sec)*],
             $crate::EMT_ENCODING_COBS,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
         );
         $crate::__magic_host!(
             [
@@ -1388,8 +1434,8 @@ macro_rules! __magic_emit {
     ([GUARD $gt:tt $gv:tt] [] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
         $crate::__magic_record!([$($sec)*],
             <$gt as $crate::Sink>::ENCODING_ID,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
         );
         $crate::__magic_host!(
             [::std::option::Option<$gt>],
@@ -1423,8 +1469,8 @@ macro_rules! __magic_emit {
     ([GUARD $gt:tt $gv:tt] [EX $ge:tt] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
         $crate::__magic_record!([$($sec)*],
             $ge,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
         );
         $crate::__magic_host!(
             [::std::option::Option<$gt>],
@@ -1456,8 +1502,8 @@ macro_rules! __magic_emit {
     ([NOSINK] [] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
         $crate::__magic_record!([$($sec)*],
             $crate::EMT_ENCODING_NONE,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
         );
         $crate::__magic_ser_fn!();
     };
@@ -1475,8 +1521,8 @@ macro_rules! __magic_emit {
     ([NOSINK] [EX $ge:tt] [] [$($w:tt)*] [$($a:tt)*] [$($sec:tt)*]) => {
         $crate::__magic_record!([$($sec)*],
             $ge,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
-            <$crate::DefaultPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
+            <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::ALIGNMENT_POWER
         );
         $crate::__magic_ser_fn!();
     };
@@ -1520,8 +1566,7 @@ macro_rules! __magic_record {
 ///
 /// `ptr_width` and `alignment_power` are recorded verbatim: a custom host serializer
 /// (`.ptr_serializer`) declares both via its [`PtrSerializer`] impl; record-only hosts
-/// (`.no_global_ptr_serializer`) accept them as explicit options and otherwise get the
-/// crate's built-in dimensions.
+/// (`.no_global_ptr_serializer`) must set them explicitly (compile error otherwise).
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __magic_record_sec {
@@ -1544,25 +1589,31 @@ macro_rules! __magic_record_sec {
     };
 }
 
-/// The MGIC record for record-only hosts (`.no_global_ptr_serializer`): resolves the
-/// pointer-width/alignment-power options, defaulting either to the built-in
-/// dimensions (`usize` payload, the crate's alignment power) when left unset. The
-/// `.section` state passes through unchanged.
+/// The MGIC record for record-only hosts (`.no_global_ptr_serializer`): both
+/// `.ptr_width` and `.alignment_power` are *required* (compile error otherwise),
+/// since there is no serializer object whose consts could advertise the stream's
+/// dimensions for the user. The `.section` state passes through unchanged.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __magic_record_noser {
     ([$($sec:tt)*], $enc:expr, [], []) => {
-        $crate::__magic_record!([$($sec)*],
-            $enc,
-            ::core::mem::size_of::<usize>(),
-            $crate::ALIGNMENT_POWER
+        ::core::compile_error!(
+            "`.no_global_ptr_serializer` requires both `.ptr_width = <usize>` and \
+             `.alignment_power = <u8>`: no object exists to advertise the stream's \
+             pointer dimensions"
         );
     };
     ([$($sec:tt)*], $enc:expr, [EX $w:tt], []) => {
-        $crate::__magic_record!([$($sec)*], $enc, $w, $crate::ALIGNMENT_POWER);
+        ::core::compile_error!(
+            "`.no_global_ptr_serializer` requires `.alignment_power = <u8>`; only \
+             `.ptr_width` was set"
+        );
     };
     ([$($sec:tt)*], $enc:expr, [], [EX $a:tt]) => {
-        $crate::__magic_record!([$($sec)*], $enc, ::core::mem::size_of::<usize>(), $a);
+        ::core::compile_error!(
+            "`.no_global_ptr_serializer` requires `.ptr_width = <usize>`; only \
+             `.alignment_power` was set"
+        );
     };
     ([$($sec:tt)*], $enc:expr, [EX $w:tt], [EX $a:tt]) => {
         $crate::__magic_record!([$($sec)*], $enc, $w, $a);
@@ -1573,12 +1624,14 @@ macro_rules! __magic_record_noser {
 /// `emt_default_serialize_pointer` symbol that the default Rust path (via
 /// [`DefaultPtrSerializer`]) and all C guests resolve.
 ///
-/// The built-in form (C parity with `EMT_FILE`) shifts the pointer by this crate's
-/// alignment power and emits it through the *caller's* own out callback. The
-/// `.ptr_serializer` form instead constructs a fresh serializer per call and runs it
-/// against an [`OutFnSink`] bridge: the bridge forwards every byte to the same caller
-/// callback, so C guests keep control of their own output chain, and a serializer's
-/// per-call state lives exactly as long as one serialization.
+/// The built-in form (C parity with `EMT_FILE`) is the inlined `out_ptr` of the
+/// crate's default [`ShiftPtrSerializer`] instantiation: it shifts the pointer by
+/// this crate's alignment power and emits the instantiation's `N_BYTES`
+/// least-significant little-endian payload bytes through the *caller's* own out
+/// callback. The `.ptr_serializer` form instead constructs a fresh serializer per
+/// call and runs it against an [`OutFnSink`] bridge: the bridge forwards every byte
+/// to the same caller callback, so C guests keep control of their own output chain,
+/// and a serializer's per-call state lives exactly as long as one serialization.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __magic_ser_fn {
@@ -1590,13 +1643,20 @@ macro_rules! __magic_ser_fn {
             extra_arg: *mut ::core::ffi::c_void,
         ) {
             unsafe {
-                // Shift the pointer into an `emt_ptr_t`, then hand the bytes to the
-                // *passed* output function. `ptr` derefability is an ABI assumption,
-                // like the user's `extra_arg` for the `out` callback.
+                // The inlined `out_ptr` of the crate's default [`ShiftPtrSerializer`]
+                // instantiation (`ShiftPtrSerializer<3, ALIGNMENT_POWER>`): shift the
+                // pointer by this crate's alignment power, then emit the
+                // instantiation's `N_BYTES` least-significant little-endian bytes
+                // through the *passed* output function. The MGIC record advertises
+                // exactly these dimensions via this serializer type's [`PtrSerializer`]
+                // consts, so the host symbol and the record cannot contradict each
+                // other. `ptr` derefability is an ABI assumption, like the user's
+                // `extra_arg` for the `out` callback.
                 let serialized_ptr = (ptr as usize) >> ($crate::ALIGNMENT_POWER as usize);
+                let bytes = serialized_ptr.to_le_bytes();
                 out(
-                    ::core::ptr::addr_of!(serialized_ptr).cast(),
-                    ::core::mem::size_of::<usize>(),
+                    bytes.as_ptr(),
+                    <$crate::ShiftPtrSerializer as $crate::PtrSerializer>::PTR_WIDTH,
                     extra_arg,
                 );
             }
@@ -1741,7 +1801,15 @@ macro_rules! __magic_host {
 ///   the encoding id.
 ///
 /// **Pointer serializer** (mutually exclusive, default: built-in shift serializer):
+/// the selected serializer's [`PtrSerializer::PTR_WIDTH`]/[`PtrSerializer::ALIGNMENT_POWER`] consts
+/// are what the MGIC record advertises, and the linked host must behave accordingly:
 ///
+/// - none (the default): the built-in serialization host is the crate's default
+///   [`ShiftPtrSerializer`] instantiation (`ShiftPtrSerializer<3, ALIGNMENT_POWER>`),
+///   emitted as the inlined `out_ptr` of that instantiation (C parity with `EMT_FILE`):
+///   pointers are shifted by this crate's `ALIGNMENT_POWER` and serialize as the
+///   3 least-significant little-endian bytes - exactly the dimensions the MGIC record
+///   advertises.
 /// - **`.ptr_serializer: <type> = <expr>`**: backs the link-time
 ///   `emt_default_serialize_pointer` with this serializer: the MGIC record takes its
 ///   pointer width ([`PtrSerializer::PTR_WIDTH`]) and alignment power
@@ -1754,10 +1822,11 @@ macro_rules! __magic_host {
 /// - **`.no_global_ptr_serializer`**: leaves `emt_default_serialize_pointer` undefined
 ///   and the MGIC encoding descriptive: *every* `trace!` call must supply
 ///   `.ptr_serializer = ...` (or the symbol comes from another artifact).
-/// - **`.ptr_width = <usize>`** / **`.alignment_power = <u8>`** (only with
-///   `.no_global_ptr_serializer`): independently set the record's advertised pointer
-///   width (default: `size_of::<usize>()`) and alignment power (default: this crate's
-///   `ALIGNMENT_POWER`). The record's *physical* `.emtrace` alignment is unaffected -
+/// - **`.ptr_width = <usize>`** / **`.alignment_power = <u8>`** (only with, and
+///   *required* by `.no_global_ptr_serializer`): set the record's advertised pointer
+///   width and alignment power. No serializer object exists in this configuration
+///   whose consts could advertise them, so leaving either out is a compile error.
+///   The record's *physical* `.emtrace` alignment is unaffected -
 ///   records are aligned by this crate's feature configuration, which must therefore
 ///   be at least as strong as the advertised power.
 ///
@@ -1773,7 +1842,7 @@ macro_rules! __magic_host {
 #[macro_export]
 macro_rules! magic {
     ($($opts:tt)*) => {
-        $crate::__magic_munch!([STDOUT] [] [] [] [] [] $($opts)*);
+        $crate::__magic_munch!([STDOUT] [] [] [] [] [] $($opts)* , __emt_end);
     };
 }
 
@@ -1928,10 +1997,10 @@ macro_rules! trace_impl {
                 };
                 const HAS_ARGS: bool = NUM_ARGS > 0;
                 const OFFSET_TABLE_SZ: usize = {
-                    let mut n = 2usize; // num_args + fmt offset
+                    let mut n = 4usize; // version major and minor + num_args + fmt offset
                     $(
                         $(
-                            n += <$types as $crate::Trace>::NUM_LAY;
+                            n += $crate::trace_num_layout_entries::<$types>();
                         )+
                     )?
                     n += 3usize; // formatter + file + line
@@ -1941,7 +2010,7 @@ macro_rules! trace_impl {
                     let mut size = FMT.len() + 1 + file!().len() + 1;
                     $(
                         $(
-                            size += <$types as $crate::Trace>::STR_SIZE;
+                            size += $crate::trace_string_size::<$types>();
                         )+
                     )?
                     size
@@ -1980,6 +2049,8 @@ macro_rules! trace_impl {
                         let mut lp = $crate::record::PAYLOAD_OFF;
                         let mut dp = lp + OFFSET_TABLE_SZ * $crate::record::SZ;
                         let fmt_pos = $crate::record::write_str(&mut bytes, &mut dp, FMT);
+                        $crate::record::write_sz(&mut bytes, &mut lp, $crate::TRACE_RUNTIME_FORMAT_VERSION.0 as usize);
+                        $crate::record::write_sz(&mut bytes, &mut lp, $crate::TRACE_RUNTIME_FORMAT_VERSION.1 as usize);
                         $crate::record::write_sz(&mut bytes, &mut lp, NUM_ARGS as usize);
                         $crate::record::write_sz(&mut bytes, &mut lp, fmt_pos as usize);
                         $(
@@ -2133,17 +2204,28 @@ macro_rules! expect {
 
 #[cfg(test)]
 mod tests {
+    use crate::serialize_to_varint;
+
     use super::CobsEncoder;
     use std::sync::{LazyLock, Mutex};
+
+    // Runtime pointer payload of this test binary's built-in host serializer
+    // (`ShiftPtrSerializer<3, ALIGNMENT_POWER>`): the record address shifted right by
+    // `ALIGNMENT_POWER`, emitted as the 3 least-significant little-endian bytes.
+    const PTR_WIDTH: usize = <super::ShiftPtrSerializer as super::PtrSerializer>::PTR_WIDTH;
+
+    /// Byte width of the LEB128 encoding of `n`.
+    fn varint_len(n: usize) -> usize {
+        (usize::BITS - n.leading_zeros()).max(1) as usize / 7 + 1
+    }
 
     #[test]
     fn test() {
         let mut capture = Vec::new();
         trace!("{}", i32: 32, .sink=capture);
-        assert_eq!(capture.len(), size_of::<usize>() + size_of::<i32>());
+        assert_eq!(capture.len(), PTR_WIDTH + size_of::<i32>());
         let mut arg_bytes: [u8; size_of::<i32>()] = [0; size_of::<i32>()];
-        arg_bytes
-            .copy_from_slice(&capture[size_of::<usize>()..size_of::<usize>() + size_of::<i32>()]);
+        arg_bytes.copy_from_slice(&capture[PTR_WIDTH..PTR_WIDTH + size_of::<i32>()]);
         let arg = i32::from_ne_bytes(arg_bytes);
         assert_eq!(arg, 32);
     }
@@ -2153,9 +2235,9 @@ mod tests {
         let mut capture = Vec::new();
         let v = Vec::<i32>::new();
         trace!("{}", [i32]: v, .sink=capture);
-        assert_eq!(capture.len(), size_of::<usize>() * 2);
+        assert_eq!(capture.len(), PTR_WIDTH + varint_len(0));
         trace!("{}", Vec<i32>: v, .sink=capture);
-        assert_eq!(capture.len(), size_of::<usize>() * 4);
+        assert_eq!(capture.len(), 2 * (PTR_WIDTH + varint_len(0)));
     }
 
     #[test]
@@ -2164,20 +2246,14 @@ mod tests {
         let mut capture2 = Vec::new();
         let v = vec![1, 3, 4, 6];
 
-        let expected_len = 2 * size_of::<usize>() + v.len() * size_of::<i32>();
+        let expected_len = PTR_WIDTH + varint_len(v.len()) + v.len() * size_of::<i32>();
         trace!("{}", [i32]: v, .sink=capture1);
         assert_eq!(capture1.len(), expected_len);
         trace!("{}", Vec<i32>: v, .sink=capture2);
         assert_eq!(capture2.len(), expected_len);
 
-        assert_eq!(
-            capture1[size_of::<usize>()..],
-            capture2[size_of::<usize>()..]
-        );
-        assert_ne!(
-            capture1[..size_of::<usize>()],
-            capture2[..size_of::<usize>()]
-        );
+        assert_eq!(capture1[PTR_WIDTH..], capture2[PTR_WIDTH..]);
+        assert_ne!(capture1[..PTR_WIDTH], capture2[..PTR_WIDTH]);
     }
 
     #[test]
@@ -2190,10 +2266,13 @@ mod tests {
         let referencing_vec = vec![&owning[0], &owning[1]];
         let referencing_slice = vec![&owning[0][..], &owning[1]];
 
-        let expected_len = 2 * size_of::<usize>()
+        // pointer payload + outer length prefix + each inner vec's length prefix and
+        // content
+        let expected_len = PTR_WIDTH
+            + varint_len(owning.len())
             + owning
                 .iter()
-                .map(|inner| inner.len() * size_of::<i32>() + size_of::<usize>())
+                .map(|inner| inner.len() * size_of::<i32>() + varint_len(inner.len()))
                 .sum::<usize>();
         trace!("{}", Vec<Vec<i32>>: owning, .sink=capture1);
         assert_eq!(capture1.len(), expected_len);
@@ -2204,18 +2283,9 @@ mod tests {
         trace!("{}", [&[i32]]: referencing_slice, .sink=capture4);
         assert_eq!(capture4.len(), expected_len);
 
-        assert_eq!(
-            capture1[size_of::<usize>()..],
-            capture2[size_of::<usize>()..]
-        );
-        assert_eq!(
-            capture1[size_of::<usize>()..],
-            capture3[size_of::<usize>()..]
-        );
-        assert_eq!(
-            capture1[size_of::<usize>()..],
-            capture4[size_of::<usize>()..]
-        );
+        assert_eq!(capture1[PTR_WIDTH..], capture2[PTR_WIDTH..]);
+        assert_eq!(capture1[PTR_WIDTH..], capture3[PTR_WIDTH..]);
+        assert_eq!(capture1[PTR_WIDTH..], capture4[PTR_WIDTH..]);
     }
 
     #[test]
@@ -2228,7 +2298,7 @@ mod tests {
         let literal = "Hello, there!";
         let owning = String::from_str(literal).unwrap();
 
-        let expected_len = size_of::<usize>() + literal.len() + size_of::<u8>();
+        let expected_len = PTR_WIDTH + literal.len() + size_of::<u8>();
         trace!("{}", str: literal, .sink=capture1);
         assert_eq!(capture1.len(), expected_len);
         trace!("{}", str: owning, .sink=capture2);
@@ -2236,14 +2306,8 @@ mod tests {
         trace!("{}", String: owning, .sink=capture3);
         assert_eq!(capture3.len(), expected_len);
 
-        assert_eq!(
-            capture1[size_of::<usize>()..],
-            capture2[size_of::<usize>()..]
-        );
-        assert_eq!(
-            capture1[size_of::<usize>()..],
-            capture3[size_of::<usize>()..]
-        );
+        assert_eq!(capture1[PTR_WIDTH..], capture2[PTR_WIDTH..]);
+        assert_eq!(capture1[PTR_WIDTH..], capture3[PTR_WIDTH..]);
     }
 
     #[test]
@@ -2258,7 +2322,7 @@ mod tests {
             .map(|s| String::from_str(s).unwrap())
             .collect();
 
-        let expected_len = 2 * size_of::<usize>() // for pointer-, and length-prefix
+        let expected_len = PTR_WIDTH + varint_len(slices.len()) // for pointer- and length-prefix
             + slices
                 .iter()
                 .map(|inner| inner.len() + size_of::<u8>()) // for content and null-terminator
@@ -2268,10 +2332,7 @@ mod tests {
         trace!("{}", Vec<String>: owning, .sink=capture2);
         assert_eq!(capture2.len(), expected_len);
 
-        assert_eq!(
-            capture1[size_of::<usize>()..],
-            capture2[size_of::<usize>()..]
-        );
+        assert_eq!(capture1[PTR_WIDTH..], capture2[PTR_WIDTH..]);
     }
 
     #[test]
@@ -2358,14 +2419,40 @@ mod tests {
     }
 
     #[test]
+    fn simple_varint() {
+        let mut capture = Vec::new();
+        serialize_to_varint(&mut capture, 0);
+        assert_eq!(capture.len(), 1);
+        assert_eq!(capture[0], 0);
+        serialize_to_varint(&mut capture, 10);
+        assert_eq!(capture.len(), 2);
+        assert_eq!(capture[1], 10);
+        serialize_to_varint(&mut capture, 127);
+        assert_eq!(capture.len(), 3);
+        assert_eq!(capture[2], 127);
+        serialize_to_varint(&mut capture, 128);
+        assert_eq!(capture.len(), 5);
+        assert_eq!(capture[3], 0x80);
+        assert_eq!(capture[4], 1);
+        serialize_to_varint(&mut capture, 128 + 17);
+        assert_eq!(capture.len(), 7);
+        assert_eq!(capture[5], 0x80 + 17);
+        assert_eq!(capture[6], 1);
+    }
+
+    #[test]
     fn shift_ptr_serializer() {
         use super::ShiftPtrSerializer;
 
         let mut capture = Vec::new();
         trace!("{}", i32: 32, .sink=capture, .ptr_serializer = ShiftPtrSerializer::new());
         // shifted record pointer + the i32 arg: same shape as the default pipeline.
-        assert_eq!(capture.len(), size_of::<usize>() + size_of::<i32>());
-        let ptr = usize::from_ne_bytes(capture[..size_of::<usize>()].try_into().unwrap());
+        assert_eq!(capture.len(), 3 + size_of::<i32>());
+        let mut ptr: u32 = 0;
+        for b in capture[..3].iter().rev() {
+            ptr += *b as u32;
+            ptr <<= 8;
+        }
         assert_ne!(ptr, 0);
     }
 
@@ -2426,16 +2513,16 @@ mod tests {
     fn ptr_serializer_consts_match_semantics() {
         assert_eq!(
             <super::DefaultPtrSerializer as super::PtrSerializer>::PTR_WIDTH,
-            size_of::<usize>()
+            0
         );
         assert_eq!(
             <super::DefaultPtrSerializer as super::PtrSerializer>::ALIGNMENT_POWER,
-            super::ALIGNMENT_POWER
+            0
         );
         // `ShiftPtrSerializer::<N_BYTES, SHIFT>` *is* its own advertised dimensions.
         assert_eq!(
             <super::ShiftPtrSerializer as super::PtrSerializer>::PTR_WIDTH,
-            size_of::<usize>()
+            3
         );
         assert_eq!(
             <super::ShiftPtrSerializer as super::PtrSerializer>::ALIGNMENT_POWER,
@@ -2475,21 +2562,22 @@ mod tests {
         assert_eq!(bytes[record::PAYLOAD_OFF + 32], 2);
         assert_eq!(bytes[record::PAYLOAD_OFF + 33], 5);
         assert_eq!(bytes[record::PAYLOAD_OFF + 34], super::EMT_ENCODING_NONE);
-        // the default path is unchanged
+        // the built-in dimensions are exactly the default `ShiftPtrSerializer`
+        // instantiation's consts
         let mut default_bytes = [0u8; record::MAGIC_SIZE];
         record::write_magic(
             &mut default_bytes,
             super::EMT_ENCODING_NONE,
-            size_of::<usize>(),
-            super::ALIGNMENT_POWER,
+            <super::ShiftPtrSerializer as super::PtrSerializer>::PTR_WIDTH,
+            <super::ShiftPtrSerializer as super::PtrSerializer>::ALIGNMENT_POWER,
         );
         assert_eq!(
             default_bytes[record::PAYLOAD_OFF + 32],
-            size_of::<usize>() as u8
+            <super::ShiftPtrSerializer as super::PtrSerializer>::PTR_WIDTH as u8
         );
         assert_eq!(
             default_bytes[record::PAYLOAD_OFF + 33],
-            super::ALIGNMENT_POWER
+            <super::ShiftPtrSerializer as super::PtrSerializer>::ALIGNMENT_POWER
         );
     }
 
@@ -2561,14 +2649,14 @@ mod tests {
         trace!("{} + {}", i32: 1, i32: 2);
 
         // Runtime stream through symbols + wrapped sink:
-        // pointer (shifted record address, `usize` bytes) + the two `i32` args.
+        // pointer (shifted record address as the 3 least-significant little-endian
+        // payload bytes) + the two `i32` args.
         let buf = CAPTURED.lock().unwrap().clone();
         let window = &buf[start..];
-        assert!(window.len() >= size_of::<usize>());
-        let ptr_part = &window[..size_of::<usize>()];
-        let ptr = usize::from_ne_bytes(ptr_part.try_into().unwrap());
+        assert!(window.len() >= PTR_WIDTH);
+        let ptr = u32::from_le_bytes([window[0], window[1], window[2], 0]);
         assert_ne!(ptr, 0);
-        let args = &window[size_of::<usize>()..];
+        let args = &window[PTR_WIDTH..];
         let want = [1i32.to_ne_bytes(), 2i32.to_ne_bytes()].concat();
         assert_eq!(args, want.as_slice());
     }
@@ -2600,17 +2688,15 @@ mod tests {
 
         // Every record must have arrived intact: independent record pointers, every
         // argument exactly once.
-        const RECORD_LEN: usize = size_of::<usize>() + size_of::<i32>();
+        const RECORD_LEN: usize = PTR_WIDTH + size_of::<i32>();
         let buf = CAPTURED.lock().unwrap();
         let window = &buf[start..];
         assert_eq!(window.len(), THREADS * RECORDS * RECORD_LEN);
         let mut args = Vec::new();
         for record in window.chunks(RECORD_LEN) {
-            let ptr = usize::from_ne_bytes(record[..size_of::<usize>()].try_into().unwrap());
+            let ptr = u32::from_le_bytes([record[0], record[1], record[2], 0]);
             assert_ne!(ptr, 0);
-            args.push(i32::from_ne_bytes(
-                record[size_of::<usize>()..].try_into().unwrap(),
-            ));
+            args.push(i32::from_ne_bytes(record[PTR_WIDTH..].try_into().unwrap()));
         }
         args.sort_unstable();
         let expected: Vec<i32> = (0..(THREADS * RECORDS) as i32).collect();

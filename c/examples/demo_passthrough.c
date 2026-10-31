@@ -9,7 +9,7 @@
 // Null bytes in passed-through output need to be escaped with an additionally null-byte,
 // although that shouldn't be a concern with text-based output.
 
-EMTRACE_MAGIC_COBS_PASSTHROUGH(size_t);
+EMTRACE_MAGIC_COBS_PASSTHROUGH(3);
 
 static int run(void) {
     emtrace_init();

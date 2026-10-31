@@ -10,9 +10,9 @@
 #include "emtrace/emtrace.h"
 
 #ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(unsigned char);
+EMTRACE_MAGIC_COBS(1);
 #else
-EMTRACE_MAGIC(unsigned char);
+EMTRACE_MAGIC(1);
 #endif
 
 // NOLINTNEXTLINE(readability-function-size)

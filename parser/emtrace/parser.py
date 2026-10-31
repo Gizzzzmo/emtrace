@@ -12,6 +12,10 @@ class EndOfStreamException(Exception):
     pass
 
 
+class TooLongLengthPrefixException(Exception):
+    pass
+
+
 class Parser:
     translation: dict[str, Callable[[Parser, TypeInfo], Any]]
     istream: Callable[[int], bytes]
@@ -51,10 +55,33 @@ class Parser:
             self.read(self.ptr_size), byteorder=self.ptr_byteorder, signed=False
         )
 
-    def read_length_prefix(self, size: int):
+    def read_length_prefix_v1(self, size: int):
         return int.from_bytes(
             self.read(size), byteorder=self.size_t_byteorder, signed=False
         )
+
+    def read_length_prefix_v2(self, max_bytes: int = 20):
+        length_prefix = 0
+        for i in range(max_bytes):
+            byte = self.read(1)[0]
+            length_prefix += (byte & 0x7F) << (i * 7)
+            # LEB128: the continuation bit (high) marks *further* groups; the
+            # terminating group has it cleared.
+            if byte & 0x80 == 0:
+                return length_prefix
+
+        raise TooLongLengthPrefixException
+
+    def read_length_prefix(self, size: int, runtime_data_version: tuple[int, int]):
+        match runtime_data_version:
+            case (1, 0):
+                return self.read_length_prefix_v1(size)
+            case (2, 0):
+                return self.read_length_prefix_v2()
+            case _:
+                raise AssertionError(
+                    f"Unknown runtime data version: {runtime_data_version}"
+                )
 
     def read_until(self, b: bytes = b"\x00") -> bytes:
         bs = bytearray(self.read(len(b)))
@@ -84,7 +111,7 @@ def signed_le(parser: Parser, info: TypeInfo) -> int:
     assert info.size.kind != "null_terminated"
 
     if info.size.kind == "length_prefixed":
-        size = parser.read_length_prefix(info.size.size)
+        size = parser.read_length_prefix(info.size.size, info.runtime_data_version)
     else:
         size = info.size.size
 
@@ -97,7 +124,7 @@ def signed_be(parser: Parser, info: TypeInfo) -> int:
     assert info.size.kind != "null_terminated"
 
     if info.size.kind == "length_prefixed":
-        size = parser.read_length_prefix(info.size.size)
+        size = parser.read_length_prefix(info.size.size, info.runtime_data_version)
     else:
         size = info.size.size
 
@@ -110,7 +137,7 @@ def unsigned_le(parser: Parser, info: TypeInfo) -> int:
     assert info.size.kind != "null_terminated"
 
     if info.size.kind == "length_prefixed":
-        size = parser.read_length_prefix(info.size.size)
+        size = parser.read_length_prefix(info.size.size, info.runtime_data_version)
     else:
         size = info.size.size
 
@@ -123,7 +150,7 @@ def unsigned_be(parser: Parser, info: TypeInfo) -> int:
     assert info.size.kind != "null_terminated"
 
     if info.size.kind == "length_prefixed":
-        size = parser.read_length_prefix(info.size.size)
+        size = parser.read_length_prefix(info.size.size, info.runtime_data_version)
     else:
         size = info.size.size
 
@@ -138,7 +165,7 @@ def string(parser: Parser, info: TypeInfo) -> str:
         return b.decode("utf-8")
 
     if info.size.kind == "length_prefixed":
-        size = parser.read_length_prefix(info.size.size)
+        size = parser.read_length_prefix(info.size.size, info.runtime_data_version)
     else:
         size = info.size.size
 
@@ -155,7 +182,7 @@ def float_le(parser: Parser, info: TypeInfo) -> float:
     assert info.size.kind != "null_terminated"
 
     if info.size.kind == "length_prefixed":
-        size = parser.read_length_prefix(info.size.size)
+        size = parser.read_length_prefix(info.size.size, info.runtime_data_version)
     else:
         size = info.size.size
 
@@ -177,7 +204,7 @@ def float_be(parser: Parser, info: TypeInfo) -> float:
     assert info.size.kind != "null_terminated"
 
     if info.size.kind == "length_prefixed":
-        size = parser.read_length_prefix(info.size.size)
+        size = parser.read_length_prefix(info.size.size, info.runtime_data_version)
     else:
         size = info.size.size
 
@@ -213,7 +240,7 @@ def char(parser: Parser, info: TypeInfo):
 def to_list(parser: Parser, info: TypeInfo) -> MyList[Any]:
     parser.debug_trace(info.size)
     if info.size.kind == "length_prefixed":
-        size = parser.read_length_prefix(info.size.size)
+        size = parser.read_length_prefix(info.size.size, info.runtime_data_version)
     else:
         size = info.size.size
 

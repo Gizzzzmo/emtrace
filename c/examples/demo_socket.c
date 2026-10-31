@@ -28,8 +28,8 @@ static void begin(const void* info, size_t total_size, int connfd) {
 
 #define TRACEF(connfd, ...)                                                                        \
     EMT_TRACE_F(                                                                                   \
-        __attribute__((used)) __attribute__((section(".emtrace"))) const, EMT_PY_FORMAT, uint16_t, \
-        out, SERIALIZE_POINTER, begin, DUMMY, connfd, "", __VA_ARGS__                              \
+        __attribute__((used)) __attribute__((section(".emtrace"))) const, EMT_PY_FORMAT, out,      \
+        SERIALIZE_POINTER, begin, DUMMY, connfd, "", __VA_ARGS__                                   \
     )
 
 int main(void) {
@@ -76,7 +76,7 @@ int main(void) {
             printf("server accept the client...\n");
         }
 
-        EMT_DEFAULT_SEC_ATTR static emt_magic_t magic = EMT_MAGIC(EMT_ENCODING_NONE, size_t, 0);
+        EMT_DEFAULT_SEC_ATTR static emt_magic_t magic = EMT_MAGIC(EMT_ENCODING_NONE, 3, 0);
 
         EMT_INIT(&magic, SERIALIZE_POINTER, out, begin, DUMMY, connfd);
         int x = 1;

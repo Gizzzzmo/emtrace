@@ -23,9 +23,7 @@ from .test_record_parser import build_mgic_record, build_trce_record
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def run_check(
-    data: bytes, *, error_on_minor: bool = False
-) -> tuple[list[str], list[str]]:
+def run_check(data: bytes) -> tuple[list[str], list[str]]:
     warnings: list[str] = []
     errors: list[str] = []
     mgic = None
@@ -36,7 +34,6 @@ def run_check(
     _check(
         data,
         mgic,
-        error_on_minor=error_on_minor,
         warnings=warnings,
         errors=errors,
     )
@@ -78,15 +75,19 @@ def test_check_duplicate_mgic():
 
 
 def test_check_trce_major_version_mismatch():
-    data = build_mgic_record() + build_trce_record(trace_version=(2, 0))
+    data = build_mgic_record() + build_trce_record(trace_version=(255, 0))
     _, errors = run_check(data)
-    assert any("unsupported major version 2.0" in e for e in errors)
+    assert any(
+        "unsupported record version" in e and "version 255.0" in e for e in errors
+    )
 
 
 def test_check_mgic_major_version_mismatch():
-    data = build_mgic_record(magic_version=(2, 0))
+    data = build_mgic_record(magic_version=(255, 0))
     _, errors = run_check(data)
-    assert any("unsupported major version 2.0" in e for e in errors)
+    assert any(
+        "unsupported record version" in e and "version 255.0" in e for e in errors
+    )
 
 
 def test_check_minor_version_ignored_by_default():
@@ -95,19 +96,12 @@ def test_check_minor_version_ignored_by_default():
     assert errors == []
 
 
-def test_check_minor_version_error_with_flag():
-    data = build_mgic_record() + build_trce_record(trace_version=(1, 9))
-    _, errors = run_check(data, error_on_minor=True)
-    assert any("minor version 9 is higher" in e for e in errors)
-
-
-def test_check_unknown_record_type_warns():
+def test_check_unknown_record_type_errors():
     unknown = bytearray(build_trce_record())
     unknown[10:14] = b"BLUB"
     data = build_mgic_record() + bytes(unknown)
-    warnings, errors = run_check(data)
-    assert errors == []
-    assert any("Unknown record type b'BLUB'" in w for w in warnings)
+    _, errors = run_check(data)
+    assert any("b'BLUB' record at offset" in w for w in errors)
 
 
 def test_check_misaligned_record():
@@ -429,7 +423,15 @@ def test_inspect_archive_summary(tmp_path: Path, capsys: pytest.CaptureFixture[s
 
     assert (
         read_cmds.cmd_inspect(
-            type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
+            type(
+                "Args",
+                (),
+                {
+                    "input": str(archive),
+                    "section_name": ".emtrace",
+                    "debug_script": False,
+                },
+            )()
         )
         == 0
     )
@@ -466,7 +468,15 @@ def test_inspect_archive_record_constrained(
 
     assert (
         read_cmds.cmd_inspect(
-            type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
+            type(
+                "Args",
+                (),
+                {
+                    "input": str(archive),
+                    "section_name": ".emtrace",
+                    "debug_script": False,
+                },
+            )()
         )
         == 0
     )
@@ -502,7 +512,15 @@ def test_inspect_archive_unconstrained_member(
 
     assert (
         read_cmds.cmd_inspect(
-            type("Args", (), {"input": str(archive), "section_name": ".emtrace"})()
+            type(
+                "Args",
+                (),
+                {
+                    "input": str(archive),
+                    "section_name": ".emtrace",
+                    "debug_script": False,
+                },
+            )()
         )
         == 0
     )

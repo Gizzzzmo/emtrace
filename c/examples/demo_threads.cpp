@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <thread>
 
-EMTRACE_MAGIC(size_t);
+EMTRACE_MAGIC(3);
 
 auto main() -> int {
     auto work = []() -> void {

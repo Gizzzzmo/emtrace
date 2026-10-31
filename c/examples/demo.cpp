@@ -1,7 +1,6 @@
 #include "emtrace/emtrace.h"
-#include <cstddef>
 
-EMTRACE_MAGIC(size_t);
+EMTRACE_MAGIC(3);
 
 auto main() -> int {
     emtrace_init();

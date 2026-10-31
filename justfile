@@ -59,7 +59,7 @@ pytest *ARGS:
 test_parser *ARGS:
     cd parser && pytest {{ARGS}}
 
-eetest: (pytest "-rs" "-n" "auto")
+eetest *ARGS: (pytest "-rs" "-n" "auto" ARGS)
 
 # Build and run the cross-language interop demos (rust/examples/interop_*,
 # c/examples/interop_*): the executable owning the entry point always hosts the
@@ -130,7 +130,7 @@ gersemi *ARGS:
 
 [no-cd]
 preproc FILE:
-    clang -std=c23 -E -P -I {{justfile_dir}}/c/include/c/include {{FILE}} | clang-format | bat --language=c
+    clang -std=c23 -E -P -I {{justfile_dir}}/c/test/src/include/ -I {{justfile_dir}}/c/include/c/include {{FILE}} | clang-format | bat --language=c
 
 alias pp := preproc
 

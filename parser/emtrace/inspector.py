@@ -17,21 +17,18 @@ from typing import Any
 from ._lief import HAS_LIEF, lief_missing_error, parse_binary
 from .engine import TraceInfoFormat, load_format_info
 from .errors import Report
+from .format_info import FmtInfo
 from .record_parser import (
     _FRAMING_SIZE,
+    KNOWN_RECORD_TYPES,
     KNOWN_VERSIONS,
     MgicInfo,
     RecordInfo,
     RecordParser,
     RecordVersionError,
+    get_record_type,
+    get_supported_parser_version,
 )
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Parser versions: the highest per-record-type versions this tool understands.
-# Record types are versioned independently (see TRACE_FORMAT.md).
-# ─────────────────────────────────────────────────────────────────────────────
-PARSER_VERSIONS: dict[bytes, tuple[int, int]] = dict(KNOWN_VERSIONS)
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -150,7 +147,6 @@ def _check_framing(
 def _check_version(
     info: RecordInfo,
     *,
-    error_on_minor: bool,
     errors: list[str],
 ) -> bool:
     """Check a record's version against the versions this tool understands.
@@ -158,24 +154,27 @@ def _check_version(
     Returns True when the record's layout is decodable by this tool.
     """
     assert info.record_type is not None
-    known = PARSER_VERSIONS[info.record_type]
-    rec_type = info.record_type.decode("ascii", "replace")
-    if info.major != known[0]:
+
+    record_type = get_record_type(info.record_type)
+
+    if record_type is None:
         errors.append(
-            f"{rec_type} record at offset {info.record_start}: unsupported major "
-            f"version {info.major}.{info.minor} (tool understands "
-            f"{known[0]}.{known[1]})."
+            f"{info.record_type} record at offset {info.record_start} is not a known record type to this version of emtrace"
         )
         return False
-    if info.minor > known[1]:
-        msg = (
-            f"{rec_type} record at offset {info.record_start}: minor version "
-            f"{info.minor} is higher than the known {known[1]}; decoding with the "
-            f"known rules."
+
+    supported_version = get_supported_parser_version(
+        record_type, info.major, info.minor
+    )
+    if supported_version is None:
+        errors.append(
+            f"{record_type} record at offset {info.record_start}: unsupported record version\n"
+            f"version {info.major}.{info.minor}\n"
+            f"this version of emtrace understands {record_type} records of the following versions (and higher within same major):\n"
+            f"{KNOWN_VERSIONS[record_type]}"
         )
-        if error_on_minor:
-            errors.append(msg)
-        return True
+        return False
+
     return True
 
 
@@ -183,7 +182,6 @@ def _check(
     data: bytes,
     mgic: MgicInfo | None,
     *,
-    error_on_minor: bool,
     warnings: list[str],
     errors: list[str],
 ) -> None:
@@ -209,20 +207,12 @@ def _check(
         rec_type = info.record_type
         assert rec_type is not None
 
-        if rec_type not in PARSER_VERSIONS:
-            warnings.append(
-                f"Unknown record type {rec_type!r} at offset {i} "
-                f"(version {info.major}.{info.minor}). Skipping."
-            )
-            i = info.record_end
-            continue
-
-        decodable = _check_version(info, error_on_minor=error_on_minor, errors=errors)
+        decodable = _check_version(info, errors=errors)
         _ = decodable
 
         if rec_type == b"MGIC":
             found_mgic_offsets.append(i)
-            _check_mgic_record(data, info, errors=errors)
+            _check_mgic_record(data, info, info.version, errors=errors)
         elif rec_type == b"TRCE":
             _check_trce_record(data, info, errors=errors)
 
@@ -282,11 +272,14 @@ def _check(
 def _check_mgic_record(
     data: bytes,
     info: RecordInfo,
+    record_version: tuple[int, int],
     *,
     errors: list[str],
 ) -> None:
     try:
-        mgic = RecordParser(memoryview(data)).parse_mgic_payload(info)
+        mgic = RecordParser(memoryview(data)).parse_mgic_payload(
+            info, record_version[0], record_version[1]
+        )
     except AssertionError as e:
         errors.append(f"MGIC record at {info.record_start}: {e}")
         return
@@ -333,13 +326,22 @@ def _check_trce_record(
             )
 
     payload_start = info.payload_offset
-    if payload_start + 2 * sz > rec_end:
+    # TRCE 2.x prepends the runtime-data version (major, minor) to the layout
+    # table; version 1.x has no header entries.
+    header_entries = 4 if info.major >= 2 else 2
+    if payload_start + header_entries * sz > rec_end:
         errors.append(
-            f"TRCE record at {offset}: payload (layout[0..1]) extends past record end."
+            f"TRCE record at {offset}: payload (layout[0..{header_entries}]) "
+            f"extends past record end."
         )
         return
 
     pos = payload_start
+    if info.major >= 2:
+        _runtime_version_major = _sz_at(pos)
+        pos += sz
+        _runtime_version_minor = _sz_at(pos)
+        pos += sz
     num_args = _sz_at(pos)
     pos += sz
     fmt_offset = _sz_at(pos)
@@ -461,7 +463,7 @@ def _check_trce_record(
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def check_section(data: bytes, *, error_on_minor: bool = False) -> CheckReport:
+def check_section(data: bytes) -> CheckReport:
     """Validate section bytes against the trace format spec (Tier 2)."""
     report = CheckReport()
 
@@ -477,7 +479,6 @@ def check_section(data: bytes, *, error_on_minor: bool = False) -> CheckReport:
     _check(
         data,
         mgic,
-        error_on_minor=error_on_minor,
         warnings=warnings,
         errors=errors,
     )
@@ -522,7 +523,9 @@ def export_section(
             report.warn(f"skipping record at offset {i}: {e}")
             _structural, _framing, next_offset = record_parser.parse_record_header(i)
             info = None
-        if info is not None:
+        # `parse_trace_record` returns a descriptive string (instead of `None`)
+        # for records it skips (e.g. MGIC framing, unsupported versions).
+        if isinstance(info, FmtInfo):
             fmt_infos[i] = info
         i = next_offset
 
@@ -561,9 +564,12 @@ class _SectionSummary:
     common_alignment_power: int | None
 
 
-def _summarize_records(data: bytes) -> _SectionSummary:
+def _summarize_records(
+    data: bytes,
+    debug_trace: Callable[[*tuple[Any, ...]], None] = lambda *args: None,
+) -> _SectionSummary:
     """Walk all records in *data* and aggregate summary information."""
-    parser = RecordParser(memoryview(data))
+    parser = RecordParser(memoryview(data), debug_trace=debug_trace)
 
     mgic: MgicInfo | None = None
     try:
@@ -587,8 +593,10 @@ def _summarize_records(data: bytes) -> _SectionSummary:
 
         assert info.record_type is not None
         rec_type = info.record_type.decode("ascii", "replace")
-        if info.record_type not in KNOWN_VERSIONS:
+
+        if info.record_type not in KNOWN_RECORD_TYPES:
             rec_type = f"unknown({info.record_type.decode('ascii', 'replace')})"
+
         record_counts[rec_type] += 1
         versions.setdefault(rec_type, Counter())[f"{info.major}.{info.minor}"] += 1
         size_t_sizes.add(info.size_t_size)
@@ -789,7 +797,11 @@ class InspectReport(Report):
     raw: RawDetails | None = None
 
 
-def inspect_path(path: Path, section_name: str) -> InspectReport:
+def inspect_path(
+    path: Path,
+    section_name: str,
+    debug_trace: Callable[[*tuple[Any, ...]], None] = lambda *args: None,
+) -> InspectReport:
     """Summarize the emtrace data in *path* (Tier 2).
 
     Auto-detects archives, executables/object files, and raw section bytes.
@@ -808,7 +820,9 @@ def inspect_path(path: Path, section_name: str) -> InspectReport:
     if input_type == "archive":
         report.archive = _inspect_archive_data(resolved, section_name, report)
     elif input_type in ("elf", "pe", "macho"):
-        report.binary = _inspect_binary_data(resolved, input_type, section_name, report)
+        report.binary = _inspect_binary_data(
+            resolved, input_type, section_name, report, debug_trace
+        )
     else:
         report.raw = _inspect_raw_data(resolved, section_name, report)
     return report
@@ -873,7 +887,11 @@ def _inspect_archive_data(
 
 
 def _inspect_binary_data(
-    path: Path, input_type: str, section_name: str, report: InspectReport
+    path: Path,
+    input_type: str,
+    section_name: str,
+    report: InspectReport,
+    debug_trace: Callable[[*tuple[Any, ...]], None] = lambda *args: None,
 ) -> BinaryDetails | None:
     if not HAS_LIEF:
         report.fail(lief_missing_error(f"parsing {input_type} executables"))
@@ -899,7 +917,7 @@ def _inspect_binary_data(
         return None
 
     details = BinaryDetails(
-        summary=_summarize_records(content),
+        summary=_summarize_records(content, debug_trace),
         alignment=_section_alignment(section),
         content_len=len(content),
     )

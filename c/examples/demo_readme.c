@@ -1,6 +1,6 @@
 #include <emtrace/emtrace.h>
 
-EMTRACE_MAGIC(unsigned);
+EMTRACE_MAGIC(3);
 
 int main(void) {
     emtrace_init();

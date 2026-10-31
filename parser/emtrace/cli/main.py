@@ -243,6 +243,7 @@ def build_parser() -> ArgumentParser:
         metavar="NAME",
         help="ELF/PE/MachO section name to inspect (default: .emtrace).",
     )
+    _ = inspect_parser.add_argument("--debug-script", action="store_true")
     inspect_parser.set_defaults(func=read_cmds.cmd_inspect)
 
     # ── strip ──────────────────────────────────────────────────────────────

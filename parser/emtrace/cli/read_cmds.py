@@ -51,7 +51,7 @@ def cmd_check(args: Any) -> int:
             print_issue(issue)
         return 1
 
-    report = inspector.check_section(loaded.data, error_on_minor=args.error_on_minor)
+    report = inspector.check_section(loaded.data)
     for issue in loaded.warnings:
         print_issue(issue)
     for w in report.warnings:
@@ -129,7 +129,20 @@ def cmd_export(args: Any) -> int:
 
 def cmd_inspect(args: Any) -> int:
     """Summarize the emtrace data of an archive, object file, or executable."""
-    report = inspector.inspect_path(Path(args.input), args.section_name)
+
+    debug_script: bool = args.debug_script
+
+    def trace(*args: Any, **kwargs: Any):
+        if debug_script:
+            text = " ".join(
+                [
+                    "\n".join("[trace] " + line for line in str(arg).split("\n"))
+                    for arg in args
+                ]
+            )
+            print(text, file=sys.stderr, **kwargs)
+
+    report = inspector.inspect_path(Path(args.input), args.section_name, trace)
     for issue in report.errors:
         print_issue(issue)
     for issue in report.warnings:

@@ -7,7 +7,6 @@ EXPECT_OUTPUT(
     "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\n"
     "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\n"
     "1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f\n"
-    "1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f\n"
     "11\n"
     "11\n"
     "11\n"
@@ -16,9 +15,9 @@ EXPECT_OUTPUT(
 );
 
 #ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(size_t);
+EMTRACE_MAGIC_COBS(3);
 #else
-EMTRACE_MAGIC(size_t);
+EMTRACE_MAGIC(3);
 #endif
 
 int main(void) {
@@ -29,7 +28,6 @@ int main(void) {
 
     int16_t arr2[8] = {31, 31, 31, 31, 31, 31, 31, 31};
     EMTRACELN_F("{:, *x}", SLC(int16_t, arr2, 8));
-    EMTRACELN_F("{:, *x}", ESLC(int16_t, arr2, uint16_t, 8));
 
     int8_t arr3[5] = {3, 3, 3, 3, 3};
     EMTRACE_F("{:\n*b}", ARR(int8_t, arr3));

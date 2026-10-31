@@ -37,8 +37,7 @@ static inline void serialize_pointer(
 
 #define EMT_TEST_TRACE_F(buffer, formatter, ...)                                                   \
     EMT_TRACE_F(                                                                                   \
-        const, formatter, uint16_t, to_buffer, serialize_pointer, DUMMY, DUMMY, (&buffer), "",     \
-        __VA_ARGS__                                                                                \
+        const, formatter, to_buffer, serialize_pointer, DUMMY, DUMMY, (&buffer), "", __VA_ARGS__   \
     )
 
 #endif // TEST_UTILS_H

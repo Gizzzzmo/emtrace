@@ -13,9 +13,9 @@ EXPECT_OUTPUT(
 // "C format: test\n";
 
 #ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(size_t);
+EMTRACE_MAGIC_COBS(3);
 #else
-EMTRACE_MAGIC(size_t);
+EMTRACE_MAGIC(3);
 #endif
 
 int main(void) {

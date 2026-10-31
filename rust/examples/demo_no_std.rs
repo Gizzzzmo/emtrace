@@ -5,16 +5,20 @@ use emtrace::{Sink, magic, trace};
 // Record-only host: a long-lived global sink isn't available in `no_std` (the thread-
 // local slot is std-only), so `magic!` runs in its pure `EMT_MAGIC` configuration:
 // only the MGIC record is emitted, with no `emt_default_*` host functions at all.
-// Because no global pointer serializer exists, `.ptr_width`/`.alignment_power` could
-// independently set the record's advertised pointer dimensions; the defaults
-// (`size_of::<usize>()`, this crate's `ALIGNMENT_POWER`) match the
-// `ShiftPtrSerializer::new()` used below, so they are left out here.
+// With no global pointer serializer no object exists to advertise the stream's
+// pointer dimensions, so `.ptr_width`/`.alignment_power` are *required*. Both are
+// set to the dimensions of the `ShiftPtrSerializer::new()` used below.
 //
 // With no global sink, every `trace!` must supply its own `.sink`/`.sink_guard` - a
 // default-sink trace would fail to link (`emt_default_begin` & co. undefined), exactly
 // like a C `EMT_MAGIC`-only binary whose records are driven through user-provided
 // output code.
-magic!(.no_global_sink, .no_global_ptr_serializer);
+magic!(
+    .no_global_sink,
+    .no_global_ptr_serializer,
+    .ptr_width = emtrace::DEFAULT_PTR_WIDTH,
+    .alignment_power = emtrace::ALIGNMENT_POWER
+);
 
 const CAPACITY: usize = 1024;
 struct StaticVec {

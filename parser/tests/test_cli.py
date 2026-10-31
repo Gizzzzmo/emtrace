@@ -64,7 +64,9 @@ def test_export_stdout(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> No
 def test_inspect_raw_bytes(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     section = tmp_path / "section.bin"
     _ = section.write_bytes(aligned_section())
-    args = SimpleNamespace(input=str(section), section_name=".emtrace")
+    args = SimpleNamespace(
+        input=str(section), section_name=".emtrace", debug_script=False
+    )
     assert read_cmds.cmd_inspect(args) == 0
     out = capsys.readouterr().out
     assert "type:             raw" in out
@@ -95,7 +97,7 @@ def test_inspect_binary_requires_lief(
     monkeypatch.setattr("emtrace.inspector.HAS_LIEF", False)
     obj = tmp_path / "test.o"
     _ = obj.write_bytes(build_minimal_elf_o(aligned_section(), sh_addralign=8))
-    args = SimpleNamespace(input=str(obj), section_name=".emtrace")
+    args = SimpleNamespace(input=str(obj), section_name=".emtrace", debug_script=False)
     assert read_cmds.cmd_inspect(args) == 1
     assert "'lief' package" in capsys.readouterr().err
 
@@ -127,7 +129,9 @@ def test_inspect_archive_renders_table(
             [("test.o", build_minimal_elf_o(aligned_section(), sh_addralign=8))]
         )
     )
-    args = SimpleNamespace(input=str(archive), section_name=".emtrace")
+    args = SimpleNamespace(
+        input=str(archive), section_name=".emtrace", debug_script=False
+    )
     assert read_cmds.cmd_inspect(args) == 0
     out = capsys.readouterr().out
     assert "type:             archive" in out

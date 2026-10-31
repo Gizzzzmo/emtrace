@@ -109,7 +109,6 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
                 # offset, size, flag, num_children (see TRACE_FORMAT.md)
                 "EMT_TAG_ARR": "9",
                 "EMT_TAG_SLC": "9",
-                "EMT_TAG_ESLC": "9",
                 "EMT_TAG_STS": "9",
             },
         )
@@ -118,7 +117,7 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
     _ = fp.write(
         build_recursive_macro(
             "EMT_F_LAYOUT_SIZE",
-            ["type", "x", "len", "length_type", "tag"],
+            ["type", "x", "len", "tag"],
             "EMT_F_LAYOUT_SIZE_DISPATCH(tag)",
             "{prev} + EMT_F_LAYOUT_SIZE_DISPATCH(tag)",
             "0",
@@ -135,7 +134,6 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
                 "EMT_TAG_STR": 'char name[sizeof("string")];',
                 "EMT_TAG_ARR": 'char name[sizeof("list")]; char name##_child_name[sizeof("")]; char name##_child_type_id[sizeof(#type)];',
                 "EMT_TAG_SLC": 'char name[sizeof("list")]; char name##_child_name[sizeof("")]; char name##_child_type_id[sizeof(#type)];',
-                "EMT_TAG_ESLC": 'char name[sizeof("list")]; char name##_child_name[sizeof("")]; char name##_child_type_id[sizeof(#type)];',
                 "EMT_TAG_STS": 'char name[sizeof("list")]; char name##_child_name[sizeof("")]; char name##_child_type_id[sizeof(#type)];',
             },
         )
@@ -144,7 +142,7 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
     _ = fp.write(
         build_recursive_macro(
             "EMT_F_INFO_MEMBER",
-            ["type", "x", "len", "length_type", "tag"],
+            ["type", "x", "len", "tag"],
             "EMT_F_INFO_MEMBER_DISPATCH(type, type0, tag)",
             "{prev} EMT_F_INFO_MEMBER_DISPATCH(type, type{i}, tag)",
             "",
@@ -155,7 +153,7 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
     _ = fp.write(
         build_dispatch_macro(
             "EMT_F_LAYOUT_DISPATCH",
-            ["name", "len", "type", "length_type", "default_length_type"],
+            ["name", "len", "type"],
             {
                 "EMT_TAG_VAL": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,",
                 "EMT_TAG_STR": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1, EMT_FLAG_NULL_TERMINATED, 0,",
@@ -169,11 +167,11 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
                 + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_SLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(default_length_type), EMT_FLAG_LENGTH_PREFIXED, 1, "
+                "EMT_TAG_SLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1, "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
                 + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_ESLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(length_type), EMT_FLAG_LENGTH_PREFIXED, 1, "
+                "EMT_TAG_ESLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1, "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
                 + "sizeof(type), EMT_FLAG_STATIC, 0,",
@@ -184,12 +182,11 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
     _ = fp.write(
         build_recursive_macro(
             "EMT_F_LAYOUT",
-            ["type", "x", "len", "length_type", "tag"],
-            "EMT_F_LAYOUT_DISPATCH(type0, len, type, length_type, default_length_type, tag)",
-            "{prev} EMT_F_LAYOUT_DISPATCH(type{i}, len, type, length_type, default_length_type, tag)",
+            ["type", "x", "len", "tag"],
+            "EMT_F_LAYOUT_DISPATCH(type0, len, type, tag)",
+            "{prev} EMT_F_LAYOUT_DISPATCH(type{i}, len, type, tag)",
             "",
             depth=max_args,
-            global_args=["default_length_type"],
         )
     )
 
@@ -211,7 +208,7 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
     _ = fp.write(
         build_recursive_macro(
             "EMT_F_INFO",
-            ["type", "x", "len", "length_type", "tag"],
+            ["type", "x", "len", "tag"],
             "EMT_F_INFO_DISPATCH(type, tag)",
             "{prev} EMT_F_INFO_DISPATCH(type, tag)",
             "",
@@ -222,7 +219,7 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
     _ = fp.write(
         build_recursive_macro(
             "EMT_F_TOTAL_SIZE",
-            ["type", "x", "len", "length_type", "tag"],
+            ["type", "x", "len", "tag"],
             body="(len)",
             body_rec="{prev} + (len)",
             body_empty="0",
@@ -238,16 +235,13 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
                 "x",
                 "len",
                 "out_fn",
-                "length_type",
-                "default_length_type",
                 "extra_arg",
             ],
             {
                 "EMT_TAG_VAL": "{type temp = x; out_fn((const void*)&temp, sizeof(type), extra_arg);}",
                 "EMT_TAG_STR": "{const char* temp = x; out_fn(temp, strlen(temp) + 1, extra_arg);}",
                 "EMT_TAG_ARR": "{const type (*temp)[] = &(x); out_fn(temp, sizeof(x), extra_arg);}",
-                "EMT_TAG_SLC": "{const type* emt_temp_unlikely_to_shadow = x; default_length_type size = (default_length_type)(len); out_fn(&size, sizeof(size), extra_arg); out_fn(emt_temp_unlikely_to_shadow, size * sizeof(type), extra_arg);}",
-                "EMT_TAG_ESLC": "{const type* emt_temp_unlikely_to_shadow = x; length_type size = (length_type)(len); out_fn(&size, sizeof(size), extra_arg); out_fn(emt_temp_unlikely_to_shadow, size * sizeof(type), extra_arg);}",
+                "EMT_TAG_SLC": "{const type* emt_temp_unlikely_to_shadow = x; emt_size_t size = len; emt_serialize_varint(size, out_fn, extra_arg); out_fn(emt_temp_unlikely_to_shadow, size * sizeof(type), extra_arg);}",
                 "EMT_TAG_STS": "{const type* temp = x; out_fn(temp,  sizeof(type)*(len), extra_arg);}",
             },
         )
@@ -256,12 +250,12 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
     _ = fp.write(
         build_recursive_macro(
             "EMT_F",
-            ["type", "x", "len", "length_type", "tag"],
-            "EMT_F_DISPATCH(type, x, len, out_fn, length_type, default_length_type, extra_arg, tag)",
-            "{prev} EMT_F_DISPATCH(type, x, len, out_fn, length_type, default_length_type, extra_arg, tag)",
+            ["type", "x", "len", "tag"],
+            "EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)",
+            "{prev} EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)",
             "",
             depth=max_args,
-            global_args=["out_fn", "default_length_type", "extra_arg"],
+            global_args=["out_fn", "extra_arg"],
         )
     )
 
@@ -279,7 +273,7 @@ if __name__ == "__main__":
     _ = parser.add_argument("--max-args", nargs="?", default=32, type=int)
     args = parser.parse_args()
 
-    with open(Path(__file__).parent.parent / "VERSION", "r") as version_file:
+    with open(Path(__file__).parent.parent / "VERSION") as version_file:
         version = version_file.read()
 
     major, minor, patch = version.strip().split(".")

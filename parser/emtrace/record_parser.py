@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Literal, cast
+from typing import Any, Literal, cast, get_args
 
 from .format_info import FmtInfo, Size, TypeInfo
 
@@ -28,17 +28,49 @@ _FRAMING_METADATA_SIZE = 7  # between the 'EMT' prefix and the type tag
 
 RECORD_TYPE = Literal[b"TRCE", b"MGIC"]
 
-# Highest record-type versions this parser knows how to decode.  Record types
+KNOWN_RECORD_TYPES: list[bytes] = [*get_args(RECORD_TYPE)]
+
+
+def get_record_type(b: bytes) -> RECORD_TYPE | None:
+    if b in KNOWN_RECORD_TYPES:
+        return cast(RECORD_TYPE, b)
+
+    return None
+
+
+# record-type versions this parser knows how to decode.  Record types
 # are versioned independently (see TRACE_FORMAT.md).
-KNOWN_VERSIONS: dict[bytes, tuple[int, int]] = {
-    b"MGIC": (1, 0),
-    b"TRCE": (1, 0),
+KNOWN_VERSIONS: dict[RECORD_TYPE, list[tuple[int, int]]] = {
+    b"MGIC": [(1, 0)],
+    b"TRCE": [(1, 0), (2, 0)],
 }
+
+
+def get_supported_parser_version(
+    record_type: RECORD_TYPE, version_major: int, version_minor: int
+):
+    """
+    Get the highest version supported by the parser that can decode
+    records of type `record_type` with the given version.
+
+    If the parser supports no compatible version for records of the
+    given type and version returns None
+    """
+    supported_version: None | tuple[int, int] = None
+    for supported_major, supported_minor in KNOWN_VERSIONS[record_type]:
+        if (
+            (supported_major == version_major)
+            and (version_minor >= supported_minor)
+            and (supported_version is None or supported_version[1] < supported_minor)
+        ):
+            supported_version = supported_major, supported_minor
+
+    return supported_version
+
 
 # `size_t` widths the parser is able to decode (endianness probe detection
 # supports arbitrary widths, but widths beyond 8 make no sense).
 _MIN_SIZE_T_SIZE = 1
-_MAX_SIZE_T_SIZE = 8
 
 # 32-byte magic constant that identifies the MGIC record.
 _MAGIC_CONSTANT: bytes = bytes.fromhex(
@@ -204,8 +236,11 @@ class RecordParser:
         size_t_size = int(data[offset + 7])
         major = int(data[offset + 8])
         minor = int(data[offset + 9])
+        self.debug_trace(
+            f"record frame: {type_off=} {size_off=} {payload_off=} {endi_off=} {size_t_size=} version={major}.{minor}"
+        )
 
-        if not (_MIN_SIZE_T_SIZE <= size_t_size <= _MAX_SIZE_T_SIZE):
+        if not (size_t_size >= _MIN_SIZE_T_SIZE):
             self.debug_trace(
                 f"Record framing at {offset}: unsupported size_t width {size_t_size}."
             )
@@ -292,9 +327,7 @@ class RecordParser:
 
         assert info.record_type is not None
         if info.record_type in KNOWN_VERSIONS:
-            # Membership in KNOWN_VERSIONS is the check; the checker cannot
-            # narrow bytes to RECORD_TYPE through dict keys.
-            record_type = cast("RECORD_TYPE", info.record_type)
+            record_type = info.record_type
             return record_type, info, info.record_end
 
         self.debug_trace(
@@ -303,7 +336,7 @@ class RecordParser:
         )
         return None, info, info.record_end
 
-    def parse_trace_record(self, offset: int) -> tuple[FmtInfo | None, int]:
+    def parse_trace_record(self, offset: int) -> tuple[FmtInfo | str, int]:
         """Parse a TRCE record format info from the data starting at *offset* (record start).
 
         Raises ``RecordVersionError`` when the record's major version is not
@@ -314,30 +347,33 @@ class RecordParser:
         record_type, info, next_offset = self.parse_record_header(offset)
 
         if record_type != b"TRCE" or info is None:
-            return None, next_offset
+            return "not a trace record", next_offset
 
-        known_major, known_minor = KNOWN_VERSIONS[b"TRCE"]
-        if info.major != known_major:
-            raise RecordVersionError(
-                b"TRCE", info.major, info.minor, (known_major, known_minor)
-            )
+        match get_supported_parser_version(record_type, info.major, info.minor):
+            case None:
+                return "unsupported TRCE record version", next_offset
+            case [major, minor]:
+                record_info = self.parse_trace_payload(
+                    offset,
+                    info.payload_offset,
+                    major,
+                    minor,
+                    info.record_end,
+                    size_t_size=info.size_t_size,
+                    # Records that reach decoding have definitive framing; "unknown"
+                    # framings are rejected earlier (see check/inspect).
+                    byteorder=cast("Literal['little', 'big']", info.byteorder),
+                )
+                record_info.add_version(info.major, info.minor)
 
-        record_info = self.parse_trace_payload(
-            offset,
-            info.payload_offset,
-            info.record_end,
-            size_t_size=info.size_t_size,
-            # Records that reach decoding have definitive framing; "unknown"
-            # framings are rejected earlier (see check/inspect).
-            byteorder=cast("Literal['little', 'big']", info.byteorder),
-        )
-        record_info.add_version(info.major, info.minor)
         return record_info, info.record_end
 
     def parse_trace_payload(
         self,
         offset: int,
         payload_offset: int,
+        version_major: int,
+        version_minor: int,
         record_end: int | None = None,
         *,
         size_t_size: int | None = None,
@@ -352,6 +388,9 @@ class RecordParser:
         not given, the parser's global context (as established by ``find_and_parse_mgic``)
         is used.
         """
+
+        assert (version_major, version_minor) in [(1, 0), (2, 0)]
+
         sz = self.size_t_size if size_t_size is None else size_t_size
         bo = self.byteorder if byteorder is None else byteorder
 
@@ -389,6 +428,13 @@ class RecordParser:
                     f"String at {start} is not valid UTF-8: {e}"
                 ) from e
 
+        if version_major >= 2:
+            runtime_data_version_major = consume_size_t()
+            runtime_data_version_minor = consume_size_t()
+        else:
+            runtime_data_version_major = 1
+            runtime_data_version_minor = 0
+
         num_args = consume_size_t()
         self.debug_trace(f"  {num_args=}")
 
@@ -409,7 +455,9 @@ class RecordParser:
             raw_flag = consume_size_t()
             type_size = self._size_from_flag(raw_size, raw_flag)
             self.debug_trace(f"    {type_size=}")
-            type_info = TypeInfo(type_size)
+            type_info = TypeInfo(
+                type_size, runtime_data_version_major, runtime_data_version_minor
+            )
             num_children = consume_size_t()
             self.debug_trace(f"    {num_children=}")
 
@@ -438,7 +486,9 @@ class RecordParser:
                 self.debug_trace(
                     f"      {child_name=} {child_type_id=} {child_size=} {child_num_children=}"
                 )
-                child_type_info = TypeInfo(child_size)
+                child_type_info = TypeInfo(
+                    child_size, runtime_data_version_major, runtime_data_version_minor
+                )
 
                 stack[0][-1].children[child_name] = (child_type_id, child_type_info)
                 stack[1][-1] -= 1
@@ -454,12 +504,21 @@ class RecordParser:
             type_infos.append((type_id, type_info))
 
         formatter_id = consume_size_t()
+        self.debug_trace(f"{formatter_id=}")
 
         file_offset = consume_size_t()
+        self.debug_trace(f"{file_offset=}")
         line = consume_size_t()
+        self.debug_trace(f"{line=}")
         file = get_string_at(offset + file_offset)
+        self.debug_trace(f"{file=}")
 
-        info: FmtInfo = FmtInfo(fmt_string, formatter_id)
+        info: FmtInfo = FmtInfo(
+            fmt_string,
+            runtime_data_version_major,
+            runtime_data_version_minor,
+            formatter_id,
+        )
         info.add_source_info(file, line)
 
         for type_id, type_info in type_infos:
@@ -479,7 +538,11 @@ class RecordParser:
         i = 0
         while i < len(self.data):
             info, next_offset = self.parse_trace_record(i)
-            if info is not None:
+            if isinstance(info, str):
+                self.debug_trace(
+                    f"Parsed record at offset {i} not a supported trace record: {info}"
+                )
+            else:
                 self.debug_trace(
                     f"Parsed record at offset {i} with formatter id {info.formatter}, and format string: {info.fmt_string}"
                 )
@@ -491,7 +554,9 @@ class RecordParser:
 
         return infos
 
-    def parse_mgic_payload(self, info: RecordInfo) -> MgicInfo:
+    def parse_mgic_payload(
+        self, info: RecordInfo, version_major: int, version_minor: int
+    ) -> MgicInfo:
         """Parse a MGIC record payload from an already-parsed framing.
 
         Sizes and byte order come from the framing context *info* — this method
@@ -499,6 +564,7 @@ class RecordParser:
 
         Raises ``AssertionError`` on malformed data.
         """
+        assert (version_major, version_minor) in [(1, 0)]
         assert info.record_type == b"MGIC", (
             f"parse_mgic_payload called on a {info.record_type!r} record."
         )
@@ -512,12 +578,16 @@ class RecordParser:
             self.data[magic_offset : magic_offset + 32].tobytes() == _MAGIC_CONSTANT
         ), f"Magic constant mismatch at offset {magic_offset}."
 
+        self.debug_trace(f"{bytes(self.data[magic_offset:]).hex()}")
         ptr_size = int(self.data[magic_offset + _MGIC_PTR_SIZE_OFFSET])
+        self.debug_trace(f"{ptr_size=}")
         alignment_power = int(self.data[magic_offset + _MGIC_ALIGNMENT_POWER_OFFSET])
+        self.debug_trace(f"{alignment_power=}")
 
         assert ptr_size > 0, "sizeof(emt_ptr_t) reported as 0 in MGIC payload."
 
         encoding_id = int(self.data[magic_offset + _MGIC_ENCODING_ID_OFFSET])
+        self.debug_trace(f"{encoding_id=}")
 
         return MgicInfo(
             record_start=info.record_start,
@@ -532,7 +602,7 @@ class RecordParser:
             encoding_id=encoding_id,
         )
 
-    def parse_mgic_record(self, offset: int) -> tuple[MgicInfo | None, int]:
+    def parse_mgic_record(self, offset: int) -> tuple[MgicInfo | str, int]:
         """Parse a MGIC record starting at *offset*.
 
         Returns ``(MgicInfo, record_end)`` on success or ``(None, next_offset)``
@@ -543,15 +613,13 @@ class RecordParser:
         record_type, info, next_offset = self.parse_record_header(offset)
 
         if record_type != b"MGIC" or info is None:
-            return None, next_offset
+            return f"record type is {record_type}, not MGIC", next_offset
 
-        known_major, known_minor = KNOWN_VERSIONS[b"MGIC"]
-        if info.major != known_major:
-            raise RecordVersionError(
-                b"MGIC", info.major, info.minor, (known_major, known_minor)
-            )
-
-        return self.parse_mgic_payload(info), info.record_end
+        match get_supported_parser_version(record_type, info.major, info.minor):
+            case None:
+                return "unsupported MGIC record version", next_offset
+            case [major, minor]:
+                return self.parse_mgic_payload(info, major, minor), info.record_end
 
     def find_and_parse_mgic(self) -> MgicInfo | None:
         """Search for the MGIC record in ``self.data`` and parse it.
@@ -599,18 +667,13 @@ class RecordParser:
             )
             return None
 
+        mgic, _ = self.parse_mgic_record(record_info.record_start)
+
+        if isinstance(mgic, str):
+            self.debug_trace(f"MGIC record unsupported: {mgic}")
+            return None
+
         self.debug_trace(f"Found MGIC record framing at offset {record_start}")
-
-        mgic = self.parse_mgic_payload(record_info)
-
-        known_major, known_minor = KNOWN_VERSIONS[b"MGIC"]
-        if mgic.version_major != known_major:
-            raise RecordVersionError(
-                b"MGIC",
-                mgic.version_major,
-                mgic.version_minor,
-                (known_major, known_minor),
-            )
 
         self.size_t_size = mgic.size_t_size
         self.ptr_size = mgic.ptr_size
