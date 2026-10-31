@@ -5,7 +5,7 @@ The command-line interface lives in :mod:`emtrace.cli` and is intentionally
 CLI side effects.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from .edit import nonload_binary, strip_binary
 from .engine import (
