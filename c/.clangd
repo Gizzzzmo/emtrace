@@ -7,6 +7,10 @@ CompileFlags:
     - -Wmissing-prototypes
   Remove: -W*
   CompilationDatabase: build/
+Hover:
+  MacroContentsLimit: 4096
+Documentation:
+  CommentFormat: Doxygen
 Diagnostics:
   UnusedIncludes: Strict
   MissingIncludes: None

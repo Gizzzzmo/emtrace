@@ -7,7 +7,7 @@ authors = [{name = "Jonas Beyer", email = "reyeb.sanoj@googlemail.com"}]
 license = {file="LICENSE"}
 keywords = ["embedded", "logging", "tracing"]
 dependencies = [
-    "lief>=0.17",
+    "lief>=1.0",
 ]
 
 [project.optional-dependencies]
