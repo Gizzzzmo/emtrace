@@ -31,11 +31,11 @@ not overlap* with either each other, or with the framing.
 ```txt
              byte-width of size_t and version numbers           endianness probe
                                        vv vvvv                     vvvv vvvv
-Byte position (hex):  0    2    4    6    8    a    c    e    10   12   14   16   18   1a   1c   1e
-hexadecimal:          454d 540a 0e16 1204 0100 424c 5542 1f00 0000 0001 0203 4d79 5061 796c 6f61 64
-ASCII (where appl.):   E M  T                   B L  U B                      M y  P a  y l  o a  d
-                             ^^ ^^^^ ^^                  ^^^^ ^^^^         
-   pointers to type, size, payload, and endianness      total size of the record, 0x1f bytes
+index (hex):  0    2    4    6    8    a    c    e    10   12   14   16   18   1a   1c   1e
+record:       454d 540a 0e16 1204 0100 424c 5542 1f00 0000 0001 0203 4d79 5061 796c 6f61 64
+as ASCII:     E M  T                   B L  U B                      M y  P a  y l  o a  d
+                     ^^ ^^^^ ^^                  ^^^^ ^^^^         
+pointers to type, size, payload, and endianness      total size of the record, 0x1f bytes
 ```
 
 This record has type `BLUB`, and contains the ASCII-encoded payload `MyPayload`.
@@ -119,7 +119,8 @@ It must lie at the beginning of the magic record's payload.
 The metadata is structured as follows: Immediately after the magic string there
 are three more single-byte integers:
 
-- The first describes how many bytes make up an `emt_ptr_t`.
+- The first describes how many bytes make up an `emt_ptr_t`, does not need to be
+  a power of 2.
 - The second contains the `EMT_ALIGNMENT_POWER`. All output `emt_ptr_t` will
   need to be multiplied by `2^EMT_ALIGNMENT_POWER` to get the actual pointer
   value.
@@ -224,16 +225,17 @@ width and endianness, as described above.
 
 At runtime, each time a trace is emitted it writes:
 
-1. An `emt_ptr_t` containing the address of the corresponding `TRCE` record,
-   right-shifted by `EMT_ALIGNMENT_POWER` bits. The parser recovers the section
-   offset by computing `address × 2^EMT_ALIGNMENT_POWER + aslr_offset`, where
-   `aslr_offset` is the difference between the section offset of the `MGIC`
-   record and the runtime address of `MGIC` reported in the initialization step.
-   Pointers in the stream are stored with the `emt_ptr_t` width and endianness
-   of the `MGIC` record. For this to be lossless, every record's runtime address
-   must be smaller than `2^(8·sizeof(emt_ptr_t) + EMT_ALIGNMENT_POWER)`; records
-   at or above this bound lose bits when shifted and can no longer be
-   distinguished from other records.
+1. An a little-endian encoded `emt_ptr_t` containing the address of the
+   corresponding `TRCE` record, right-shifted by `EMT_ALIGNMENT_POWER` bits. The
+   parser recovers the section offset by computing
+   `address × 2^EMT_ALIGNMENT_POWER + aslr_offset`, where `aslr_offset` is the
+   difference between the section offset of the `MGIC` record and the runtime
+   address of `MGIC` reported in the initialization step. Pointers in the stream
+   are stored with the `emt_ptr_t` width and endianness of the `MGIC` record.
+   For this to be lossless, every record's runtime address must be smaller than
+   `2^(num_bits(emt_ptr_t) + EMT_ALIGNMENT_POWER)`; records at or above this
+   bound lose bits when shifted and can no longer be distinguished from other
+   records.
 2. For each argument, the raw bytes of the argument value:
    - For `EMT_FLAG_STATIC` arguments without children: exactly `size` bytes.
    - For `EMT_FLAG_STATIC` with children: the concatenation of the streams of
@@ -251,7 +253,3 @@ At runtime, each time a trace is emitted it writes:
 
 Argument values in the stream are stored with the endianness of the `TRCE`
 record they belong to.
-
-Before the first trace record the program writes the runtime address of the
-`MGIC` record (also as an `emt_ptr_t`) so the parser can determine the ASLR
-offset.
