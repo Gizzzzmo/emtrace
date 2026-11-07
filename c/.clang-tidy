@@ -3,7 +3,7 @@ Checks: >
   clang-diagnostic-*,
   bugprone-*,-bugprone-easily-swappable-parameters,
   misc-include-cleaner,
-  modernize-*,-modernize-macro-to-enum,
+  modernize-*,-modernize-macro-to-enum,-modernize-avoid-c-arrays,
   readability-*,-readability-identifier-length,-readability-magic-numbers,
   llvm-header-guard
 
@@ -26,6 +26,7 @@ CheckOptions:
   readability-identifier-naming.GlobalFunctionPrefix: emt_
   readability-identifier-naming.GlobalVariablePrefix: g_emt_
   readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.ParameterCase: lower_case
   readability-identifier-naming.TypedefCase: lower_case
   readability-identifier-naming.TypedefSuffix: _t
   readability-identifier-naming.EnumConstantCase: UPPER_CASE

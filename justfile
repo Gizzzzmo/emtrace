@@ -28,11 +28,13 @@ gen-header *ARGS:
 
 alias genh := gen-header
 
-check-header:
-    python ./c/header-generator/build_macro.py ./c/build/emtrace.h
-    diff ./c/include/c/include/emtrace/emtrace.h ./c/build/emtrace.h
+check-headers:
+    python ./c/header-generator/build_macro.py ./c/build/comp.h
+    python ./c/header-generator/build_macro.py -c++ ./c/build/comp.hpp
+    diff ./c/include/c/include/emtrace/emtrace.h ./c/build/comp.h
+    diff ./c/include/c/include/emtrace/emtrace.h ./c/build/comp.hpp
 
-alias checkh := check-header
+alias checkh := check-headers
 
 hatch_build:
     cd parser && hatchling build

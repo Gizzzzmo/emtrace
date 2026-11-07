@@ -6,10 +6,6 @@ set(EMTRACE_ENABLE_CXX OFF CACHE BOOL "Enable dedicated C++ integration")
 
 set(LANGUAGES C)
 if(EMTRACE_ENABLE_CXX)
-    message(
-        WARNING
-        "Configured with EMTRACE_ENABLE_CXX=ON, but dedicated C++ integration doesn't exist yet."
-    )
     list(APPEND LANGUAGES CXX)
 endif()
 if(NOT EMTRACE_ENABLE_EXAMPLES AND NOT EMTRACE_ENABLE_TESTS)
@@ -26,16 +22,21 @@ if(EMTRACE_ENABLE_CXX OR EMTRACE_ENABLE_EXAMPLES)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
+set(headers ./include/c/include/emtrace/emtrace.h)
+if(EMTRACE_ENABLE_CXX)
+    list(APPEND headers ./include/cxx/include/emtrace/emtrace.hpp)
+endif()
+
 add_library(emtrace INTERFACE)
 target_sources(
     emtrace
-    PUBLIC
-        FILE_SET HEADERS BASE_DIRS ./include/c/include FILES ./include/c/include/emtrace/emtrace.h
+    PUBLIC FILE_SET HEADERS BASE_DIRS ./include/c/include ./include/cxx/include FILES ${headers}
 )
 target_include_directories(
     emtrace
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/c/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/cxx/include>
         $<INSTALL_INTERFACE:include>
 )
 add_library(emtrace::emtrace ALIAS emtrace)

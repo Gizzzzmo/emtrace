@@ -97,3 +97,8 @@ if(EMTRACE_ENABLE_TESTS)
         target_include_directories(${testname}_cobs PRIVATE include)
     endforeach()
 endif()
+
+if(EMTRACE_ENABLE_CXX)
+    add_executable(demo_readme_cpp ./cpp/demo_readme.cpp)
+    target_link_libraries(demo_readme_cpp PRIVATE emtrace::emtrace)
+endif()

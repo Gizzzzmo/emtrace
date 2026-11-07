@@ -1,5 +1,4 @@
 #include "emtrace/emtrace.h"
-#include <cstddef>
 #include <thread>
 
 EMTRACE_MAGIC(3);

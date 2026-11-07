@@ -24,13 +24,11 @@ static inline void to_buffer(const void* data, size_t size, void* extra_arg) {
     buffer->size += size;
 }
 
-typedef uintptr_t emt_ptr_t;
-
 static inline void serialize_pointer(
     const void* ptr, void (*out)(const void* data, size_t size, void* extra_arg), void* extra_arg
 ) {
     emt_ptr_t serialized_pointer = (emt_ptr_t) (uintptr_t) ptr;
-    out(&serialized_pointer, sizeof(ptr), extra_arg);
+    out(&serialized_pointer, sizeof(serialized_pointer), extra_arg);
 }
 
 #define DUMMY(a, b, c)

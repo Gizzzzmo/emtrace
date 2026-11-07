@@ -213,7 +213,7 @@ comparison to those I know, and have tried:
 - [x] push to github
 - [ ] add some basic benchmarks
 - [ ] add CI pipeline (github actions?)
-- [ ] add dedicated C++ implementation
+- [x] add dedicated C++ implementation
 - [x] add CMake profile-switching to justfile
 - [x] add versioning information
 - [x] publish rust crate to crates.io

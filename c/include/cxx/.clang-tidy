@@ -1,4 +1,7 @@
 InheritParentConfig: true
+Checks: -readability-named-parameter
 CheckOptions:
   readability-identifier-naming.MacroDefinitionPrefix: EMT_
-  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "(EMTRACE_F|EMTRACE|EMTRACE_S|EMTRACELN|EMTRACELN_F|EMTRACELN_S|EMTRACE_INIT|EMTRACE_.*_H)"
+  readability-identifier-naming.GlobalFunctionPrefix: ""
+  readability-identifier-naming.GlobalVariablePrefix: ""
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "(EMTRACE_COMMON|EMTRACE_VERSION_PATCH|EMTRACE_VERSION_MINOR|EMTRACE_VERSION_MAJOR|MTRACE|MTRACELN|EMTRACE_.*_H)"

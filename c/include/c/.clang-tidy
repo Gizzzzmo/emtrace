@@ -1,4 +1,5 @@
 InheritParentConfig: true
+Checks: -modernize-*
 CheckOptions:
   readability-identifier-naming.FunctionPrefix: emt_
   readability-identifier-naming.TypedefPrefix: emt_
@@ -7,4 +8,4 @@ CheckOptions:
   readability-identifier-naming.MacroDefinitionPrefix: EMT_
   readability-identifier-naming.EnumConstantPrefix: EMT_
   readability-identifier-naming.FunctionIgnoredRegexp: emtrace_init
-  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "(EMTRACE_VERSION_PATCH|EMTRACE_VERSION_MINOR|EMTRACE_VERSION_MAJOR|EMTRACE_F|EMTRACE_MAGIC|EMTRACE_MAGIC_COBS|EMTRACE_MAGIC_COBS_PASSTHROUGH|EMTRACE|EMTRACELN|EMTRACELN_F|EMTRACE_INIT|EMTRACE_.*_H)"
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "(EMTRACE_COMMON|EMTRACE_VERSION_PATCH|EMTRACE_VERSION_MINOR|EMTRACE_VERSION_MAJOR|EMTRACE_F|EMTRACE_MAGIC|EMTRACE_MAGIC_COBS|EMTRACE_MAGIC_COBS_PASSTHROUGH|EMTRACE|EMTRACELN|EMTRACELN_F|EMTRACE_INIT|EMTRACE_.*_H)"

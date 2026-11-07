@@ -1,12 +1,22 @@
-// DO NOT MODIFY DIRECTLY! Header is auto-generated from c/header-generator/emtrace_template.h using
-// this python script: c/header-generator/build_macro.py Script arguments were: --max-args=32
+// DO NOT MODIFY DIRECTLY! Header is auto-generated from c/header-generator/c/emtrace_template.h and
+// c/header-generator/c/emtrace_common.h using this python script: c/header-generator/build_macro.py
+// Script arguments were: max_args=32
 #ifndef EMTRACE_EMTRACE_H
 #define EMTRACE_EMTRACE_H
-// NOLINTBEGIN(modernize-*,bugprone-casting-through-void)
-
+#ifdef EMTRACE_COMMON
+#if (defined(EMTRACE_VERSION_MAJOR) && EMTRACE_VERSION_MAJOR != 0) ||                              \
+    (defined(EMTRACE_VERSION_MINOR) && EMTRACE_VERSION_MINOR != 3) ||                              \
+    (defined(EMTRACE_VERSION_PATCH) && EMTRACE_VERSION_PATCH != 0)
+#error                                                                                             \
+    "version mismatch between this header and another previously included one (probably C++ variant emtrace.hpp)"
+#endif
+#else // EMTRACE_COMMON
+#define EMTRACE_COMMON
 #define EMTRACE_VERSION_MAJOR 0
 #define EMTRACE_VERSION_MINOR 3
 #define EMTRACE_VERSION_PATCH 0
+
+// NOLINTBEGIN(modernize-*,bugprone-casting-through-void)
 
 #ifndef EMT_NO_LIBC
 #include <assert.h>
@@ -216,6 +226,18 @@ typedef struct {
 
 /// Initialize / reset `cobs_state`. Call before serializing a new COBS frame.
 static inline void emt_cobs_init(emt_cobs_state_t* cobs_state) { cobs_state->pos = 0; }
+
+#ifdef __cplusplus
+}
+#endif
+// NOLINTEND(modernize-*,bugprone-casting-through-void)
+
+#endif // EMTRACE_COMMON
+// NOLINTBEGIN(modernize-*,bugprone-casting-through-void)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /// Serialize `data` as part of the COBS frame that was started when `cobs_state` was last
 /// initialized. Serialized output goes through `out_fn()`.
