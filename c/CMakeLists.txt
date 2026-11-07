@@ -17,8 +17,16 @@ string(STRIP ${emtrace_version} emtrace_version)
 
 project(emtrace LANGUAGES ${LANGUAGES} VERSION ${emtrace_version})
 
-if(EMTRACE_ENABLE_CXX OR EMTRACE_ENABLE_EXAMPLES)
-    set(CMAKE_CXX_STANDARD 20)
+if(EMTRACE_ENABLE_CXX)
+    if(NOT DEFINED CMAKE_CXX_STANDARD)
+        set(CMAKE_CXX_STANDARD 20)
+    endif()
+    if(CMAKE_CXX_STANDARD LESS 20)
+        message(
+            FATAL_ERROR
+            "CMAKE_CXX_STANDARD must be 20 or higher to enable dedicated C++ implementation"
+        )
+    endif()
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 

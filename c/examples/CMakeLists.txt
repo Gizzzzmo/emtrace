@@ -12,12 +12,15 @@ if(UNIX)
     target_link_libraries(demo_c_socket PRIVATE emtrace::emtrace)
 endif()
 
-if(EMTRACE_ENABLE_CXX)
-    add_executable(demo_cpp demo.cpp)
-    target_link_libraries(demo_cpp PRIVATE emtrace::emtrace)
-
+if(DEFINED CMAKE_CXX_COMPILER AND "cxx_std_11" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
     add_executable(demo_threads demo_threads.cpp)
     target_link_libraries(demo_threads PRIVATE emtrace::emtrace)
+    target_compile_features(demo_threads PRIVATE "cxx_std_11")
+endif()
+
+if(EMTRACE_ENABLE_CXX)
+    add_executable(demo_readme_cpp ./cpp/demo_readme.cpp)
+    target_link_libraries(demo_readme_cpp PRIVATE emtrace::emtrace)
 endif()
 
 # Cross-language interop demos. In all of them the executable that owns the
@@ -96,9 +99,28 @@ if(EMTRACE_ENABLE_TESTS)
         target_compile_definitions(${testname}_cobs PRIVATE TEST_COBS)
         target_include_directories(${testname}_cobs PRIVATE include)
     endforeach()
-endif()
 
-if(EMTRACE_ENABLE_CXX)
-    add_executable(demo_readme_cpp ./cpp/demo_readme.cpp)
-    target_link_libraries(demo_readme_cpp PRIVATE emtrace::emtrace)
+    if(EMTRACE_ENABLE_CXX)
+        set(eetests
+            test_basic
+            test_integers
+            test_strings
+            test_doubles
+            test_mixed
+            test_edge_cases
+            test_large_numbers
+            test_arr
+        )
+        foreach(testname ${eetests})
+            add_executable(${testname}_cpp cpp/${testname}.cpp)
+            target_link_libraries(${testname}_cpp PRIVATE emtrace::emtrace)
+            target_include_directories(${testname}_cpp PRIVATE include)
+        endforeach()
+        foreach(testname ${eetests})
+            add_executable(${testname}_cobs_cpp cpp/${testname}.cpp)
+            target_link_libraries(${testname}_cobs_cpp PRIVATE emtrace::emtrace)
+            target_compile_definitions(${testname}_cobs_cpp PRIVATE TEST_COBS)
+            target_include_directories(${testname}_cobs_cpp PRIVATE include)
+        endforeach()
+    endif()
 endif()

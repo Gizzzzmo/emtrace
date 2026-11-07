@@ -16,6 +16,22 @@ import pytest
 # If a binary specified here does not exist, the test is skipped.
 # `just build_all` should build all binaries.
 C_TEST_EXECUTABLES = [
+    "examples/test_basic_cpp",
+    "examples/test_basic_cobs_cpp",
+    "examples/test_integers_cpp",
+    "examples/test_integers_cobs_cpp",
+    "examples/test_strings_cpp",
+    "examples/test_strings_cobs_cpp",
+    "examples/test_doubles_cpp",
+    "examples/test_doubles_cobs_cpp",
+    "examples/test_mixed_cpp",
+    "examples/test_mixed_cobs_cpp",
+    "examples/test_edge_cases_cpp",
+    "examples/test_edge_cases_cobs_cpp",
+    "examples/test_large_numbers_cpp",
+    "examples/test_large_numbers_cobs_cpp",
+    "examples/test_arr_cpp",
+    "examples/test_arr_cobs_cpp",
     "examples/test_basic",
     "examples/test_basic_cobs",
     "examples/test_integers",
