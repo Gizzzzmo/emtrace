@@ -374,7 +374,6 @@ def build_be_s390_exe() -> bytes:
 
 def build_pe_exe() -> bytes:
     """Minimal PE32+ image (AMD64) with .text and .emtrace sections."""
-    """Minimal PE32+ image (AMD64) with .text and .emtrace sections."""
     file_align = 0x200
     marker = b"TRACE_MARKER_" * 32
     eraw = (len(marker) + file_align - 1) // file_align * file_align
@@ -386,37 +385,38 @@ def build_pe_exe() -> bytes:
     out += struct.pack("<HHIIIHH", 0x8664, 2, 0, 0, 0, 240, 0x0022)
     opt = bytearray(240)
     struct.pack_into(
-        "<HBBIIIIIQIIHHHHHHIIIHHQQQQII",
+        "<HBBIIIIIQIIHHHHHHIIIIHHQQQQII",
         opt,
         0,
-        0x20B,
-        14,
-        0,
-        0x200,
-        eraw,
-        0,
-        0x1000,
-        0x1000,
-        0x140000000,
-        0x1000,
-        file_align,
-        6,
-        0,
-        0,
-        6,
-        0,
-        0,
-        0x3000,
-        0x200,
-        0,
-        3,
-        0,
-        0x100000,
-        0x1000,
-        0x100000,
-        0x1000,
-        0,
-        16,
+        0x20B,  # Magic (PE32+)
+        14,  # Linker major version
+        0,  # Linker minor version
+        0x200,  # SizeOfCode
+        eraw,  # SizeOfInitializedData
+        0,  # SizeOfUninitializedData
+        0x1000,  # AddressOfEntryPoint
+        0x1000,  # BaseOfCode
+        0x140000000,  # ImageBase
+        0x1000,  # SectionAlignment
+        file_align,  # FileAlignment
+        6,  # OperatingSystemVersion major
+        0,  # OperatingSystemVersion minor
+        0,  # ImageVersion major
+        0,  # ImageVersion minor
+        6,  # SubsystemVersion major
+        0,  # SubsystemVersion minor
+        0,  # Win32VersionValue
+        0x3000,  # SizeOfImage
+        0x200,  # SizeOfHeaders
+        0,  # CheckSum
+        3,  # Subsystem (console)
+        0,  # DllCharacteristics
+        0x100000,  # SizeOfStackReserve
+        0x1000,  # SizeOfStackCommit
+        0x100000,  # SizeOfHeapReserve
+        0x1000,  # SizeOfHeapCommit
+        0,  # LoaderFlags
+        16,  # NumberOfRvaAndSizes
     )
     out += opt
 
