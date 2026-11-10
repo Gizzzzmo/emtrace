@@ -31,22 +31,27 @@ if(EMTRACE_ENABLE_CXX)
 endif()
 
 set(headers ./include/c/include/emtrace/emtrace.h)
+set(base_dirs ./include/c/include)
 if(EMTRACE_ENABLE_CXX)
     list(APPEND headers ./include/cxx/include/emtrace/emtrace.hpp)
+    list(APPEND base_dirs ./include/cxx/include)
 endif()
 
 add_library(emtrace INTERFACE)
-target_sources(
-    emtrace
-    PUBLIC FILE_SET HEADERS BASE_DIRS ./include/c/include ./include/cxx/include FILES ${headers}
-)
+target_sources(emtrace PUBLIC FILE_SET HEADERS BASE_DIRS ${base_dirs} FILES ${headers})
 target_include_directories(
     emtrace
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/c/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/cxx/include>
         $<INSTALL_INTERFACE:include>
 )
+if(EMTRACE_ENABLE_CXX)
+    target_include_directories(
+        emtrace
+        INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/cxx/include>
+    )
+endif()
+
 add_library(emtrace::emtrace ALIAS emtrace)
 
 install(
