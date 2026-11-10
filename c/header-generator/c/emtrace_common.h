@@ -121,17 +121,40 @@ void emt_default_serialize_pointer(
 void emt_default_finish(const void* info, emt_size_t total_size, void* extra_arg);
 extern const emt_magic_t g_emt_default_magic;
 
-#ifndef EMT_DEFAULT_SEC_ATTR
+#ifndef EMT_DEFAULT_ALIGNMENT_POWER
 #define EMT_DEFAULT_ALIGNMENT_POWER 8
+#endif
+
 #define EMT_DEFAULT_ALIGNMENT (1 << (EMT_DEFAULT_ALIGNMENT_POWER))
+
+#ifndef EMT_DEFAULT_ALIGN_ATTRIBUTE
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) ||                                  \
+    (defined(__cplusplus) && __cplusplus >= 201103L)
+#define EMT_DEFAULT_ALIGN_ATTRIBUTE alignas(EMT_DEFAULT_ALIGNMENT)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#define EMT_DEFAULT_ALIGN_ATTRIBUTE _Alignas(EMT_DEFAULT_ALIGNMENT)
+#elif defined(__GNUC__) || defined(__clang__)
+#define EMT_DEFAULT_ALIGN_ATTRIBUTE __attribute__((aligned(EMT_DEFAULT_ALIGNMENT)))
+#endif
+
+#endif // not EMT_DEFAULT_ALIGN_ATTRIBUTE
+
+#ifndef EMT_DEFAULT_SEC_ATTR
+
 #if defined(__GNUC__) || defined(__clang__)
-#define EMT_DEFAULT_SEC_ATTR                                                                       \
-    __attribute__((used, aligned(EMT_DEFAULT_ALIGNMENT), section(".emtrace"))) const
+#define EMT_DEFAULT_SEC_ATTR __attribute__((used, section(".emtrace"))) const
 #elif defined(_MSC_VER)
 #define EMT_DEFAULT_SEC_ATTR                                                                       \
     __declspec(align(EMT_DEMT_DEFAULT_ALIGNMENT)) __declspec(allocate(".emtrace")) const
 #endif
-#endif // EMT_DEFAULT_SEC_ATTR
+
+#endif // not EMT_DEFAULT_SEC_ATTR
+
+#if !defined(EMT_DEFAULT_ATTR) && defined(EMT_DEFAULT_ALIGN_ATTRIBUTE) &&                          \
+    defined(EMT_DEFAULT_SEC_ATTR)
+#define EMT_DEFAULT_ATTR EMT_DEFAULT_ALIGN_ATTRIBUTE EMT_DEFAULT_SEC_ATTR
+#endif
 
 // from C23 and C++11 onwards we can use enum class with fixed underlying types instead of macros
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) ||                                  \
@@ -180,32 +203,6 @@ enum : emt_size_t {
 #define EMT_ENCODING_COBS ((emt_size_t) 1)
 #define EMT_ENCODING_COBS_PASSTHROUGH ((emt_size_t) 2)
 #endif
-
-#ifndef EMT_NO_LIBC
-
-#if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE || _BSD_SOURCE || _SVID_SOURCE)
-#define EMT_FWRITE fwrite_unlocked
-#else
-#define EMT_FWRITE fwrite
-#endif
-
-static inline void emt_out_file(const void* data, emt_size_t size, FILE* file) {
-    EMT_FWRITE(data, 1, size, file);
-}
-
-static inline void emt_out_file_wrapper(const void* data, emt_size_t size, void* extra_arg) {
-    FILE* file = (FILE*) extra_arg;
-    EMT_FWRITE(data, 1, size, file);
-}
-#endif // not EMT_NO_LIBC
-
-typedef struct {
-    unsigned char buffer[254];
-    unsigned char pos;
-} emt_cobs_state_t;
-
-/// Initialize / reset `cobs_state`. Call before serializing a new COBS frame.
-static inline void emt_cobs_init(emt_cobs_state_t* cobs_state) { cobs_state->pos = 0; }
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,5 @@
 #include "test_utils.h"
 #include <cstdint>
-#include <emtrace/emtrace.h>
 #include <emtrace/emtrace.hpp>
 
 EXPECT_OUTPUT(
@@ -9,16 +8,12 @@ EXPECT_OUTPUT(
     "Numbers: \x01 \x02 \x03 \x04 \x05\n"
 );
 
-#ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(3);
-#else
-EMTRACE_MAGIC(3);
-#endif
+MTRACE_MAGIC(CPP_TEST_SINK);
 
 using std::uint8_t;
 
 auto main() -> int {
-    emtrace_init();
+    emt::init();
 
     // Test mixing different types in one trace
     int int_val = 42;

@@ -1,5 +1,4 @@
 #include "test_utils.h"
-#include <emtrace/emtrace.h>
 #include <emtrace/emtrace.hpp>
 #include <limits>
 #include <numbers>
@@ -10,14 +9,10 @@ EXPECT_OUTPUT(
     "Extreme values: 1.7976931348623157e+308 2.2250738585072014e-308\n"
 );
 
-#ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(3);
-#else
-EMTRACE_MAGIC(3);
-#endif
+MTRACE_MAGIC(CPP_TEST_SINK);
 
 auto main() -> int {
-    emtrace_init();
+    emt::init();
 
     // Test basic double values
     double nan_val = std::numeric_limits<double>::quiet_NaN();

@@ -1,7 +1,6 @@
 #include "test_utils.h"
 #include <cstddef>
 #include <cstdint>
-#include <emtrace/emtrace.h>
 #include <emtrace/emtrace.hpp>
 
 EXPECT_OUTPUT(
@@ -10,11 +9,7 @@ EXPECT_OUTPUT(
     "Size integers: 42 -42\n"
 );
 
-#ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(3);
-#else
-EMTRACE_MAGIC(3);
-#endif
+MTRACE_MAGIC(CPP_TEST_SINK);
 
 using std::int16_t;
 using std::int32_t;
@@ -24,7 +19,7 @@ using std::int8_t;
 using std::size_t;
 
 auto main() -> int {
-    emtrace_init();
+    emt::init();
 
     // Test various signed integer types
     int8_t i8 = INT8_MIN;    // -128

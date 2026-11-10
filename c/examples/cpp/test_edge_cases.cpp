@@ -1,6 +1,5 @@
 #include "test_utils.h"
 #include <cstdint>
-#include <emtrace/emtrace.h>
 #include <emtrace/emtrace.hpp>
 #include <limits>
 
@@ -13,11 +12,7 @@ EXPECT_OUTPUT(
 );
 // "C format: test\n";
 
-#ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(3);
-#else
-EMTRACE_MAGIC(3);
-#endif
+MTRACE_MAGIC(CPP_TEST_SINK);
 
 using std::int32_t;
 using std::int8_t;
@@ -25,9 +20,9 @@ using std::uint32_t;
 using std::uint8_t;
 
 auto main() -> int {
-    emtrace_init();
+    emt::init();
 
-    EMTRACELN("Edge cases:");
+    MTRACELN("Edge cases:");
 
     // Test zero values
     int zero_int = 0;

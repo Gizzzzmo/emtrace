@@ -90,17 +90,16 @@ fn main() {
 The [C](#in-c) implementation can be used in C++ (from C++11 and up) in exactly
 the same way. In addition, if your compiler supports C++20 or later, there is a
 [dedicated C++ header](./c/include/cxx/include/emtrace/emtrace.hpp) that is more
-ergonomic to use. In its `MTRACE`, and `MTRACELN` macros types, for example, can
-be deduced:
+ergonomic to use and does not require the C header. Its `MTRACE` and `MTRACELN`
+macros, for example, deduce their argument types:
 
 ```cpp
-#include <emtrace/emtrace.h>
 #include <emtrace/emtrace.hpp>
 
-EMTRACE_MAGIC(3);
+MTRACE_MAGIC()
 
 auto main() -> int {
-    emtrace_init();
+    emt::init();
     MTRACELN("Hello World!");
 
     int a = 1;

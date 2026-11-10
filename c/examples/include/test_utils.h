@@ -11,4 +11,11 @@
     extern char expected[];                                                                        \
     TEST_EXPECTED_SECTION char expected[] = exp
 
+#ifdef TEST_COBS
+#define CPP_TEST_SINK                                                                              \
+    emt::Cobs {}
+#else
+#define CPP_TEST_SINK
+#endif
+
 #endif // TEST_UTILS_H

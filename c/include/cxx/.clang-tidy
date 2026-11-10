@@ -4,4 +4,4 @@ CheckOptions:
   readability-identifier-naming.MacroDefinitionPrefix: EMT_
   readability-identifier-naming.GlobalFunctionPrefix: ""
   readability-identifier-naming.GlobalVariablePrefix: ""
-  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "(EMTRACE_COMMON|EMTRACE_VERSION_PATCH|EMTRACE_VERSION_MINOR|EMTRACE_VERSION_MAJOR|MTRACE|MTRACELN|EMTRACE_.*_H)"
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "(EMTRACE_COMMON|EMTRACE_VERSION_PATCH|EMTRACE_VERSION_MINOR|EMTRACE_VERSION_MAJOR|MTRACE_MAGIC|MTRACE|MTRACELN|EMTRACE_.*_H)"

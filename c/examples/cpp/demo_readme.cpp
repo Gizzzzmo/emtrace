@@ -1,10 +1,9 @@
-#include <emtrace/emtrace.h>
 #include <emtrace/emtrace.hpp>
 
-EMTRACE_MAGIC(3);
+MTRACE_MAGIC();
 
 auto main() -> int {
-    emtrace_init();
+    emt::init();
     MTRACELN("Hello World!");
 
     int a = 1;

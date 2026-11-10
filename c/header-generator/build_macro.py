@@ -305,7 +305,7 @@ def write_cpp_header(output_path: Path, version: tuple[int, int, int]):
         relative_common_path = COMMON_HEADER_PATH.relative_to(ROOT)
         relative_script_path = Path(__file__).resolve().relative_to(ROOT)
         _ = output.write(
-            f"// DO NOT MODIFY DIRECTLY! Header is auto-generated from {relative_header_path} and {relative_common_path} using this python script: {relative_script_path}\n// Script arguments were: {sys.argv[1:]}\n"
+            f"// DO NOT MODIFY DIRECTLY! Header is auto-generated from {relative_header_path} and {relative_common_path} using this python script: {relative_script_path}\n"
         )
         header_guard = "EMTRACE_EMTRACE_HPP"
         _ = output.write(f"#ifndef {header_guard}\n")

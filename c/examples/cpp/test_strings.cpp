@@ -1,5 +1,4 @@
 #include "test_utils.h"
-#include <emtrace/emtrace.h>
 #include <emtrace/emtrace.hpp>
 
 EXPECT_OUTPUT(
@@ -9,14 +8,10 @@ EXPECT_OUTPUT(
     "Long string: first second third\n"
 );
 
-#ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(3);
-#else
-EMTRACE_MAGIC(3);
-#endif
+MTRACE_MAGIC(CPP_TEST_SINK);
 
 auto main() -> int {
-    emtrace_init();
+    emt::init();
 
     // Test basic string
     MTRACELN("Hello, World!");

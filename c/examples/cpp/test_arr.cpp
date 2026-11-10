@@ -1,6 +1,5 @@
 #include "test_utils.h"
 #include <cstdint>
-#include <emtrace/emtrace.h>
 #include <emtrace/emtrace.hpp>
 #include <ranges>
 #include <span>
@@ -18,11 +17,7 @@ EXPECT_OUTPUT(
     "[1, 4, 9, 16, 25, 36, 49, 64, 81, 100]"
 );
 
-#ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(3);
-#else
-EMTRACE_MAGIC(3);
-#endif
+MTRACE_MAGIC(CPP_TEST_SINK);
 
 using std::int16_t;
 using std::int8_t;
@@ -30,7 +25,8 @@ using std::int8_t;
 using std::ranges::views::transform;
 
 auto main() -> int {
-    emtrace_init();
+    emt::init();
+
     int arr1[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     std::span<int> ptr{arr1};
     MTRACELN("{}\n{}", arr1, ptr);

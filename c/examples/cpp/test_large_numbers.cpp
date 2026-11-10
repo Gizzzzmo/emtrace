@@ -1,6 +1,5 @@
 #include "test_utils.h"
 #include <cstdint>
-#include <emtrace/emtrace.h>
 #include <emtrace/emtrace.hpp>
 #include <limits>
 
@@ -11,17 +10,13 @@ EXPECT_OUTPUT(
     "int64_t min: -9223372036854775808\n"
 );
 
-#ifdef TEST_COBS
-EMTRACE_MAGIC_COBS(3);
-#else
-EMTRACE_MAGIC(3);
-#endif
+MTRACE_MAGIC(CPP_TEST_SINK);
 
 using std::int64_t;
 using std::uint64_t;
 
 auto main() -> int {
-    emtrace_init();
+    emt::init();
 
     MTRACELN("Large integers:");
 

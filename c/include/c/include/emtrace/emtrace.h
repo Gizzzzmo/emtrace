@@ -141,17 +141,40 @@ void emt_default_serialize_pointer(
 void emt_default_finish(const void* info, emt_size_t total_size, void* extra_arg);
 extern const emt_magic_t g_emt_default_magic;
 
-#ifndef EMT_DEFAULT_SEC_ATTR
+#ifndef EMT_DEFAULT_ALIGNMENT_POWER
 #define EMT_DEFAULT_ALIGNMENT_POWER 8
+#endif
+
 #define EMT_DEFAULT_ALIGNMENT (1 << (EMT_DEFAULT_ALIGNMENT_POWER))
+
+#ifndef EMT_DEFAULT_ALIGN_ATTRIBUTE
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) ||                                  \
+    (defined(__cplusplus) && __cplusplus >= 201103L)
+#define EMT_DEFAULT_ALIGN_ATTRIBUTE alignas(EMT_DEFAULT_ALIGNMENT)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#define EMT_DEFAULT_ALIGN_ATTRIBUTE _Alignas(EMT_DEFAULT_ALIGNMENT)
+#elif defined(__GNUC__) || defined(__clang__)
+#define EMT_DEFAULT_ALIGN_ATTRIBUTE __attribute__((aligned(EMT_DEFAULT_ALIGNMENT)))
+#endif
+
+#endif // not EMT_DEFAULT_ALIGN_ATTRIBUTE
+
+#ifndef EMT_DEFAULT_SEC_ATTR
+
 #if defined(__GNUC__) || defined(__clang__)
-#define EMT_DEFAULT_SEC_ATTR                                                                       \
-    __attribute__((used, aligned(EMT_DEFAULT_ALIGNMENT), section(".emtrace"))) const
+#define EMT_DEFAULT_SEC_ATTR __attribute__((used, section(".emtrace"))) const
 #elif defined(_MSC_VER)
 #define EMT_DEFAULT_SEC_ATTR                                                                       \
     __declspec(align(EMT_DEMT_DEFAULT_ALIGNMENT)) __declspec(allocate(".emtrace")) const
 #endif
-#endif // EMT_DEFAULT_SEC_ATTR
+
+#endif // not EMT_DEFAULT_SEC_ATTR
+
+#if !defined(EMT_DEFAULT_ATTR) && defined(EMT_DEFAULT_ALIGN_ATTRIBUTE) &&                          \
+    defined(EMT_DEFAULT_SEC_ATTR)
+#define EMT_DEFAULT_ATTR EMT_DEFAULT_ALIGN_ATTRIBUTE EMT_DEFAULT_SEC_ATTR
+#endif
 
 // from C23 and C++11 onwards we can use enum class with fixed underlying types instead of macros
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) ||                                  \
@@ -201,6 +224,18 @@ enum : emt_size_t {
 #define EMT_ENCODING_COBS_PASSTHROUGH ((emt_size_t) 2)
 #endif
 
+#ifdef __cplusplus
+}
+#endif
+// NOLINTEND(modernize-*,bugprone-casting-through-void)
+
+#endif // EMTRACE_COMMON
+// NOLINTBEGIN(modernize-*,bugprone-casting-through-void)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef EMT_NO_LIBC
 
 #if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE || _BSD_SOURCE || _SVID_SOURCE)
@@ -226,18 +261,6 @@ typedef struct {
 
 /// Initialize / reset `cobs_state`. Call before serializing a new COBS frame.
 static inline void emt_cobs_init(emt_cobs_state_t* cobs_state) { cobs_state->pos = 0; }
-
-#ifdef __cplusplus
-}
-#endif
-// NOLINTEND(modernize-*,bugprone-casting-through-void)
-
-#endif // EMTRACE_COMMON
-// NOLINTBEGIN(modernize-*,bugprone-casting-through-void)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /// Serialize `data` as part of the COBS frame that was started when `cobs_state` was last
 /// initialized. Serialized output goes through `out_fn()`.
@@ -429,7 +452,7 @@ static inline void emt_serialize_varint(
             EMT_F_INFO_MEMBER(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))       \
             char file[sizeof(__FILE__)];                                                           \
         };                                                                                         \
-        static fmt_info_attributes struct emt_info_unlikely_to_shadow_t                            \
+        fmt_info_attributes static struct emt_info_unlikely_to_shadow_t                            \
             emt_info_unlikely_to_shadow = {                                                        \
                 {'E', 'M', 'T', 10,                                                                \
                  (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, record_size),  \
@@ -717,45 +740,43 @@ static inline void emt_serialize_varint(
         finish((const void*) (magic_ptr), sizeof(emt_magic_t), extra_arg);                         \
     } while (0)
 
-#if defined(EMT_DEFAULT_SEC_ATTR) && defined(EMT_DEFAULT_ALIGNMENT_POWER)
+#if defined(EMT_DEFAULT_ATTR) && defined(EMT_DEFAULT_ALIGNMENT_POWER)
 
 #define EMTRACE_F(...)                                                                             \
     EMT_TRACE_F(                                                                                   \
-        EMT_DEFAULT_SEC_ATTR, EMT_PY_FORMAT, emt_default_out, emt_default_serialize_pointer,       \
+        EMT_DEFAULT_ATTR, EMT_PY_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
         emt_default_begin, emt_default_finish, NULL, "", __VA_ARGS__                               \
     )
 #define EMTRACE(str)                                                                               \
     EMT_TRACE_F(                                                                                   \
-        EMT_DEFAULT_SEC_ATTR, EMT_NO_FORMAT, emt_default_out, emt_default_serialize_pointer,       \
+        EMT_DEFAULT_ATTR, EMT_NO_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
         emt_default_begin, emt_default_finish, NULL, "", str                                       \
     )
 
 #define EMTRACELN_F(...)                                                                           \
     EMT_TRACE_F(                                                                                   \
-        EMT_DEFAULT_SEC_ATTR, EMT_PY_FORMAT, emt_default_out, emt_default_serialize_pointer,       \
+        EMT_DEFAULT_ATTR, EMT_PY_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
         emt_default_begin, emt_default_finish, NULL, "\n", __VA_ARGS__                             \
     )
 #define EMTRACELN(str)                                                                             \
     EMT_TRACE_F(                                                                                   \
-        EMT_DEFAULT_SEC_ATTR, EMT_NO_FORMAT, emt_default_out, emt_default_serialize_pointer,       \
+        EMT_DEFAULT_ATTR, EMT_NO_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
         emt_default_begin, emt_default_finish, NULL, "", str "\n"                                  \
     )
 
 #ifdef EMT_FILE
 #define EMTRACE_MAGIC(emt_ptr_len)                                                                 \
-    EMT_FILE(EMT_DEFAULT_SEC_ATTR, emt_ptr_len, EMT_DEFAULT_ALIGNMENT_POWER, stdout)
+    EMT_FILE(EMT_DEFAULT_ATTR, emt_ptr_len, EMT_DEFAULT_ALIGNMENT_POWER, stdout)
 #endif
 
 #ifdef EMT_FILE_COBS
 #define EMTRACE_MAGIC_COBS(emt_ptr_len)                                                            \
-    EMT_FILE_COBS(EMT_DEFAULT_SEC_ATTR, emt_ptr_len, EMT_DEFAULT_ALIGNMENT_POWER, stdout)
+    EMT_FILE_COBS(EMT_DEFAULT_ATTR, emt_ptr_len, EMT_DEFAULT_ALIGNMENT_POWER, stdout)
 #endif
 
 #ifdef EMT_FILE_COBS_PASSTHROUGH
 #define EMTRACE_MAGIC_COBS_PASSTHROUGH(emt_ptr_len)                                                \
-    EMT_FILE_COBS_PASSTHROUGH(                                                                     \
-        EMT_DEFAULT_SEC_ATTR, emt_ptr_len, EMT_DEFAULT_ALIGNMENT_POWER, stdout                     \
-    )
+    EMT_FILE_COBS_PASSTHROUGH(EMT_DEFAULT_ATTR, emt_ptr_len, EMT_DEFAULT_ALIGNMENT_POWER, stdout)
 #endif
 
 #ifndef EMT_NO_LIBC
@@ -772,7 +793,7 @@ static inline void emtrace_init(void) {
 }
 #endif // not EMT_NO_LIBC
 
-#endif // EMT_DEFAULT_SEC_ATTR
+#endif // EMT_DEFAULT_ATTR
 
 #ifdef _MSC_VER
 #define EMT_MACRO_ARGS_CAP 127

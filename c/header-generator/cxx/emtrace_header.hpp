@@ -4,11 +4,14 @@
 #include <concepts>
 #include <cstddef>
 #include <cstring>
+#include <ios>
+#include <iostream>
 #include <optional>
 #include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
+#include <syncstream>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -20,11 +23,28 @@ template <typename... T>
 struct Ts {};
 
 template <emt_size_t N>
+    requires(N >= 1)
 struct StringLiteral {
     constexpr StringLiteral(const char (&str)[N]) {
         for (emt_size_t i = 0; i < N; i++) {
             value[i] = str[i];
         }
+    }
+
+    constexpr StringLiteral() : value{} {}
+
+    template <emt_size_t M>
+    constexpr auto operator+(const StringLiteral<M>& other) -> StringLiteral<N + M - 1> {
+        StringLiteral<N + M - 1> concat{};
+        for (emt_size_t i = 0; i < N - 1; i++) {
+            concat.value[i] = value[i];
+        }
+
+        for (emt_size_t i = 0; i < M; i++) {
+            concat.value[i + N - 1] = other.value[i];
+        }
+
+        return concat;
     }
 
     char value[N];
@@ -38,6 +58,9 @@ struct Child {
     using Type = T;
     static constexpr StringLiteral lit = l;
 };
+
+template <typename T>
+struct Sink {};
 
 template <typename T>
 struct Trace {};
@@ -132,17 +155,124 @@ struct StaticSize {
 
 using SizeType = std::variant<NullTerminated, LengthPrefixed, StaticSize>;
 
-struct DefaultSink {
+/// Error type of a sink, accepting either a sink type or a reference to one
+template <typename S>
+using SinkError = Sink<S>::Error;
+
+template <typename T>
+concept IsSink = requires(T t, Sink<T> sink_impl, const void* ptr, emt_size_t size) {
+    typename Sink<T>::Error;
+    { Sink<T>{std::forward<T>(t), ptr, size} } -> std::same_as<Sink<T>>;
+    { sink_impl.begin() } -> std::same_as<std::optional<SinkError<T>>>;
+    { Sink<T>::out_ptr(sink_impl, ptr) } -> std::same_as<std::optional<SinkError<T>>>;
+    { sink_impl.out(ptr, size) } -> std::same_as<std::optional<SinkError<T>>>;
+    { std::move(sink_impl).finish() } -> std::same_as<std::optional<SinkError<T>>>;
+};
+
+inline constexpr emt_size_t default_ptr_width = 3;
+
+struct StdoutSink {};
+
+template <>
+struct Sink<StdoutSink&> {
+    using Error = Infallible;
+    static constexpr unsigned char encoding_id = EMT_ENCODING_NONE;
+    static constexpr unsigned char ptr_width = default_ptr_width;
+    static constexpr unsigned char alignment_power = EMT_DEFAULT_ALIGNMENT_POWER;
+
+    Sink(StdoutSink, const void*, emt_size_t) : synced_stdout(std::cout) {}
+
+    static auto begin() -> std::optional<Error> { return std::nullopt; }
+
+    template <typename S>
+    static auto out_ptr(S&& sink_impl, const void* record)
+        -> std::optional<typename std::remove_reference_t<S>::Error> {
+        emt_ptr_t shifted = reinterpret_cast<emt_ptr_t>(record) >> alignment_power;
+
+        std::array<unsigned char, ptr_width> bytes{};
+        for (emt_size_t i = 0; i < ptr_width; i++) {
+            bytes[i] = static_cast<unsigned char>(shifted >> (i * 8));
+        }
+
+        return std::forward<S>(sink_impl).out(bytes.data(), bytes.size());
+    }
+
+    auto out(const void* ptr, emt_size_t size) -> std::optional<Error> {
+        synced_stdout.write(reinterpret_cast<const char*>(ptr), static_cast<std::streamsize>(size));
+        return std::nullopt;
+    }
+
+    static auto finish() -> std::optional<Error> { return std::nullopt; }
+
+private:
+    std::osyncstream synced_stdout;
+};
+
+static_assert(IsSink<StdoutSink&>);
+
+template <>
+struct Sink<std::ostream&> {
+    using Error = Infallible;
+    static constexpr unsigned char encoding_id = EMT_ENCODING_NONE;
+    static constexpr unsigned char ptr_width = default_ptr_width;
+    static constexpr unsigned char alignment_power = EMT_DEFAULT_ALIGNMENT_POWER;
+
+    Sink(std::ostream& stream, const void*, emt_size_t) : synced_stdout(stream) {}
+
+    static auto begin() -> std::optional<Error> { return std::nullopt; }
+
+    template <typename SI>
+    auto out_ptr(SI&& sink_impl, const void* record)
+        -> std::optional<typename std::remove_reference_t<SI>::Error> {
+        emt_ptr_t shifted = reinterpret_cast<emt_ptr_t>(record) >> alignment_power;
+
+        std::array<unsigned char, ptr_width> bytes{};
+        for (emt_size_t i = 0; i < ptr_width; i++) {
+            bytes[i] = static_cast<unsigned char>(shifted >> (i * 8));
+        }
+
+        return std::forward<SI>(sink_impl).out(bytes.data(), bytes.size());
+    }
+
+    auto out(const void* ptr, emt_size_t size) -> std::optional<Error> {
+        synced_stdout.write(reinterpret_cast<const char*>(ptr), static_cast<std::streamsize>(size));
+        return std::nullopt;
+    }
+
+    static auto finish() -> std::optional<Error> { return std::nullopt; }
+
+private:
+    std::osyncstream synced_stdout;
+};
+
+struct DefaultSink {};
+
+template <>
+struct Sink<DefaultSink> {
     const void* record;
     emt_size_t total_size;
 
     using Error = Infallible;
 
-    [[nodiscard]]
-    auto begin(const void* record, emt_size_t total_size) -> std::optional<Error> {
-        this->record = record;
-        this->total_size = total_size;
+    Sink(const DefaultSink, const void* record, emt_size_t total_size)
+        : record(record), total_size(total_size) {}
+
+    [[nodiscard]] auto begin() const -> std::optional<Error> {
         emt_default_begin(record, total_size, nullptr);
+        return std::nullopt;
+    }
+
+    template <typename S>
+    [[nodiscard]] static auto out_ptr(S&& sink_impl, const void* record)
+        -> std::optional<typename std::remove_reference_t<S>::Error> {
+        emt_default_serialize_pointer(
+            record,
+            [](const void* data, emt_size_t size, void* extra_arg) -> void {
+                (void) std::forward<S>(*reinterpret_cast<std::remove_reference_t<S>*>(extra_arg))
+                    .out(data, size);
+            },
+            &sink_impl
+        );
         return std::nullopt;
     }
 
@@ -152,16 +282,226 @@ struct DefaultSink {
         return std::nullopt;
     }
 
-    [[nodiscard]]
-    auto finish() const -> std::optional<Error> {
-        emt_default_finish(record, this->total_size, nullptr);
+    [[nodiscard]] auto finish() const -> std::optional<Error> {
+        emt_default_finish(record, total_size, nullptr);
         return std::nullopt;
     }
 };
 
-/// Error type of a sink, accepting either a sink type or a reference to one
+/// Shifts the record address right by `SHIFT` bits, then emits the `N_BYTES`
+/// least-significant bytes (little-endian) through the sink.
+template <emt_size_t N_BYTES, unsigned char SHIFT, typename S = StdoutSink>
+    requires(
+        (IsSink<S> || IsSink<S&>) && N_BYTES > 0 && N_BYTES <= sizeof(emt_ptr_t) &&
+        SHIFT < sizeof(emt_ptr_t) * 8
+    )
+struct ChangePtr {
+    S inner;
+};
+
+template <emt_size_t N_BYTES, unsigned char SHIFT, typename S>
+    requires(
+        IsSink<S&> && N_BYTES > 0 && N_BYTES <= sizeof(emt_ptr_t) && SHIFT < sizeof(emt_ptr_t) * 8
+    )
+struct Sink<ChangePtr<N_BYTES, SHIFT, S>&> : Sink<S&> {
+    static constexpr emt_size_t ptr_width = N_BYTES;
+    static constexpr unsigned char alignment_power = SHIFT;
+    using Error = typename Sink<S&>::Error;
+
+    Sink(ChangePtr<ptr_width, alignment_power, S>& s, const void* record, emt_size_t total_size)
+        : Sink<S&>{s.inner, record, total_size} {}
+
+    template <typename SI>
+    static auto out_ptr(SI&& sink_impl, const void* record)
+        -> std::optional<typename std::remove_reference_t<SI>::Error> {
+        emt_ptr_t shifted = reinterpret_cast<emt_ptr_t>(record) >> alignment_power;
+
+        std::array<unsigned char, ptr_width> bytes{};
+        for (emt_size_t i = 0; i < ptr_width; i++) {
+            bytes[i] = static_cast<unsigned char>(shifted >> (i * 8));
+        }
+
+        return std::forward<SI>(sink_impl).out(bytes.data(), bytes.size());
+    }
+};
+
+template <typename S, emt_size_t N_BYTES, unsigned char SHIFT>
+    requires(
+        IsSink<S> && N_BYTES > 0 && N_BYTES <= sizeof(emt_ptr_t) && SHIFT < sizeof(emt_ptr_t) * 8
+    )
+struct Sink<ChangePtr<N_BYTES, SHIFT, S>> : Sink<S> {
+    static constexpr emt_size_t ptr_width = N_BYTES;
+    static constexpr unsigned char alignment_power = SHIFT;
+    using Error = typename Sink<S>::Error;
+
+    Sink(ChangePtr<ptr_width, alignment_power, S>&& s, const void* record, emt_size_t total_size)
+        : Sink<S>{std::move(s.inner), record, total_size} {}
+
+    template <typename SI>
+    static auto out_ptr(SI&& sink_impl, const void* record)
+        -> std::optional<typename std::remove_reference_t<SI>::Error> {
+        emt_ptr_t shifted = reinterpret_cast<emt_ptr_t>(record) >> alignment_power;
+
+        std::array<unsigned char, ptr_width> bytes{};
+        for (emt_size_t i = 0; i < ptr_width; i++) {
+            bytes[i] = static_cast<unsigned char>(shifted >> (i * 8));
+        }
+
+        return std::forward<SI>(sink_impl).out(bytes.data(), bytes.size());
+    }
+};
+
+static_assert(IsSink<ChangePtr<1, 1, DefaultSink>>);
+
+struct CobsEncoder {
+    template <typename S>
+    auto encode(S& sink_impl, const void* data, emt_size_t size)
+        -> std::optional<typename S::Error> {
+
+        for (emt_size_t i = 0; i < size; i++) {
+            unsigned char byte = ((const unsigned char*) data)[i];
+            if (byte == 0) {
+                unsigned char ptr = pos + 1;
+                if (auto err = sink_impl.out(&ptr, 1)) {
+                    return err;
+                }
+
+                if (auto err = sink_impl.out(buffer.data(), pos)) {
+                    return err;
+                }
+                pos = 0;
+                continue;
+            }
+            if (pos == 254) {
+                unsigned char ptr = 0xff;
+                if (auto err = sink_impl.out(&ptr, 1)) {
+                    return err;
+                }
+                if (auto err = sink_impl.out(buffer.data(), 254)) {
+                    return err;
+                }
+                pos = 0;
+            }
+            buffer[pos] = byte;
+            pos++;
+        }
+
+        return std::nullopt;
+    }
+
+    template <typename S>
+    auto finalize(S& sink_impl) -> std::optional<typename S::Error> {
+        if (pos > 0) {
+            unsigned char ptr = pos + 1;
+            if (auto err = sink_impl.out(&ptr, 1)) {
+                return err;
+            }
+            if (auto err = sink_impl.out(buffer.data(), pos)) {
+                return err;
+            }
+        } else {
+            unsigned char ptr = 1;
+            if (auto err = sink_impl.out(&ptr, 1)) {
+                return err;
+            }
+        }
+        unsigned char zero = 0;
+        if (auto err = sink_impl.out(&zero, 1)) {
+            return err;
+        }
+        pos = 0;
+        return std::nullopt;
+    }
+
+private:
+    std::array<unsigned char, 254> buffer;
+    unsigned char pos{0};
+};
+
+template <typename S = StdoutSink>
+    requires(
+        (IsSink<S> && Sink<S>::encoding_id == EMT_ENCODING_NONE) ||
+        (IsSink<S&> && Sink<S&>::encoding_id == EMT_ENCODING_NONE)
+    )
+struct Cobs {
+    S inner;
+};
+
+Cobs() -> Cobs<StdoutSink>;
+
 template <typename S>
-using SinkError = typename std::remove_reference_t<S>::Error;
+    requires(IsSink<S> && Sink<S>::encoding_id == EMT_ENCODING_NONE)
+struct Sink<Cobs<S>> {
+    using Error = Sink<S>::Error;
+    static constexpr unsigned char encoding_id = EMT_ENCODING_COBS;
+    static constexpr emt_size_t ptr_width = Sink<S>::ptr_width;
+    static constexpr unsigned char alignment_power = Sink<S>::alignment_power;
+
+    Sink(Cobs<S>&& sink, const void* record, emt_size_t total_size)
+        : inner{std::move(sink.inner), record, total_size} {}
+
+    [[nodiscard]] auto begin() const -> std::optional<Error> { return inner.begin(); }
+
+    template <typename SI>
+    [[nodiscard]] static auto out_ptr(SI&& sink_impl, const void* record)
+        -> std::optional<typename std::remove_reference_t<SI>::Error> {
+        return Sink<S>::out_ptr(std::forward<SI>(sink_impl), record);
+    }
+
+    [[nodiscard]]
+    auto out(const void* data, emt_size_t size) -> std::optional<Error> {
+        return encoder.encode(inner, data, size);
+    }
+
+    [[nodiscard]] auto finish() const -> std::optional<Error> {
+        if (auto err = encoder.finalize(inner)) {
+            return err;
+        }
+
+        return std::move(inner).finish();
+    }
+
+private:
+    Sink<S> inner;
+    CobsEncoder encoder{};
+};
+
+template <typename S>
+    requires(IsSink<S&> && Sink<S&>::encoding_id == EMT_ENCODING_NONE)
+struct Sink<Cobs<S>&> {
+    using Error = Sink<S&>::Error;
+    static constexpr unsigned char encoding_id = EMT_ENCODING_COBS;
+    static constexpr emt_size_t ptr_width = Sink<S&>::ptr_width;
+    static constexpr unsigned char alignment_power = Sink<S&>::alignment_power;
+
+    Sink(Cobs<S>& sink, const void* record, emt_size_t total_size)
+        : inner{sink.inner, record, total_size} {}
+
+    [[nodiscard]] auto begin() -> std::optional<Error> { return inner.begin(); }
+
+    template <typename SI>
+    [[nodiscard]] static auto out_ptr(SI&& sink_impl, const void* record)
+        -> std::optional<typename std::remove_reference_t<SI>::Error> {
+        return Sink<S&>::out_ptr(std::forward<SI>(sink_impl), record);
+    }
+
+    [[nodiscard]]
+    auto out(const void* data, emt_size_t size) -> std::optional<Error> {
+        return encoder.encode(inner, data, size);
+    }
+
+    [[nodiscard]] auto finish() && -> std::optional<Error> {
+        if (auto err = encoder.finalize(inner)) {
+            return err;
+        }
+
+        return std::move(inner).finish();
+    }
+
+private:
+    Sink<S&> inner;
+    CobsEncoder encoder{};
+};
 
 namespace internal {
 
@@ -257,7 +597,7 @@ consteval auto constexpr_check(T t) -> T {
 
 template <typename T>
 concept Traceable =
-    internal::IsTsOfChildren<typename Trace<T>::Children> && requires(T t, DefaultSink s) {
+    internal::IsTsOfChildren<typename Trace<T>::Children> && requires(T t, Sink<DefaultSink> s) {
         { Trace<T>::size(t) } -> std::same_as<emt_size_t>;
         { Trace<T>::serialize(t, s) } -> std::same_as<std::optional<SinkError<DefaultSink>>>;
 
@@ -403,8 +743,8 @@ struct SimpleTrace {
     static constexpr SizeType size_type = StaticSize{sizeof(T)};
     static constexpr bool simple = true;
     template <typename S>
-    static auto serialize(const T& val, S&& sink) -> std::optional<SinkError<S>> {
-        return std::forward<S>(sink).out(&val, sizeof(T));
+    static auto serialize(const T& val, S& sink) -> std::optional<typename S::Error> {
+        return sink.out(&val, sizeof(T));
     }
     static auto size(const T&) -> emt_size_t { return sizeof(T); }
 };
@@ -449,8 +789,9 @@ struct Trace<std::string> {
     static constexpr SizeType size_type = NullTerminated{1};
     static constexpr bool simple = false;
     template <typename S>
-    static auto serialize(const std::string& str, S&& sink) -> std::optional<SinkError<S>> {
-        return std::forward<S>(sink).out(str.data(), str.size());
+    static auto serialize(const std::string& str, S& sink_impl)
+        -> std::optional<typename S::Error> {
+        return sink_impl.out(str.data(), str.size());
     }
     static auto size(const std::string& str) -> emt_size_t { return str.size(); }
 };
@@ -464,8 +805,8 @@ struct Trace<std::string_view> {
     static constexpr SizeType size_type = NullTerminated{1};
     static constexpr bool simple = false;
     template <typename S>
-    static auto serialize(std::string_view sv, S&& sink) -> std::optional<SinkError<S>> {
-        return std::forward<S>(sink).out(sv.data(), sv.size());
+    static auto serialize(std::string_view sv, S& sink_impl) -> std::optional<typename S::Error> {
+        return sink_impl.out(sv.data(), sv.size());
     }
     static auto size(std::string_view sv) -> emt_size_t { return sv.size(); }
 };
@@ -477,8 +818,8 @@ struct Trace<const char*> {
     static constexpr SizeType size_type = NullTerminated{1};
     static constexpr bool simple = false;
     template <typename S>
-    static auto serialize(const char* str, S&& sink) -> std::optional<SinkError<S>> {
-        return std::forward<S>(sink).out(str, std::strlen(str));
+    static auto serialize(const char* str, S& sink) -> std::optional<typename S::Error> {
+        return sink.out(str, std::strlen(str));
     }
     static auto size(const char* str) -> emt_size_t { return std::strlen(str); }
 };
@@ -493,8 +834,9 @@ struct Trace<std::vector<T>> {
     static constexpr SizeType size_type = LengthPrefixed{};
     static constexpr bool simple = false;
     template <typename S>
-    static auto serialize(const std::vector<T>& vec, S&& sink) -> std::optional<SinkError<S>> {
-        return Trace<std::span<T>>::serialize(std::span<const T>{vec}, std::forward<S>(sink));
+    static auto serialize(const std::vector<T>& vec, S& sink_impl)
+        -> std::optional<typename S::Error> {
+        return Trace<std::span<T>>::serialize(std::span<const T>{vec}, sink_impl);
     }
     static auto size(const std::vector<T>& vec) -> emt_size_t { return vec.size(); }
 };
@@ -509,13 +851,13 @@ struct Trace<T[N]> {
     static constexpr SizeType size_type = StaticSize{N};
     static constexpr bool simple = Trace<T>::simple;
     template <typename S>
-    static auto serialize(const T* data, S&& sink) -> std::optional<SinkError<S>> {
+    static auto serialize(const T* data, S& sink_impl) -> std::optional<typename S::Error> {
         if constexpr (Trace<T>::simple) {
-            return std::forward<S>(sink).out(data, sizeof(T) * N);
+            return sink_impl.out(data, sizeof(T) * N);
         }
 
         for (size_t i = 0; i < N; i++) {
-            auto error = Trace<T>::serialize(data[i], std::forward<S>(sink));
+            auto error = Trace<T>::serialize(data[i], sink_impl);
             if (error.has_value()) {
                 return error;
             }
@@ -535,13 +877,14 @@ struct Trace<std::array<T, N>> {
     static constexpr SizeType size_type = StaticSize{N};
     static constexpr bool simple = Trace<T>::simple;
     template <typename S>
-    static auto serialize(const std::array<T, N>& arr, S&& sink) -> std::optional<SinkError<S>> {
+    static auto serialize(const std::array<T, N>& arr, S& sink_impl)
+        -> std::optional<typename S::Error> {
         if constexpr (Trace<T>::simple) {
-            return std::forward<S>(sink).out(arr.data(), sizeof(T) * N);
+            return sink_impl.out(arr.data(), sizeof(T) * N);
         }
 
         for (const T& el : arr) {
-            auto error = Trace<T>::serialize(el, std::forward<S>(sink));
+            auto error = Trace<T>::serialize(el, sink_impl);
             if (error.has_value()) {
                 return error;
             }
@@ -561,14 +904,14 @@ struct Trace<std::span<T>> {
     static constexpr SizeType size_type = LengthPrefixed{};
     static constexpr bool simple = true;
     template <typename S>
-    static auto serialize(const std::span<const T>& slice, S&& sink)
-        -> std::optional<SinkError<S>> {
+    static auto serialize(const std::span<const T>& slice, S& sink_impl)
+        -> std::optional<typename S::Error> {
         if constexpr (Trace<T>::simple) {
-            return std::forward<S>(sink).out(slice.data(), sizeof(T) * slice.size());
+            return sink_impl.out(slice.data(), sizeof(T) * slice.size());
         }
 
         for (const T& el : slice) {
-            auto error = Trace<T>::serialize(el, std::forward<S>(sink));
+            auto error = Trace<T>::serialize(el, sink_impl);
             if (error.has_value()) {
                 return error;
             }
@@ -593,9 +936,9 @@ struct Trace<R> {
     static constexpr SizeType size_type = LengthPrefixed{};
     static constexpr bool simple = false;
     template <typename S>
-    static auto serialize(const R& range, S&& sink) -> std::optional<SinkError<S>> {
+    static auto serialize(const R& range, S& sink_impl) -> std::optional<typename S::Error> {
         for (const T& el : range) {
-            auto error = Trace<T>::serialize(el, std::forward<S>(sink));
+            auto error = Trace<T>::serialize(el, sink_impl);
             if (error.has_value()) {
                 return error;
             }
@@ -608,7 +951,7 @@ struct Trace<R> {
 namespace internal {
 
 template <typename S>
-auto serialize_varint(S&& sink, emt_size_t len) -> std::optional<SinkError<S>> {
+auto serialize_varint(S& sink_impl, emt_size_t len) -> std::optional<typename S::Error> {
     unsigned char bytes[((sizeof(emt_size_t) * 8) + 6) / 7];
 
     emt_size_t remaining = len;
@@ -617,7 +960,7 @@ auto serialize_varint(S&& sink, emt_size_t len) -> std::optional<SinkError<S>> {
 
         remaining >>= 7;
         if (remaining == 0) {
-            return std::forward<S>(sink).out(bytes, i + 1);
+            return sink_impl.out(bytes, i + 1);
         }
         bytes[i] |= 0x80;
     }
@@ -626,20 +969,20 @@ auto serialize_varint(S&& sink, emt_size_t len) -> std::optional<SinkError<S>> {
 
 template <typename S, typename T>
     requires(IsOpt<T>)
-auto emit_arg(S&&, const T&) -> std::optional<SinkError<S>> {
+auto emit_arg(S&, const T&) -> std::optional<typename S::Error> {
     return std::nullopt;
 }
 
 template <typename S, typename T>
     requires(Traceable<T>)
-auto emit_arg(S&& sink, const T& arg) -> std::optional<SinkError<S>> {
+auto emit_arg(S& sink_impl, const T& arg) -> std::optional<typename S::Error> {
     if constexpr (std::holds_alternative<LengthPrefixed>(Trace<T>::size_type)) {
-        auto error = serialize_varint(std::forward<S>(sink), Trace<T>::size(arg));
+        auto error = serialize_varint(sink_impl, Trace<T>::size(arg));
         if (error.has_value()) {
             return error;
         }
     }
-    auto error = Trace<T>::serialize(arg, std::forward<S>(sink));
+    auto error = Trace<T>::serialize(arg, sink_impl);
     if (error.has_value()) {
         return error;
     }
@@ -647,7 +990,7 @@ auto emit_arg(S&& sink, const T& arg) -> std::optional<SinkError<S>> {
     if constexpr (std::holds_alternative<NullTerminated>(Trace<T>::size_type)) {
         std::array<unsigned char, std::get<NullTerminated>(Trace<T>::size_type).terminator_length>
             null_bytes{};
-        return sink.out(null_bytes.data(), sizeof(null_bytes));
+        return sink_impl.out(null_bytes.data(), sizeof(null_bytes));
     }
     return std::nullopt;
 }
@@ -1077,23 +1420,18 @@ constexpr auto format_string_ok(emt_size_t formatter_id) -> bool {
 }
 
 template <bool throw_on_error, typename S, typename... Args>
-    requires((IsOpt<Args> || Traceable<Args>) && ...)
+    requires(IsSink<S> && ((IsOpt<Args> || Traceable<Args>) && ...))
 [[nodiscard]] auto emit_trace(const void* record, S&& sink, const Args&... args)
     -> std::conditional_t<
         throw_on_error || std::same_as<SinkError<S>, Infallible>,
         void,
         std::optional<SinkError<S>>> {
-    std::optional<SinkError<S>> error = sink.begin(record, 0);
+    Sink<S> sink_impl{std::forward<S>(sink), record, 0}; // todo fix total_size
+    using Error = SinkError<S>;
 
-    emt_default_serialize_pointer( // todo: make ptr serializer modular
-        record,
-        [](const void* data, emt_size_t size, void* sink) -> void {
-            (void) (*reinterpret_cast<std::remove_reference_t<S>*>(sink)).out(data, size);
-        },
-        &sink
-    );
+    std::optional<Error> error = sink_impl.begin();
 
-    if constexpr (!std::same_as<SinkError<S>, Infallible>) {
+    if constexpr (!std::same_as<Error, Infallible>) {
         if (error.has_value()) {
             if constexpr (throw_on_error) {
                 throw 1; // todo: create exception type
@@ -1102,9 +1440,20 @@ template <bool throw_on_error, typename S, typename... Args>
         }
     }
 
-    (void) ((error = emit_arg(std::forward<S>(sink), args), error.has_value()) || ...);
+    error = Sink<S>::out_ptr(sink_impl, record);
 
-    if constexpr (!std::same_as<SinkError<S>, Infallible>) {
+    if constexpr (!std::same_as<Error, Infallible>) {
+        if (error.has_value()) {
+            if constexpr (throw_on_error) {
+                throw 1; // todo: create exception type
+            }
+            return error;
+        }
+    }
+
+    (void) ((error = emit_arg(sink_impl, args), error.has_value()) || ...);
+
+    if constexpr (!std::same_as<Error, Infallible>) {
         if (error.has_value()) {
             if constexpr (throw_on_error) {
                 throw 1;
@@ -1113,50 +1462,46 @@ template <bool throw_on_error, typename S, typename... Args>
         }
     }
 
-    error = sink.finish();
-    if constexpr (!std::same_as<SinkError<S>, Infallible>) {
+    error = std::move(sink_impl).finish();
+    if constexpr (!std::same_as<Error, Infallible>) {
         if (error.has_value()) {
             if constexpr (throw_on_error) {
                 throw 1;
             }
             return error;
         }
+        return std::nullopt;
     }
 }
 
 } // namespace internal
 
-#define EMT_CPP_TRACE_IMPL(fmt_info_attributes, postfix, fmt, ...)                                 \
-    []<typename... Args>(const Args&... args) -> auto {                                            \
-        constexpr emt_size_t formatter_id = emt::internal::get_formatter<Args...>();               \
-        static_assert(((emt::internal::IsOpt<Args> || emt::Traceable<Args>) && ...));              \
-        static_assert(emt::internal::format_string_ok<fmt postfix, Args...>(formatter_id));        \
-        static fmt_info_attributes constexpr auto fmt_info =                                       \
-            emt::internal::make_format_info<fmt postfix, __FILE__, Args...>(                       \
-                formatter_id, __LINE__                                                             \
-            );                                                                                     \
-        return emt::internal::emit_trace<emt::internal::get_throw<Args...>()>(                     \
-            &fmt_info, emt::internal::get_sink(args...), args...                                   \
-        );                                                                                         \
-    }(__VA_ARGS__)
-
-#define EMT_CPP_TRACE(fmt_info_attributes, ...)                                                    \
-    EMT_CPP_TRACE_IMPL(fmt_info_attributes, "", __VA_ARGS__)
-#define EMT_CPP_TRACELN(fmt_info_attributes, ...)                                                  \
-    EMT_CPP_TRACE_IMPL(fmt_info_attributes, "\n", __VA_ARGS__)
-
-#ifdef EMT_DEFAULT_SEC_ATTR
-#define MTRACE(...) EMT_CPP_TRACE(EMT_DEFAULT_SEC_ATTR, __VA_ARGS__)
-#define MTRACELN(...) EMT_CPP_TRACELN(EMT_DEFAULT_SEC_ATTR, __VA_ARGS__)
-#endif
-
-struct VecSink {
-    std::vector<unsigned char> buffer;
+template <>
+struct Sink<std::vector<unsigned char>&> {
+    std::vector<unsigned char>& buffer;
     using Error = Infallible;
+    static constexpr unsigned char encoding_id = EMT_ENCODING_NONE;
+    static constexpr emt_size_t ptr_width = default_ptr_width;
+    static constexpr unsigned char alignment_power = EMT_DEFAULT_ALIGNMENT_POWER;
+
+    Sink(std::vector<unsigned char>& vec, const void*, emt_size_t) : buffer(vec) {}
 
     [[nodiscard]]
-    static auto begin(const void*, emt_size_t) -> std::optional<Error> {
+    static auto begin() -> std::optional<Error> {
         return std::nullopt;
+    }
+
+    template <typename SI>
+    [[nodiscard]] static auto out_ptr(SI&& sink_impl, const void* record)
+        -> std::optional<typename std::remove_reference_t<SI>::Error> {
+        emt_ptr_t shifted = reinterpret_cast<emt_ptr_t>(record) >> alignment_power;
+
+        std::array<unsigned char, ptr_width> bytes{};
+        for (emt_size_t i = 0; i < ptr_width; i++) {
+            bytes[i] = static_cast<unsigned char>(shifted >> (i * 8));
+        }
+
+        return std::forward<SI>(sink_impl).out(bytes.data(), bytes.size());
     }
 
     [[nodiscard]]
@@ -1174,6 +1519,10 @@ struct VecSink {
     }
 };
 
+static_assert(IsSink<std::vector<unsigned char>&>);
+static_assert(IsSink<ChangePtr<1, 1, std::vector<unsigned char>>&>);
+static_assert(IsSink<Cobs<std::vector<unsigned char>>&>);
+
 static constexpr internal::OptThrow<true> opt_throw = internal::OptThrow{};
 static constexpr internal::OptThrow<false> opt_no_throw = internal::OptThrow<false>{};
 
@@ -1189,10 +1538,10 @@ static constexpr internal::OptFormatter<emt::py_fmt> opt_py_fmt =
 static constexpr internal::OptFormatter<emt::c_style_fmt> opt_c_style_fmt =
     internal::OptFormatter<emt::c_style_fmt>{};
 
-template <typename T>
-constexpr auto opt_sink(T&& t) -> auto {
-    using SinkRef = std::conditional_t<std::is_reference_v<T>, T, T&&>;
-    return internal::OptSink<SinkRef>{std::forward<T>(t)};
+template <typename S>
+constexpr auto opt_sink(S&& t) -> auto {
+    using SinkRef = std::conditional_t<std::is_reference_v<S>, S, S&&>;
+    return internal::OptSink<SinkRef>{std::forward<S>(t)};
 }
 static_assert(1 == get_sink(internal::OptSink{1}));
 static_assert(2 == get_sink(internal::OptSink{1}, internal::OptSink{2}));
@@ -1202,5 +1551,273 @@ static_assert(std::same_as<decltype(internal::get_sink(1, 2, opt_sink(1), 2)), i
 static_assert(
     std::same_as<decltype(internal::get_sink(opt_sink(1), opt_sink(1U))), unsigned int&&>
 );
+
+template <typename S, S (*get_sink)(void) = nullptr>
+    requires(IsSink<S> || IsSink<S&>)
+struct GlobalSink {};
+
+template <typename S, S (*get_sink)(void)>
+    requires(get_sink != nullptr && IsSink<S>)
+struct GlobalSink<S, get_sink> {
+    using SinkImpl = Sink<S&>;
+
+    static auto begin(const void* record, emt_size_t total_size, void*) -> void {
+        SinkImpl& sink_impl = *new (sink_impl_slot.data()) SinkImpl{get_sink(), record, total_size};
+
+        auto error = sink_impl.begin();
+        if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
+            if (error.has_value()) {
+                sink_impl.~SinkImpl();
+            }
+        }
+    }
+
+    static auto out_ptr(const void* record, void (*)(const void*, emt_size_t, void*), void*)
+        -> void {
+        SinkImpl& sink_impl = *reinterpret_cast<SinkImpl*>(sink_impl_slot.data());
+
+        auto error = SinkImpl::out_ptr(sink_impl, record);
+        if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
+            if (error.has_value()) {
+                sink_impl.~SinkImpl();
+            }
+        }
+    }
+
+    static auto out(const void* data, emt_size_t size, void*) -> void {
+        SinkImpl& sink_impl = *reinterpret_cast<SinkImpl*>(sink_impl_slot.data());
+
+        auto error = sink_impl.out(data, size);
+        if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
+            if (error.has_value()) {
+                sink_impl.~SinkImpl();
+            }
+        }
+    }
+
+    static auto finish(const void*, emt_size_t, void*) -> void {
+        SinkImpl& sink_impl = *reinterpret_cast<SinkImpl*>(sink_impl_slot.data());
+
+        auto error = sink_impl.finish();
+        sink_impl.~SinkImpl();
+    }
+
+private:
+    alignas(
+        SinkImpl
+    ) static thread_local constinit std::array<unsigned char, sizeof(SinkImpl)> sink_impl_slot;
+};
+
+template <typename S, S (*get_sink)(void)>
+    requires(IsSink<S&> && get_sink == nullptr)
+struct GlobalSink<S, get_sink> {
+    constinit static S inner_sink;
+    using SinkImpl = Sink<S&>;
+
+    static auto begin(const void* record, emt_size_t total_size, void*) -> void {
+        SinkImpl& sink_impl = *new (sink_impl_slot.data()) SinkImpl{inner_sink, record, total_size};
+
+        auto error = sink_impl.begin();
+        if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
+            if (error.has_value()) {
+                sink_impl.~SinkImpl();
+            }
+        }
+    }
+
+    static auto out_ptr(const void* record, void (*)(const void*, emt_size_t, void*), void*)
+        -> void {
+        SinkImpl& sink_impl = *reinterpret_cast<SinkImpl*>(sink_impl_slot.data());
+
+        auto error = SinkImpl::out_ptr(sink_impl, record);
+        if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
+            if (error.has_value()) {
+                sink_impl.~SinkImpl();
+            }
+        }
+    }
+
+    static auto out(const void* data, emt_size_t size, void*) -> void {
+        SinkImpl& sink_impl = *reinterpret_cast<SinkImpl*>(sink_impl_slot.data());
+
+        auto error = sink_impl.out(data, size);
+        if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
+            if (error.has_value()) {
+                sink_impl.~SinkImpl();
+            }
+        }
+    }
+
+    static auto finish(const void*, emt_size_t, void*) -> void {
+        SinkImpl& sink_impl = *reinterpret_cast<SinkImpl*>(sink_impl_slot.data());
+
+        auto error = std::move(sink_impl).finish();
+        sink_impl.~SinkImpl();
+    }
+
+private:
+    alignas(
+        SinkImpl
+    ) static thread_local constinit std::array<unsigned char, sizeof(SinkImpl)> sink_impl_slot;
+};
+
+struct MagicRecordConfig {
+    unsigned char encoding = EMT_ENCODING_NONE;
+    unsigned char ptr_width = static_cast<unsigned char>(Sink<StdoutSink&>::ptr_width);
+    unsigned char alignment_power = Sink<StdoutSink&>::alignment_power;
+};
+
+template <typename S = StdoutSink>
+    requires(IsSink<S&>)
+struct MagicConfig {
+    S sink;
+};
+
+/// Builds the MGIC record. The config values are promises about how the trace
+/// stream is encoded and how record pointers are serialized; creating the record
+/// does not enforce them.
+[[nodiscard]] constexpr auto make_magic_record(MagicRecordConfig config = {}) noexcept
+    -> emt_magic_t {
+    static_assert(sizeof(emt_magic_t) <= 0xFF);
+    static_assert(offsetof(emt_magic_t, record_size) <= 0xFF);
+    static_assert(offsetof(emt_magic_t, meta) <= 0xFF);
+    static_assert(offsetof(emt_magic_t, endianness_probe) <= 0xFF);
+
+    emt_magic_t record{};
+
+    record.framing[0] = 'E';
+    record.framing[1] = 'M';
+    record.framing[2] = 'T';
+    record.framing[3] = 10;
+    record.framing[4] = static_cast<unsigned char>(offsetof(emt_magic_t, record_size));
+    record.framing[5] = static_cast<unsigned char>(offsetof(emt_magic_t, meta));
+    record.framing[6] = static_cast<unsigned char>(offsetof(emt_magic_t, endianness_probe));
+    record.framing[7] = static_cast<unsigned char>(sizeof(emt_size_t));
+    record.framing[8] = EMT_MAGIC_VERSION_MAJOR;
+    record.framing[9] = EMT_MAGIC_VERSION_MINOR;
+    record.framing[10] = 'M';
+    record.framing[11] = 'G';
+    record.framing[12] = 'I';
+    record.framing[13] = 'C';
+
+    record.record_size = sizeof(emt_magic_t);
+    record.endianness_probe = EMT_ENDIANNESS_PROBE;
+
+    constexpr std::array<unsigned char, 32> magic = {
+        0xd1, 0x97, 0xf5, 0x22, 0xd9, 0x26, 0x9f, 0xd1, 0xad, 0x70, 0x33,
+        0x92, 0xf6, 0x59, 0xdf, 0xd0, 0xfb, 0xec, 0xbd, 0x60, 0x97, 0x13,
+        0x25, 0xe8, 0x92, 0x01, 0xb2, 0x5a, 0x38, 0x5d, 0x9e, 0xc7,
+    };
+
+    for (std::size_t i = 0; i < magic.size(); i++) {
+        record.meta[i] = magic[i];
+    }
+    record.meta[32] = config.ptr_width;
+    record.meta[33] = config.alignment_power;
+    record.meta[34] = config.encoding;
+
+    return record;
+}
+
+template <typename S>
+    requires(IsSink<S&>) && requires {
+        std::integral_constant<emt_size_t, Sink<S&>::ptr_width>{};
+        std::integral_constant<unsigned char, Sink<S&>::alignment_power>{};
+        std::integral_constant<unsigned char, Sink<S&>::encoding_id>{};
+    }
+[[nodiscard]] consteval auto make_magic_record() noexcept -> emt_magic_t {
+    return make_magic_record(
+        MagicRecordConfig{
+            .encoding = Sink<S&>::encoding_id,
+            .ptr_width = Sink<S&>::ptr_width,
+            .alignment_power = Sink<S&>::alignment_power,
+        }
+    );
+}
+
+static_assert(make_magic_record().record_size == sizeof(emt_magic_t));
+static_assert(make_magic_record().meta[32] == default_ptr_width);
+static_assert(make_magic_record().meta[33] == EMT_DEFAULT_ALIGNMENT_POWER);
+static_assert(make_magic_record().meta[34] == EMT_ENCODING_NONE);
+
+/// Emits the serialized pointer to the MGIC record, which anchors the runtime
+/// stream to the section. Requires the default pipeline symbols supplied by
+/// `EMT_CPP_GLOBAL_SINK` (or a compatible
+/// host).
+inline void init() {
+#ifdef _WIN32
+    // Prevent byte `0xa` from being replaced with the sequence `0xd` `0xa`.
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
+
+    Sink<DefaultSink> sink{DefaultSink{}, &::g_emt_default_magic, sizeof(emt_magic_t)};
+    (void) sink.begin();
+    (void) emt::Sink<emt::DefaultSink>::out_ptr(sink, &::g_emt_default_magic);
+    (void) sink.finish();
+}
+
+#define EMT_CPP_TRACE_IMPL(fmt_info_attributes, postfix, fmt, ...)                                 \
+    []<typename... Args>(const Args&... args) -> auto {                                            \
+        using ::emt::StringLiteral;                                                                \
+        constexpr ::emt_size_t formatter_id = ::emt::internal::get_formatter<Args...>();           \
+        constexpr auto full_fmt_string = StringLiteral{fmt} + StringLiteral{postfix};              \
+        static_assert(((::emt::internal::IsOpt<Args> || ::emt::Traceable<Args>) && ...));          \
+        static_assert(::emt::internal::format_string_ok<full_fmt_string, Args...>(formatter_id));  \
+        fmt_info_attributes static constexpr auto fmt_info =                                       \
+            ::emt::internal::make_format_info<full_fmt_string, __FILE__, Args...>(                 \
+                formatter_id, __LINE__                                                             \
+            );                                                                                     \
+        return ::emt::internal::emit_trace<::emt::internal::get_throw<Args...>()>(                 \
+            &fmt_info, ::emt::internal::get_sink(args...), args...                                 \
+        );                                                                                         \
+    }(__VA_ARGS__)
+
+#define EMT_CPP_TRACE(fmt_info_attributes, ...)                                                    \
+    EMT_CPP_TRACE_IMPL(fmt_info_attributes, "", __VA_ARGS__)
+#define EMT_CPP_TRACELN(fmt_info_attributes, ...)                                                  \
+    EMT_CPP_TRACE_IMPL(fmt_info_attributes, "\n", __VA_ARGS__)
+
+#ifdef EMT_DEFAULT_ATTR
+#define MTRACE(...) EMT_CPP_TRACE(EMT_DEFAULT_ATTR, __VA_ARGS__)
+#define MTRACELN(...) EMT_CPP_TRACELN(EMT_DEFAULT_ATTR, __VA_ARGS__)
+#endif
+
+#define EMT_CPP_GLOBAL_SINK(sink)                                                                  \
+    template <>                                                                                    \
+    decltype(sink)(::emt::GlobalSink<decltype(sink)>::inner_sink){sink};                           \
+    template <>                                                                                    \
+    std::array<unsigned char, sizeof(::emt::Sink<decltype(sink)&>)> thread_local ::emt::           \
+        GlobalSink<decltype(sink)>::sink_impl_slot{};                                              \
+                                                                                                   \
+    auto emt_default_begin(const void* info, emt_size_t total_size, void* extra_arg) -> void {     \
+        ::emt::GlobalSink<decltype(sink)>::begin(info, total_size, extra_arg);                     \
+    }                                                                                              \
+                                                                                                   \
+    auto emt_default_serialize_pointer(                                                            \
+        const void* ptr, void (*out)(const void*, emt_size_t, void*), void* extra_arg              \
+    ) -> void {                                                                                    \
+        ::emt::GlobalSink<decltype(sink)>::out_ptr(ptr, out, extra_arg);                           \
+    }                                                                                              \
+                                                                                                   \
+    auto emt_default_out(const void* data, emt_size_t size, void* extra_arg) -> void {             \
+        ::emt::GlobalSink<decltype(sink)>::out(data, size, extra_arg);                             \
+    }                                                                                              \
+                                                                                                   \
+    auto emt_default_finish(const void* info, emt_size_t total_size, void* extra_arg) -> void {    \
+        ::emt::GlobalSink<decltype(sink)>::finish(info, total_size, extra_arg);                    \
+    }
+
+// NOLINTBEGIN(clang-diagnostic-missing-designated-field-initializers)
+#define EMT_CPP_MAGIC(attrs, ...)                                                                  \
+    namespace emt::impl {                                                                          \
+    constexpr ::emt::MagicConfig cfg{__VA_ARGS__};                                                 \
+    };                                                                                             \
+    EMT_CPP_GLOBAL_SINK(emt::impl::cfg.sink)                                                       \
+    alignas(1 << ::emt::Sink<decltype(emt::impl::cfg.sink)&>::alignment_power)                     \
+        attrs emt_magic_t g_emt_default_magic =                                                    \
+            ::emt::make_magic_record<decltype(emt::impl::cfg.sink)>()
+// NOLINTEND(clang-diagnostic-missing-designated-field-initializers)
+
+#define MTRACE_MAGIC(...) EMT_CPP_MAGIC(EMT_DEFAULT_SEC_ATTR, __VA_ARGS__)
 
 } // namespace emt
