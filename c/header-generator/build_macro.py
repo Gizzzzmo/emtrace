@@ -2,7 +2,6 @@ import subprocess
 from argparse import ArgumentParser
 from io import TextIOWrapper
 from pathlib import Path
-import sys
 
 
 def build_recursive_macro(
@@ -269,7 +268,7 @@ ROOT = Path(__file__).parent.parent.parent.resolve()
 
 def write_common(output, version: tuple[int, int, int], nolint_errors: str):
     major, minor, patch = version
-    _ = output.write(f"#ifdef EMTRACE_COMMON\n")
+    _ = output.write("#ifdef EMTRACE_COMMON\n")
     _ = output.write(
         f"#if (defined(EMTRACE_VERSION_MAJOR) && EMTRACE_VERSION_MAJOR != {major})"
     )
@@ -280,12 +279,12 @@ def write_common(output, version: tuple[int, int, int], nolint_errors: str):
         f" || (defined(EMTRACE_VERSION_PATCH) && EMTRACE_VERSION_PATCH != {patch})\n"
     )
     _ = output.write(
-        f'#error "version mismatch between this header and another previously included one (probably C++ variant emtrace.hpp)"\n'
+        '#error "version mismatch between this header and another previously included one (probably C++ variant emtrace.hpp)"\n'
     )
-    _ = output.write(f"#endif\n")
-    _ = output.write(f"#else // EMTRACE_COMMON\n")
+    _ = output.write("#endif\n")
+    _ = output.write("#else // EMTRACE_COMMON\n")
 
-    _ = output.write(f"#define EMTRACE_COMMON\n")
+    _ = output.write("#define EMTRACE_COMMON\n")
     _ = output.write(f"#define EMTRACE_VERSION_MAJOR {major}\n")
     _ = output.write(f"#define EMTRACE_VERSION_MINOR {minor}\n")
     _ = output.write(f"#define EMTRACE_VERSION_PATCH {patch}\n\n")
@@ -296,7 +295,7 @@ def write_common(output, version: tuple[int, int, int], nolint_errors: str):
         _ = output.write(common.read())
 
     _ = output.write(f"// NOLINTEND({nolint_errors})\n\n")
-    _ = output.write(f"#endif // EMTRACE_COMMON\n")
+    _ = output.write("#endif // EMTRACE_COMMON\n")
 
 
 def write_cpp_header(output_path: Path, version: tuple[int, int, int]):
