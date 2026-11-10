@@ -1,4 +1,5 @@
 #include "test_utils.h"
+#include <array>
 #include <cstdint>
 #include <emtrace/emtrace.hpp>
 #include <ranges>

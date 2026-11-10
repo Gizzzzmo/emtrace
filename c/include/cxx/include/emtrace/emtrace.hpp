@@ -248,6 +248,7 @@ enum : emt_size_t {
 #include <variant>
 #include <vector>
 
+// NOLINTBEGIN(readability-named-parameter)
 namespace emt {
 
 template <typename... T>
@@ -538,7 +539,7 @@ template <emt_size_t N_BYTES, unsigned char SHIFT, typename S>
 struct Sink<ChangePtr<N_BYTES, SHIFT, S>&> : Sink<S&> {
     static constexpr emt_size_t ptr_width = N_BYTES;
     static constexpr unsigned char alignment_power = SHIFT;
-    using Error = typename Sink<S&>::Error;
+    using Error = Sink<S&>::Error;
 
     Sink(ChangePtr<ptr_width, alignment_power, S>& s, const void* record, emt_size_t total_size)
         : Sink<S&>{s.inner, record, total_size} {}
@@ -564,7 +565,7 @@ template <typename S, emt_size_t N_BYTES, unsigned char SHIFT>
 struct Sink<ChangePtr<N_BYTES, SHIFT, S>> : Sink<S> {
     static constexpr emt_size_t ptr_width = N_BYTES;
     static constexpr unsigned char alignment_power = SHIFT;
-    using Error = typename Sink<S>::Error;
+    using Error = Sink<S>::Error;
 
     Sink(ChangePtr<ptr_width, alignment_power, S>&& s, const void* record, emt_size_t total_size)
         : Sink<S>{std::move(s.inner), record, total_size} {}
@@ -589,9 +590,10 @@ struct CobsEncoder {
     template <typename S>
     auto encode(S& sink_impl, const void* data, emt_size_t size)
         -> std::optional<typename S::Error> {
+        const auto* bytes = reinterpret_cast<const unsigned char*>(data);
 
         for (emt_size_t i = 0; i < size; i++) {
-            unsigned char byte = ((const unsigned char*) data)[i];
+            unsigned char byte = bytes[i];
             if (byte == 0) {
                 unsigned char ptr = pos + 1;
                 if (auto err = sink_impl.out(&ptr, 1)) {
@@ -1219,7 +1221,7 @@ auto serialize_varint(S& sink_impl, emt_size_t len) -> std::optional<typename S:
 
     emt_size_t remaining = len;
     for (size_t i = 0; i < sizeof(bytes); i++) {
-        bytes[i] = (unsigned char) remaining & 0x7F;
+        bytes[i] = static_cast<unsigned char>(remaining) & 0x7F;
 
         remaining >>= 7;
         if (remaining == 0) {
@@ -1425,7 +1427,7 @@ struct FormatInfo {
 
 template <StringLiteral fmt, StringLiteral file_, typename... Args>
     requires((IsOpt<Args> || Traceable<Args>) && ...)
-constexpr auto make_format_info(emt_size_t formatter_id, emt_size_t source_line)
+consteval auto make_format_info(emt_size_t formatter_id, emt_size_t source_line)
     -> FormatInfo<fmt, file_, Args...> {
     using FmtInfo = FormatInfo<fmt, file_, Args...>;
 
@@ -1500,7 +1502,7 @@ class PyFormatValidator {
                 return number;
             }
             number *= 10;
-            number += (emt_size_t) (fmt.value[i] - '0');
+            number += static_cast<emt_size_t>(fmt.value[i] - '0');
         }
         return number;
     }
@@ -1828,6 +1830,9 @@ template <typename S, S (*get_sink)(void)>
 struct GlobalSink<S, get_sink> {
     using SinkImpl = Sink<S&>;
 
+    // Mirrors the value specialization's sink storage; holds the factory here.
+    constinit static S (*inner_sink)();
+
     static auto begin(const void* record, emt_size_t total_size, void*) -> void {
         SinkImpl& sink_impl = *new (sink_impl_slot.data()) SinkImpl{get_sink(), record, total_size};
 
@@ -1835,6 +1840,7 @@ struct GlobalSink<S, get_sink> {
         if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
             if (error.has_value()) {
                 sink_impl.~SinkImpl();
+                std::abort();
             }
         }
     }
@@ -1847,6 +1853,7 @@ struct GlobalSink<S, get_sink> {
         if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
             if (error.has_value()) {
                 sink_impl.~SinkImpl();
+                std::abort();
             }
         }
     }
@@ -1858,6 +1865,7 @@ struct GlobalSink<S, get_sink> {
         if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
             if (error.has_value()) {
                 sink_impl.~SinkImpl();
+                std::abort();
             }
         }
     }
@@ -1865,8 +1873,13 @@ struct GlobalSink<S, get_sink> {
     static auto finish(const void*, emt_size_t, void*) -> void {
         SinkImpl& sink_impl = *reinterpret_cast<SinkImpl*>(sink_impl_slot.data());
 
-        auto error = sink_impl.finish();
-        sink_impl.~SinkImpl();
+        auto error = std::move(sink_impl).finish();
+        sink_impl.~SinkImpl(); // NOLINT(bugprone-use-after-move)
+        if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
+            if (error.has_value()) {
+                std::abort();
+            }
+        }
     }
 
 private:
@@ -1888,6 +1901,7 @@ struct GlobalSink<S, get_sink> {
         if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
             if (error.has_value()) {
                 sink_impl.~SinkImpl();
+                std::abort();
             }
         }
     }
@@ -1900,6 +1914,7 @@ struct GlobalSink<S, get_sink> {
         if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
             if (error.has_value()) {
                 sink_impl.~SinkImpl();
+                std::abort();
             }
         }
     }
@@ -1911,6 +1926,7 @@ struct GlobalSink<S, get_sink> {
         if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
             if (error.has_value()) {
                 sink_impl.~SinkImpl();
+                std::abort();
             }
         }
     }
@@ -1919,7 +1935,12 @@ struct GlobalSink<S, get_sink> {
         SinkImpl& sink_impl = *reinterpret_cast<SinkImpl*>(sink_impl_slot.data());
 
         auto error = std::move(sink_impl).finish();
-        sink_impl.~SinkImpl();
+        sink_impl.~SinkImpl(); // NOLINT(bugprone-use-after-move)
+        if constexpr (!std::same_as<SinkError<S&>, Infallible>) {
+            if (error.has_value()) {
+                std::abort();
+            }
+        }
     }
 
 private:
@@ -1937,8 +1958,47 @@ struct MagicRecordConfig {
 template <typename S = StdoutSink>
     requires(IsSink<S&>)
 struct MagicConfig {
+    using SinkType = S;
+
     S sink;
+
+    static constexpr auto get_factory() -> S (*)() { return nullptr; }
 };
+
+template <typename S>
+    requires(IsSink<S>)
+struct MagicConfigFactory {
+    using SinkType = S;
+
+    S (*sink)();
+
+    constexpr auto get_factory() const -> S (*)() { return sink; }
+};
+
+template <typename S>
+    requires(IsSink<std::remove_cvref_t<S>&>)
+constexpr auto make_magic_config(S&& sink) -> MagicConfig<std::remove_cvref_t<S>> {
+    return {std::forward<S>(sink)};
+}
+
+template <typename S>
+    requires(IsSink<S>)
+constexpr auto make_magic_config(S (*sink)()) -> MagicConfigFactory<S> {
+    return {sink};
+}
+
+template <typename F>
+    requires(
+        std::is_class_v<std::remove_cvref_t<F>> && !IsSink<std::remove_cvref_t<F>&> &&
+        requires(F& fn) {
+            { +fn } -> std::convertible_to<decltype(fn()) (*)()>;
+        }
+    )
+constexpr auto make_magic_config(F&& fn) -> MagicConfigFactory<decltype(std::declval<F&>()())> {
+    return {+std::forward<F>(fn)};
+}
+
+constexpr auto make_magic_config() -> MagicConfig<> { return {}; }
 
 /// Builds the MGIC record. The config values are promises about how the trace
 /// stream is encoded and how record pointers are serialized; creating the record
@@ -2050,44 +2110,53 @@ inline void init() {
 #define MTRACELN(...) EMT_CPP_TRACELN(EMT_DEFAULT_SEC_ATTR, __VA_ARGS__)
 #endif
 
-#define EMT_CPP_GLOBAL_SINK(sink)                                                                  \
+// The definition of inner_sink is sometimes unused
+// NOLINTBEGIN(clang-diagnostic-unneeded-internal-declaration)
+#define EMT_CPP_GLOBAL_SINK(...)                                                                   \
+    namespace emt::impl {                                                                          \
+    constexpr auto cfg = ::emt::make_magic_config(__VA_ARGS__);                                    \
+    using CfgType = decltype(cfg);                                                                 \
+    using SinkType = CfgType::SinkType;                                                            \
+    using GlobalSinkType = ::emt::GlobalSink<SinkType, cfg.get_factory()>;                         \
+    using SinkImplType = GlobalSinkType::SinkImpl;                                                 \
+    };                                                                                             \
     template <>                                                                                    \
-    decltype(sink)(::emt::GlobalSink<decltype(sink)>::inner_sink){sink};                           \
+    decltype(::emt::impl::GlobalSinkType::inner_sink)(::emt::impl::GlobalSinkType::inner_sink){    \
+        ::emt::impl::cfg.sink                                                                      \
+    };                                                                                             \
     template <>                                                                                    \
-    std::array<unsigned char, sizeof(::emt::Sink<decltype(sink)&>)> thread_local ::emt::           \
-        GlobalSink<decltype(sink)>::sink_impl_slot{};                                              \
+    std::array<unsigned char, sizeof(::emt::impl::SinkImplType)> thread_local ::emt::impl::        \
+        GlobalSinkType::sink_impl_slot{};                                                          \
                                                                                                    \
     auto emt_default_begin(const void* info, emt_size_t total_size, void* extra_arg) -> void {     \
-        ::emt::GlobalSink<decltype(sink)>::begin(info, total_size, extra_arg);                     \
+        ::emt::impl::GlobalSinkType::begin(info, total_size, extra_arg);                           \
     }                                                                                              \
                                                                                                    \
     auto emt_default_serialize_pointer(                                                            \
         const void* ptr, void (*out)(const void*, emt_size_t, void*), void* extra_arg              \
     ) -> void {                                                                                    \
-        ::emt::GlobalSink<decltype(sink)>::out_ptr(ptr, out, extra_arg);                           \
+        ::emt::impl::GlobalSinkType::out_ptr(ptr, out, extra_arg);                                 \
     }                                                                                              \
                                                                                                    \
     auto emt_default_out(const void* data, emt_size_t size, void* extra_arg) -> void {             \
-        ::emt::GlobalSink<decltype(sink)>::out(data, size, extra_arg);                             \
+        ::emt::impl::GlobalSinkType::out(data, size, extra_arg);                                   \
     }                                                                                              \
                                                                                                    \
     auto emt_default_finish(const void* info, emt_size_t total_size, void* extra_arg) -> void {    \
-        ::emt::GlobalSink<decltype(sink)>::finish(info, total_size, extra_arg);                    \
+        ::emt::impl::GlobalSinkType::finish(info, total_size, extra_arg);                          \
     }
+// NOLINTEND(clang-diagnostic-unneeded-internal-declaration)
 
 // NOLINTBEGIN(clang-diagnostic-missing-designated-field-initializers)
 #define EMT_CPP_MAGIC(attrs, ...)                                                                  \
-    namespace emt::impl {                                                                          \
-    constexpr ::emt::MagicConfig cfg{__VA_ARGS__};                                                 \
-    };                                                                                             \
-    EMT_CPP_GLOBAL_SINK(emt::impl::cfg.sink)                                                       \
-    alignas(1 << ::emt::Sink<decltype(emt::impl::cfg.sink)&>::alignment_power)                     \
-        attrs emt_magic_t g_emt_default_magic =                                                    \
-            ::emt::make_magic_record<decltype(emt::impl::cfg.sink)>()
+    EMT_CPP_GLOBAL_SINK(__VA_ARGS__)                                                               \
+    alignas(1 << ::emt::impl::SinkImplType::alignment_power)                                       \
+        attrs emt_magic_t g_emt_default_magic = ::emt::make_magic_record<::emt::impl::SinkType>()
 // NOLINTEND(clang-diagnostic-missing-designated-field-initializers)
 
 #define MTRACE_MAGIC(...) EMT_CPP_MAGIC(EMT_DEFAULT_SEC_ATTR, __VA_ARGS__)
 
 } // namespace emt
+// NOLINTEND(readability-named-parameter)
 
 #endif // EMTRACE_EMTRACE_HPP

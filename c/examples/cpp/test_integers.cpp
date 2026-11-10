@@ -1,7 +1,11 @@
 #include "test_utils.h"
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <emtrace/emtrace.hpp>
+#if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#include <sys/types.h> // NOLINT(misc-include-cleaner)
+#endif
 
 EXPECT_OUTPUT(
     "Signed integers: -128 -32768 -2147483648 -9223372036854775808\n"
@@ -42,7 +46,7 @@ auto main() -> int {
 #if !defined(__unix__) && !defined(__unix) && !(defined(__APPLE__) || defined(__MACH__))
     typedef int ssize_t;
 #endif
-    ssize_t ssz = -42;
+    ssize_t ssz = -42; // NOLINT(misc-include-cleaner)
 
     MTRACELN("Size integers: {} {}", sz, ssz);
 

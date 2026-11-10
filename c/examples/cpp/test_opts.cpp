@@ -1,4 +1,5 @@
 #include "emtrace/emtrace.hpp"
+#include <array>
 #include <iostream>
 #include <vector>
 
