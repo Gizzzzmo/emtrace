@@ -222,7 +222,8 @@ struct Sink<std::ostream&> {
     static auto begin() -> std::optional<Error> { return std::nullopt; }
 
     template <typename SI>
-    auto out_ptr(SI&& sink_impl, const void* record)
+    [[nodiscard]]
+    static auto out_ptr(SI&& sink_impl, const void* record)
         -> std::optional<typename std::remove_reference_t<SI>::Error> {
         emt_ptr_t shifted = reinterpret_cast<emt_ptr_t>(record) >> alignment_power;
 
@@ -515,6 +516,12 @@ struct OptFormatter {
     static constexpr emt_size_t value = formatter;
 };
 
+template <emt_size_t alignment>
+    requires((alignment & (alignment - 1)) == 0)
+struct OptAlignment {
+    static constexpr emt_size_t value = alignment;
+};
+
 template <typename S>
 struct OptSink {
     S sink;
@@ -527,6 +534,11 @@ struct IsOptThrowImpl {
 
 template <typename T>
 struct IsOptFormatterImpl {
+    static constexpr bool value = false;
+};
+
+template <typename T>
+struct IsOptAlignmentImpl {
     static constexpr bool value = false;
 };
 
@@ -545,6 +557,11 @@ struct IsOptFormatterImpl<OptFormatter<formatter>> {
     static constexpr bool value = true;
 };
 
+template <emt_size_t alignment>
+struct IsOptAlignmentImpl<OptAlignment<alignment>> {
+    static constexpr bool value = true;
+};
+
 template <typename T>
 struct IsOptSinkImpl<OptSink<T>> {
     static constexpr bool value = true;
@@ -557,10 +574,13 @@ template <typename T>
 concept IsOptFormatter = IsOptFormatterImpl<T>::value;
 
 template <typename T>
+concept IsOptAlignment = IsOptAlignmentImpl<T>::value;
+
+template <typename T>
 concept IsOptSink = IsOptSinkImpl<T>::value;
 
 template <typename T>
-concept IsOpt = IsOptThrow<T> || IsOptFormatter<T> || IsOptSink<T>;
+concept IsOpt = IsOptThrow<T> || IsOptFormatter<T> || IsOptAlignment<T> || IsOptSink<T>;
 
 template <typename T>
 struct IsStringLitImpl {
@@ -670,6 +690,18 @@ static_assert(
                               OptFormatter<EMT_C_STYLE_FORMAT>,
                               int>()
 );
+
+template <typename... Args>
+constexpr auto get_alignment() -> emt_size_t {
+    emt_size_t value = EMT_DEFAULT_ALIGNMENT;
+
+    for_types<Args...>([&]<typename T>() -> void {
+        if constexpr (IsOptAlignment<T>) {
+            value = T::value;
+        }
+    });
+    return value;
+}
 
 constexpr auto get_sink() -> DefaultSink { return DefaultSink{}; }
 
@@ -1538,6 +1570,10 @@ static constexpr internal::OptFormatter<emt::py_fmt> opt_py_fmt =
 static constexpr internal::OptFormatter<emt::c_style_fmt> opt_c_style_fmt =
     internal::OptFormatter<emt::c_style_fmt>{};
 
+template <emt_size_t alignment>
+    requires((alignment & (alignment - 1)) == 0)
+static constexpr internal::OptAlignment<alignment> opt_align = internal::OptAlignment<alignment>{};
+
 template <typename S>
 constexpr auto opt_sink(S&& t) -> auto {
     using SinkRef = std::conditional_t<std::is_reference_v<S>, S, S&&>;
@@ -1763,10 +1799,11 @@ inline void init() {
         constexpr auto full_fmt_string = StringLiteral{fmt} + StringLiteral{postfix};              \
         static_assert(((::emt::internal::IsOpt<Args> || ::emt::Traceable<Args>) && ...));          \
         static_assert(::emt::internal::format_string_ok<full_fmt_string, Args...>(formatter_id));  \
-        fmt_info_attributes static constexpr auto fmt_info =                                       \
-            ::emt::internal::make_format_info<full_fmt_string, __FILE__, Args...>(                 \
-                formatter_id, __LINE__                                                             \
-            );                                                                                     \
+        alignas(::emt::internal::get_alignment<Args...>())                                         \
+            fmt_info_attributes static constexpr auto fmt_info =                                   \
+                ::emt::internal::make_format_info<full_fmt_string, __FILE__, Args...>(             \
+                    formatter_id, __LINE__                                                         \
+                );                                                                                 \
         return ::emt::internal::emit_trace<::emt::internal::get_throw<Args...>()>(                 \
             &fmt_info, ::emt::internal::get_sink(args...), args...                                 \
         );                                                                                         \
@@ -1778,8 +1815,8 @@ inline void init() {
     EMT_CPP_TRACE_IMPL(fmt_info_attributes, "\n", __VA_ARGS__)
 
 #ifdef EMT_DEFAULT_ATTR
-#define MTRACE(...) EMT_CPP_TRACE(EMT_DEFAULT_ATTR, __VA_ARGS__)
-#define MTRACELN(...) EMT_CPP_TRACELN(EMT_DEFAULT_ATTR, __VA_ARGS__)
+#define MTRACE(...) EMT_CPP_TRACE(EMT_DEFAULT_SEC_ATTR, __VA_ARGS__)
+#define MTRACELN(...) EMT_CPP_TRACELN(EMT_DEFAULT_SEC_ATTR, __VA_ARGS__)
 #endif
 
 #define EMT_CPP_GLOBAL_SINK(sink)                                                                  \
