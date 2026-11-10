@@ -43,8 +43,8 @@
           cargo-expand
           llvmPackages_22.clang-tools
           llvmPackages_22.clang
-          llvmPackages_22.clang-unwrapped
           llvmPackages_22.lldb
+          llvmPackages_22.lld
           ninja
           neocmakelsp
           conan
@@ -72,6 +72,11 @@
               ++ c-nativeBuildInputs;
             propagatedBuildInputs = parser-propagatedbuildInputs;
             inherit packages;
+            shellHook = ''
+              mkdir -p "$PWD/.nix-bin"
+              ln -sf "${llvmPackages_22.clang-unwrapped}/bin/clang" "$PWD/.nix-bin/clang-unwrapped"
+              export PATH="$PWD/.nix-bin:$PATH"
+            '';
           };
 
           packages.parser = pkgs.python314Packages.buildPythonPackage {
