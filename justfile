@@ -30,9 +30,9 @@ alias genh := gen-header
 
 check-headers:
     python ./c/header-generator/build_macro.py ./c/build/comp.h
-    python ./c/header-generator/build_macro.py -c++ ./c/build/comp.hpp
+    python ./c/header-generator/build_macro.py --cpp ./c/build/comp.hpp
     diff ./c/include/c/include/emtrace/emtrace.h ./c/build/comp.h
-    diff ./c/include/c/include/emtrace/emtrace.h ./c/build/comp.hpp
+    diff ./c/include/cxx/include/emtrace/emtrace.hpp ./c/build/comp.hpp
 
 alias checkh := check-headers
 
