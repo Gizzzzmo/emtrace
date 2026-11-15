@@ -363,6 +363,19 @@ struct CobsEncoder {
 
         for (emt_size_t i = 0; i < size; i++) {
             unsigned char byte = bytes[i];
+            // A full block is written with the code 0xff, which means that it is not followed
+            // by an (implicit) zero. So it has to be written before looking at the next byte, even
+            // if that is a zero.
+            if (pos == 254) {
+                unsigned char ptr = 0xff;
+                if (auto err = sink_impl.out(&ptr, 1)) {
+                    return err;
+                }
+                if (auto err = sink_impl.out(buffer.data(), 254)) {
+                    return err;
+                }
+                pos = 0;
+            }
             if (byte == 0) {
                 unsigned char ptr = pos + 1;
                 if (auto err = sink_impl.out(&ptr, 1)) {
@@ -374,16 +387,6 @@ struct CobsEncoder {
                 }
                 pos = 0;
                 continue;
-            }
-            if (pos == 254) {
-                unsigned char ptr = 0xff;
-                if (auto err = sink_impl.out(&ptr, 1)) {
-                    return err;
-                }
-                if (auto err = sink_impl.out(buffer.data(), 254)) {
-                    return err;
-                }
-                pos = 0;
             }
             buffer[pos] = byte;
             pos++;

@@ -41,18 +41,21 @@ static inline void emt_cobs_encode(
 ) {
     for (emt_size_t i = 0; i < size; i++) {
         unsigned char byte = ((const unsigned char*) data)[i];
+        // A full block is written with the code 0xff, which means that it is not followed by an
+        // (implicit) zero. So it has to be written before looking at the next byte, even if that
+        // is a zero.
+        if (cobs_state->pos == 254) {
+            unsigned char ptr = 0xff;
+            out_fn(&ptr, 1, extra_arg);
+            out_fn(cobs_state->buffer, 254, extra_arg);
+            cobs_state->pos = 0;
+        }
         if (byte == 0) {
             unsigned char ptr = cobs_state->pos + 1;
             out_fn(&ptr, 1, extra_arg);
             out_fn(cobs_state->buffer, cobs_state->pos, extra_arg);
             cobs_state->pos = 0;
             continue;
-        }
-        if (cobs_state->pos == 254) {
-            unsigned char ptr = 0xff;
-            out_fn(&ptr, 1, extra_arg);
-            out_fn(cobs_state->buffer, 254, extra_arg);
-            cobs_state->pos = 0;
         }
         cobs_state->buffer[cobs_state->pos] = byte;
         cobs_state->pos++;

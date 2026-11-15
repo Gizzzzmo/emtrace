@@ -874,17 +874,20 @@ impl CobsEncoder {
         let buffer: &mut [u8] = unsafe { slice::from_raw_parts_mut(ptr, 254) };
 
         for byte in b {
+            // A full block is written with the code 0xff, which means that it is not followed by
+            // an (implicit) zero. So it has to be written before looking at the next byte, even
+            // if that is a zero.
+            if self.pos == 254 {
+                sink.out(&[255u8][..])?;
+                sink.out(buffer)?;
+                self.pos = 0;
+            }
             if *byte == 0 {
                 let len = self.pos + 1;
                 sink.out(core::slice::from_ref(&len))?;
                 sink.out(&buffer[..self.pos as usize])?;
                 self.pos = 0;
                 continue;
-            }
-            if self.pos == 254 {
-                sink.out(&[255u8][..])?;
-                sink.out(buffer)?;
-                self.pos = 0;
             }
             self.buffer[self.pos as usize].write(*byte);
             self.pos += 1;
@@ -2416,6 +2419,115 @@ mod tests {
 
         println!("{:x?}", capture);
         assert_eq!(capture, vec![3, b'a', b'b', 0, 3, b'c', b'd', 0]);
+    }
+
+    /// Encodes `chunks` as a single COBS frame.
+    fn cobs_encode(chunks: &[&[u8]]) -> Vec<u8> {
+        let mut capture = Vec::new();
+        let mut cobs = CobsEncoder::new();
+        for chunk in chunks {
+            cobs.encode(&mut capture, chunk).unwrap();
+        }
+        cobs.finalize(&mut capture).unwrap();
+        capture
+    }
+
+    /// Decodes a single frame including its terminator, or returns `None` if it is malformed.
+    fn cobs_decode(encoded: &[u8]) -> Option<Vec<u8>> {
+        let (&terminator, body) = encoded.split_last()?;
+        if terminator != 0 {
+            return None;
+        }
+        let mut decoded = Vec::new();
+        let mut i = 0;
+        while i < body.len() {
+            let code = body[i] as usize;
+            i += 1;
+            if code == 0 || i + code - 1 > body.len() {
+                return None;
+            }
+            let block = &body[i..i + code - 1];
+            if block.contains(&0) {
+                return None;
+            }
+            decoded.extend_from_slice(block);
+            i += code - 1;
+            if i < body.len() && code != 0xFF {
+                decoded.push(0);
+            }
+        }
+        Some(decoded)
+    }
+
+    /// Repeatable pseudo random bytes, where about every `zero_period`-th one is zero.
+    fn pseudo_random_bytes(size: usize, zero_period: u32) -> Vec<u8> {
+        let mut state: u32 = 12345;
+        (0..size)
+            .map(|_| {
+                state = state.wrapping_mul(1103515245).wrapping_add(12345);
+                let random = state >> 16;
+                if zero_period != 0 && random % zero_period == 0 {
+                    0
+                } else {
+                    (1 + random % 255) as u8
+                }
+            })
+            .collect()
+    }
+
+    #[test]
+    fn cobs_encode_zero_after_full_block() {
+        // A zero following exactly one full block of non-zero bytes must not get lost.
+        let mut data = vec![1u8; 254];
+        data.push(0);
+
+        let encoded = cobs_encode(&[&data]);
+        println!("{:x?}", encoded);
+        assert_eq!(cobs_decode(&encoded), Some(data));
+    }
+
+    #[test]
+    fn cobs_encode_chunking_is_irrelevant() {
+        let data = pseudo_random_bytes(700, 9);
+        let whole = cobs_encode(&[&data]);
+
+        assert_eq!(
+            cobs_encode(&[&data[..1], &data[1..301], &data[301..]]),
+            whole
+        );
+        let single_bytes: Vec<&[u8]> = data.chunks(1).collect();
+        assert_eq!(cobs_encode(&single_bytes), whole);
+    }
+
+    #[test]
+    fn cobs_roundtrip_lengths_and_zero_densities() {
+        for zero_period in [0, 1, 2, 7, 300] {
+            let mut size = 0;
+            while size < 800 {
+                let data = pseudo_random_bytes(size, zero_period);
+                let encoded = cobs_encode(&[&data]);
+
+                // the only zero is the terminator
+                assert_eq!(encoded.iter().filter(|&&b| b == 0).count(), 1);
+                assert_eq!(cobs_decode(&encoded), Some(data));
+                size += if size < 40 { 1 } else { 37 };
+            }
+        }
+    }
+
+    #[test]
+    fn cobs_roundtrip_around_the_maximum_block_size() {
+        for run in 252..=256 {
+            for trailing_zeros in 0..=2 {
+                let mut data = vec![7u8; run];
+                data.extend(core::iter::repeat_n(0u8, trailing_zeros));
+                data.push(9);
+
+                assert_eq!(cobs_decode(&cobs_encode(&[&data])), Some(data.clone()));
+                data.pop();
+                assert_eq!(cobs_decode(&cobs_encode(&[&data])), Some(data));
+            }
+        }
     }
 
     #[test]
