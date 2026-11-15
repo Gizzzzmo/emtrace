@@ -1962,7 +1962,10 @@ struct MagicConfig {
 
     S sink;
 
-    static constexpr auto get_factory() -> S (*)() { return nullptr; }
+    [[nodiscard]]
+    static constexpr auto get_factory() -> S (*)() {
+        return nullptr;
+    }
 };
 
 template <typename S>
@@ -1972,7 +1975,10 @@ struct MagicConfigFactory {
 
     S (*sink)();
 
-    constexpr auto get_factory() const -> S (*)() { return sink; }
+    [[nodiscard]]
+    constexpr auto get_factory() const -> S (*)() {
+        return sink;
+    }
 };
 
 template <typename S>
@@ -2110,42 +2116,39 @@ inline void init() {
 #define MTRACELN(...) EMT_CPP_TRACELN(EMT_DEFAULT_SEC_ATTR, __VA_ARGS__)
 #endif
 
-// The definition of inner_sink is sometimes unused
-// NOLINTBEGIN(clang-diagnostic-unneeded-internal-declaration)
-#define EMT_CPP_GLOBAL_SINK(...)                                                                   \
-    namespace emt::impl {                                                                          \
-    constexpr auto cfg = ::emt::make_magic_config(__VA_ARGS__);                                    \
-    using CfgType = decltype(cfg);                                                                 \
-    using SinkType = CfgType::SinkType;                                                            \
-    using GlobalSinkType = ::emt::GlobalSink<SinkType, cfg.get_factory()>;                         \
-    using SinkImplType = GlobalSinkType::SinkImpl;                                                 \
-    };                                                                                             \
-    template <>                                                                                    \
-    decltype(::emt::impl::GlobalSinkType::inner_sink)(::emt::impl::GlobalSinkType::inner_sink){    \
-        ::emt::impl::cfg.sink                                                                      \
-    };                                                                                             \
-    template <>                                                                                    \
-    std::array<unsigned char, sizeof(::emt::impl::SinkImplType)> thread_local ::emt::impl::        \
-        GlobalSinkType::sink_impl_slot{};                                                          \
-                                                                                                   \
-    auto emt_default_begin(const void* info, emt_size_t total_size, void* extra_arg) -> void {     \
-        ::emt::impl::GlobalSinkType::begin(info, total_size, extra_arg);                           \
-    }                                                                                              \
-                                                                                                   \
-    auto emt_default_serialize_pointer(                                                            \
-        const void* ptr, void (*out)(const void*, emt_size_t, void*), void* extra_arg              \
-    ) -> void {                                                                                    \
-        ::emt::impl::GlobalSinkType::out_ptr(ptr, out, extra_arg);                                 \
-    }                                                                                              \
-                                                                                                   \
-    auto emt_default_out(const void* data, emt_size_t size, void* extra_arg) -> void {             \
-        ::emt::impl::GlobalSinkType::out(data, size, extra_arg);                                   \
-    }                                                                                              \
-                                                                                                   \
-    auto emt_default_finish(const void* info, emt_size_t total_size, void* extra_arg) -> void {    \
-        ::emt::impl::GlobalSinkType::finish(info, total_size, extra_arg);                          \
+#define EMT_CPP_GLOBAL_SINK(...)                                                                                           \
+    namespace emt::impl {                                                                                                  \
+    constexpr auto cfg = ::emt::make_magic_config(__VA_ARGS__);                                                            \
+    using CfgType = decltype(cfg);                                                                                         \
+    using SinkType = CfgType::SinkType;                                                                                    \
+    using GlobalSinkType = ::emt::GlobalSink<SinkType, cfg.get_factory()>;                                                 \
+    using SinkImplType = GlobalSinkType::SinkImpl;                                                                         \
+    };                                                                                                                     \
+    template <> /*NOLINTNEXTLINE(clang-diagnostic-unneeded-internal-declaration,bugprone-throwing-static-initialization)*/ \
+    decltype(::emt::impl::GlobalSinkType::inner_sink)(::emt::impl::GlobalSinkType::inner_sink){                            \
+        ::emt::impl::cfg.sink                                                                                              \
+    };                                                                                                                     \
+    template <>                                                                                                            \
+    [[maybe_unused]] std::array<unsigned char, sizeof(::emt::impl::SinkImplType)> thread_local ::                          \
+        emt::impl::GlobalSinkType::sink_impl_slot{};                                                                       \
+                                                                                                                           \
+    auto emt_default_begin(const void* info, emt_size_t total_size, void* extra_arg) -> void {                             \
+        ::emt::impl::GlobalSinkType::begin(info, total_size, extra_arg);                                                   \
+    }                                                                                                                      \
+                                                                                                                           \
+    auto emt_default_serialize_pointer(                                                                                    \
+        const void* ptr, void (*out)(const void*, emt_size_t, void*), void* extra_arg                                      \
+    ) -> void {                                                                                                            \
+        ::emt::impl::GlobalSinkType::out_ptr(ptr, out, extra_arg);                                                         \
+    }                                                                                                                      \
+                                                                                                                           \
+    auto emt_default_out(const void* data, emt_size_t size, void* extra_arg) -> void {                                     \
+        ::emt::impl::GlobalSinkType::out(data, size, extra_arg);                                                           \
+    }                                                                                                                      \
+                                                                                                                           \
+    auto emt_default_finish(const void* info, emt_size_t total_size, void* extra_arg) -> void {                            \
+        ::emt::impl::GlobalSinkType::finish(info, total_size, extra_arg);                                                  \
     }
-// NOLINTEND(clang-diagnostic-unneeded-internal-declaration)
 
 // NOLINTBEGIN(clang-diagnostic-missing-designated-field-initializers)
 #define EMT_CPP_MAGIC(attrs, ...)                                                                  \

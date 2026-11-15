@@ -19,6 +19,12 @@ if(DEFINED CMAKE_CXX_COMPILER AND "cxx_std_11" IN_LIST CMAKE_CXX_COMPILE_FEATURE
 endif()
 
 if(EMTRACE_ENABLE_CXX)
+    add_executable(demo_global_sink_cpp ./cpp/demo_global_sink.cpp)
+    target_link_libraries(demo_global_sink_cpp PRIVATE emtrace::emtrace)
+
+    add_executable(demo_global_sink_factory_cpp ./cpp/demo_global_sink_factory.cpp)
+    target_link_libraries(demo_global_sink_factory_cpp PRIVATE emtrace::emtrace)
+
     add_executable(demo_readme_cpp ./cpp/demo_readme.cpp)
     target_link_libraries(demo_readme_cpp PRIVATE emtrace::emtrace)
 endif()
