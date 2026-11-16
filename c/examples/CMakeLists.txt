@@ -19,14 +19,18 @@ if(DEFINED CMAKE_CXX_COMPILER AND "cxx_std_11" IN_LIST CMAKE_CXX_COMPILE_FEATURE
 endif()
 
 if(EMTRACE_ENABLE_CXX)
-    add_executable(demo_global_sink_cpp ./cpp/demo_global_sink.cpp)
-    target_link_libraries(demo_global_sink_cpp PRIVATE emtrace::emtrace)
-
-    add_executable(demo_global_sink_factory_cpp ./cpp/demo_global_sink_factory.cpp)
-    target_link_libraries(demo_global_sink_factory_cpp PRIVATE emtrace::emtrace)
-
-    add_executable(demo_readme_cpp ./cpp/demo_readme.cpp)
-    target_link_libraries(demo_readme_cpp PRIVATE emtrace::emtrace)
+    foreach(
+        demo
+        demo_readme
+        demo_cobs
+        demo_global_sink
+        demo_global_sink_factory
+        demo_custom_sink
+        demo_error_handling
+    )
+        add_executable(${demo}_cpp ./cpp/${demo}.cpp)
+        target_link_libraries(${demo}_cpp PRIVATE emtrace::emtrace)
+    endforeach()
 endif()
 
 # Cross-language interop demos. In all of them the executable that owns the
@@ -116,7 +120,16 @@ if(EMTRACE_ENABLE_TESTS)
             test_edge_cases
             test_large_numbers
             test_arr
+            test_ranges
+            test_vec
+            test_bool
+            test_f32
+            test_alignment
         )
+        # 128 bit integers are a compiler extension
+        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            list(APPEND eetests test_int128)
+        endif()
         foreach(testname ${eetests})
             add_executable(${testname}_cpp cpp/${testname}.cpp)
             target_link_libraries(${testname}_cpp PRIVATE emtrace::emtrace)
@@ -127,6 +140,19 @@ if(EMTRACE_ENABLE_TESTS)
             target_link_libraries(${testname}_cobs_cpp PRIVATE emtrace::emtrace)
             target_compile_definitions(${testname}_cobs_cpp PRIVATE TEST_COBS)
             target_include_directories(${testname}_cobs_cpp PRIVATE include)
+        endforeach()
+
+        # These tests configure their own sinks, so they don't have a COBS variant.
+        set(standalone_eetests test_custom_sink test_global_sink test_global_sink_factory)
+        # test_section places the records in a section called `.emtsec`, which is only a valid
+        # section specifier for ELF
+        if(UNIX AND NOT APPLE)
+            list(APPEND standalone_eetests test_section)
+        endif()
+        foreach(testname ${standalone_eetests})
+            add_executable(${testname}_cpp cpp/${testname}.cpp)
+            target_link_libraries(${testname}_cpp PRIVATE emtrace::emtrace)
+            target_include_directories(${testname}_cpp PRIVATE include)
         endforeach()
     endif()
 endif()

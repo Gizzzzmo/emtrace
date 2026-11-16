@@ -2,7 +2,6 @@
 #include <array>
 #include <cstdint>
 #include <emtrace/emtrace.hpp>
-#include <ranges>
 #include <span>
 
 EXPECT_OUTPUT(
@@ -15,15 +14,12 @@ EXPECT_OUTPUT(
     "11\n"
     "11\n"
     "[[0, 0], [0, 0]]\n"
-    "[1, 4, 9, 16, 25, 36, 49, 64, 81, 100]"
 );
 
 MTRACE_MAGIC(CPP_TEST_SINK);
 
 using std::int16_t;
 using std::int8_t;
-
-using std::ranges::views::transform;
 
 auto main() -> int {
     emt::init();
@@ -41,8 +37,5 @@ auto main() -> int {
 
     std::array<int[2], 2> nested_arr{};
     MTRACELN("{}", nested_arr);
-
-    auto r = arr1 | transform([](int x) -> int { return x * x; });
-    MTRACE("{}", r);
     return 0;
 }

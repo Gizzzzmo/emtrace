@@ -10,7 +10,6 @@ EXPECT_OUTPUT(
     "No format {}\n"
     "C format: test\n"
 );
-// "C format: test\n";
 
 MTRACE_MAGIC(CPP_TEST_SINK);
 
@@ -40,8 +39,7 @@ auto main() -> int {
     MTRACELN("Extremes: {:d} {:d} {} {}", max_u8, min_i8, max_u32, min_i32);
 
     // Test trace without format arguments (NO_FORMAT)
-    MTRACE("No format");
-    MTRACELN(" {}");
+    MTRACELN("No format {}");
 
     // Test C-style format
     const char* test_str = "test";

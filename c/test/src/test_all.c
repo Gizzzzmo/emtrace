@@ -41,6 +41,24 @@ int main(void) {
     total_result.passed += result.passed;
     total_result.failed += result.failed;
 
+    const char* test_names_cobs[] = {
+        "test_cobs_short",
+        "test_cobs_empty",
+        "test_cobs_only_zeros",
+        "test_cobs_one_full_block",
+        "test_cobs_longer_than_a_block",
+        "test_cobs_zero_after_full_block",
+        "test_cobs_reuse_state",
+        "test_cobs_chunking_is_irrelevant",
+        "test_cobs_roundtrip_lengths",
+        "test_cobs_roundtrip_around_max_block",
+    };
+    tests = emt_get_cobs_tests(&count);
+    result = run_tests(&ctx, tests, count, test_names_cobs);
+    total_result.total += result.total;
+    total_result.passed += result.passed;
+    total_result.failed += result.failed;
+
     printf("\n========================================\n");
     printf("Test Results: %zu/%zu passed", total_result.passed, total_result.total);
     if (total_result.failed > 0) {

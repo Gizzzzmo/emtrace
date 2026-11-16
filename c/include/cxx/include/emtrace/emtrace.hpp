@@ -235,6 +235,7 @@ enum : emt_size_t {
 #include <concepts>
 #include <cstddef>
 #include <cstring>
+#include <exception>
 #include <ios>
 #include <iostream>
 #include <optional>
@@ -250,6 +251,23 @@ enum : emt_size_t {
 
 // NOLINTBEGIN(readability-named-parameter)
 namespace emt {
+
+template <typename Error>
+struct TraceException : std::exception {
+    Error e;
+    template <typename... Args>
+    explicit TraceException(Args&&... args) : e{std::forward<Args>(args)...} {}
+
+    [[nodiscard]] auto what() const noexcept -> const char* override {
+        if constexpr (requires(Error e) {
+                          { e.what() } -> std::same_as<const char*>;
+                      }) {
+            return e.what();
+        } else {
+            return "Error while emitting Trace";
+        }
+    }
+};
 
 template <typename... T>
 struct Ts {};
@@ -1094,6 +1112,51 @@ struct Trace<const char*> {
 
 static_assert(Traceable<const char*>);
 
+namespace internal {
+
+template <typename S>
+auto serialize_varint(S& sink_impl, emt_size_t len) -> std::optional<typename S::Error> {
+    unsigned char bytes[((sizeof(emt_size_t) * 8) + 6) / 7];
+
+    emt_size_t remaining = len;
+    for (size_t i = 0; i < sizeof(bytes); i++) {
+        bytes[i] = static_cast<unsigned char>(remaining) & 0x7F;
+
+        remaining >>= 7;
+        if (remaining == 0) {
+            return sink_impl.out(bytes, i + 1);
+        }
+        bytes[i] |= 0x80;
+    }
+    assert(false);
+}
+
+/// Emits `val` the way a value of type `T` appears in the runtime stream: length-prefixed types
+/// are preceded by their element count, null-terminated types are followed by their terminator.
+/// Used for top-level arguments as well as for the elements of containers.
+template <typename T, typename S>
+auto emit_value(S& sink_impl, const T& val) -> std::optional<typename S::Error> {
+    if constexpr (std::holds_alternative<LengthPrefixed>(Trace<T>::size_type)) {
+        auto error = serialize_varint(sink_impl, Trace<T>::size(val));
+        if (error.has_value()) {
+            return error;
+        }
+    }
+    auto error = Trace<T>::serialize(val, sink_impl);
+    if (error.has_value()) {
+        return error;
+    }
+
+    if constexpr (std::holds_alternative<NullTerminated>(Trace<T>::size_type)) {
+        std::array<unsigned char, std::get<NullTerminated>(Trace<T>::size_type).terminator_length>
+            null_bytes{};
+        return sink_impl.out(null_bytes.data(), sizeof(null_bytes));
+    }
+    return std::nullopt;
+}
+
+} // namespace internal
+
 template <typename T>
     requires(Traceable<T>)
 struct Trace<std::vector<T>> {
@@ -1125,7 +1188,7 @@ struct Trace<T[N]> {
         }
 
         for (size_t i = 0; i < N; i++) {
-            auto error = Trace<T>::serialize(data[i], sink_impl);
+            auto error = internal::emit_value<T>(sink_impl, data[i]);
             if (error.has_value()) {
                 return error;
             }
@@ -1152,7 +1215,7 @@ struct Trace<std::array<T, N>> {
         }
 
         for (const T& el : arr) {
-            auto error = Trace<T>::serialize(el, sink_impl);
+            auto error = internal::emit_value<T>(sink_impl, el);
             if (error.has_value()) {
                 return error;
             }
@@ -1170,7 +1233,7 @@ struct Trace<std::span<T>> {
     using Children = Ts<Child<T>>;
     static constexpr StringLiteral type_id = "list";
     static constexpr SizeType size_type = LengthPrefixed{};
-    static constexpr bool simple = true;
+    static constexpr bool simple = false;
     template <typename S>
     static auto serialize(const std::span<const T>& slice, S& sink_impl)
         -> std::optional<typename S::Error> {
@@ -1179,7 +1242,7 @@ struct Trace<std::span<T>> {
         }
 
         for (const T& el : slice) {
-            auto error = Trace<T>::serialize(el, sink_impl);
+            auto error = internal::emit_value<T>(sink_impl, el);
             if (error.has_value()) {
                 return error;
             }
@@ -1193,11 +1256,32 @@ static_assert(Traceable<std::span<int>>);
 
 template <typename R>
     requires(
-        std::ranges::sized_range<R> &&
-        Traceable<std::remove_reference_t<std::ranges::range_reference_t<R>>>
+        std::ranges::sized_range<const R> &&
+        Traceable<std::remove_cvref_t<std::ranges::range_reference_t<const R>>> &&
+        std::ranges::contiguous_range<const R> &&
+        Trace<std::remove_cvref_t<std::ranges::range_reference_t<const R>>>::simple
     )
 struct Trace<R> {
-    using T = std::remove_reference_t<std::ranges::range_reference_t<R>>;
+    using T = std::remove_cvref_t<std::ranges::range_reference_t<const R>>;
+
+    using Children = Ts<Child<T>>;
+    static constexpr StringLiteral type_id = "list";
+    static constexpr SizeType size_type = LengthPrefixed{};
+    static constexpr bool simple = false;
+    template <typename S>
+    static auto serialize(const R& range, S& sink_impl) -> std::optional<typename S::Error> {
+        return sink_impl.out(std::ranges::data(range), sizeof(T) * std::ranges::size(range));
+    }
+    static auto size(const R& range) -> emt_size_t { return std::ranges::size(range); }
+};
+
+template <typename R>
+    requires(
+        std::ranges::sized_range<const R> &&
+        Traceable<std::remove_cvref_t<std::ranges::range_reference_t<const R>>>
+    )
+struct Trace<R> {
+    using T = std::remove_cvref_t<std::ranges::range_reference_t<const R>>;
 
     using Children = Ts<Child<T>>;
     static constexpr StringLiteral type_id = "list";
@@ -1206,7 +1290,7 @@ struct Trace<R> {
     template <typename S>
     static auto serialize(const R& range, S& sink_impl) -> std::optional<typename S::Error> {
         for (const T& el : range) {
-            auto error = Trace<T>::serialize(el, sink_impl);
+            auto error = internal::emit_value<T>(sink_impl, el);
             if (error.has_value()) {
                 return error;
             }
@@ -1218,23 +1302,6 @@ struct Trace<R> {
 
 namespace internal {
 
-template <typename S>
-auto serialize_varint(S& sink_impl, emt_size_t len) -> std::optional<typename S::Error> {
-    unsigned char bytes[((sizeof(emt_size_t) * 8) + 6) / 7];
-
-    emt_size_t remaining = len;
-    for (size_t i = 0; i < sizeof(bytes); i++) {
-        bytes[i] = static_cast<unsigned char>(remaining) & 0x7F;
-
-        remaining >>= 7;
-        if (remaining == 0) {
-            return sink_impl.out(bytes, i + 1);
-        }
-        bytes[i] |= 0x80;
-    }
-    assert(false);
-}
-
 template <typename S, typename T>
     requires(IsOpt<T>)
 auto emit_arg(S&, const T&) -> std::optional<typename S::Error> {
@@ -1244,23 +1311,7 @@ auto emit_arg(S&, const T&) -> std::optional<typename S::Error> {
 template <typename S, typename T>
     requires(Traceable<T>)
 auto emit_arg(S& sink_impl, const T& arg) -> std::optional<typename S::Error> {
-    if constexpr (std::holds_alternative<LengthPrefixed>(Trace<T>::size_type)) {
-        auto error = serialize_varint(sink_impl, Trace<T>::size(arg));
-        if (error.has_value()) {
-            return error;
-        }
-    }
-    auto error = Trace<T>::serialize(arg, sink_impl);
-    if (error.has_value()) {
-        return error;
-    }
-
-    if constexpr (std::holds_alternative<NullTerminated>(Trace<T>::size_type)) {
-        std::array<unsigned char, std::get<NullTerminated>(Trace<T>::size_type).terminator_length>
-            null_bytes{};
-        return sink_impl.out(null_bytes.data(), sizeof(null_bytes));
-    }
-    return std::nullopt;
+    return emit_value<T>(sink_impl, arg);
 }
 
 static_assert(std::same_as<AllTypes<int>, Ts<int>>);
@@ -1697,48 +1748,29 @@ template <bool throw_on_error, typename S, typename... Args>
     Sink<S> sink_impl{std::forward<S>(sink), record, 0}; // todo fix total_size
     using Error = SinkError<S>;
 
+    // Each step is only performed if all the previous ones succeeded.
     std::optional<Error> error = sink_impl.begin();
 
-    if constexpr (!std::same_as<Error, Infallible>) {
-        if (error.has_value()) {
-            if constexpr (throw_on_error) {
-                throw 1; // todo: create exception type
-            }
-            return error;
-        }
+    if (!error.has_value()) {
+        error = Sink<S>::out_ptr(sink_impl, record);
     }
 
-    error = Sink<S>::out_ptr(sink_impl, record);
-
-    if constexpr (!std::same_as<Error, Infallible>) {
-        if (error.has_value()) {
-            if constexpr (throw_on_error) {
-                throw 1; // todo: create exception type
-            }
-            return error;
-        }
+    if (!error.has_value()) {
+        (void) ((error = emit_arg(sink_impl, args), error.has_value()) || ...);
     }
 
-    (void) ((error = emit_arg(sink_impl, args), error.has_value()) || ...);
-
-    if constexpr (!std::same_as<Error, Infallible>) {
-        if (error.has_value()) {
-            if constexpr (throw_on_error) {
-                throw 1;
-            }
-            return error;
-        }
+    if (!error.has_value()) {
+        error = std::move(sink_impl).finish();
     }
 
-    error = std::move(sink_impl).finish();
     if constexpr (!std::same_as<Error, Infallible>) {
-        if (error.has_value()) {
-            if constexpr (throw_on_error) {
-                throw 1;
+        if constexpr (throw_on_error) {
+            if (error.has_value()) {
+                throw TraceException<Error>{std::move(error.value())};
             }
+        } else {
             return error;
         }
-        return std::nullopt;
     }
 }
 
@@ -1774,6 +1806,10 @@ struct Sink<std::vector<unsigned char>&> {
 
     [[nodiscard]]
     auto out(const void* data, emt_size_t size) -> std::optional<Error> {
+        if (size == 0) {
+            // data may be null (e.g. for an empty vector), which memcpy doesn't accept
+            return std::nullopt;
+        }
         buffer.reserve(std::max(buffer.size() + size, buffer.size() * 2));
         buffer.resize(buffer.size() + size);
         std::memcpy(buffer.data() + buffer.size() - size, data, size);

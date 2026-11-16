@@ -1,11 +1,16 @@
 #include "test_utils.h"
 #include <emtrace/emtrace.hpp>
+#include <string>
+#include <string_view>
 
 EXPECT_OUTPUT(
     "Hello, World!\n"
     "Empty string: \n"
     "Unicode: 😀✅©\n"
     "Long string: first second third\n"
+    "std::string: owned\n"
+    "std::string_view: viewed\n"
+    "empty std::string: \n"
 );
 
 MTRACE_MAGIC(CPP_TEST_SINK);
@@ -32,6 +37,11 @@ auto main() -> int {
 
     MTRACE("Long string: ");
     MTRACE("{}\n", long_string);
+
+    // Test the C++ string types
+    MTRACELN("std::string: {}", std::string{"owned"});
+    MTRACELN("std::string_view: {}", std::string_view{"viewed"});
+    MTRACELN("empty std::string: {}", std::string{});
 
     return 0;
 }

@@ -14,8 +14,12 @@
 #ifdef TEST_COBS
 #define CPP_TEST_SINK                                                                              \
     emt::Cobs {}
+#define CPP_TEST_SINK_ALIGNED(ptr_width, alignment_power)                                          \
+    emt::ChangePtr<ptr_width, alignment_power, emt::Cobs<>> {}
 #else
 #define CPP_TEST_SINK
+#define CPP_TEST_SINK_ALIGNED(ptr_width, alignment_power)                                          \
+    emt::ChangePtr<ptr_width, alignment_power> {}
 #endif
 
 #endif // TEST_UTILS_H

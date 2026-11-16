@@ -32,6 +32,21 @@ C_TEST_EXECUTABLES = [
     "examples/test_large_numbers_cobs_cpp",
     "examples/test_arr_cpp",
     "examples/test_arr_cobs_cpp",
+    "examples/test_ranges_cpp",
+    "examples/test_ranges_cobs_cpp",
+    "examples/test_vec_cpp",
+    "examples/test_vec_cobs_cpp",
+    "examples/test_bool_cpp",
+    "examples/test_bool_cobs_cpp",
+    "examples/test_f32_cpp",
+    "examples/test_f32_cobs_cpp",
+    "examples/test_int128_cpp",
+    "examples/test_int128_cobs_cpp",
+    "examples/test_alignment_cpp",
+    "examples/test_alignment_cobs_cpp",
+    "examples/test_custom_sink_cpp",
+    "examples/test_global_sink_cpp",
+    "examples/test_global_sink_factory_cpp",
     "examples/test_basic",
     "examples/test_basic_cobs",
     "examples/test_integers",
@@ -697,8 +712,88 @@ def test_strip_matches_objcopy(executable_path_str: str):
             assert check.returncode == 1, f"check passed on {path}"
 
 
-# Must match the `.section` of rust/examples/test_section.rs.
+# Must match the `.section` of rust/examples/test_section.rs and
+# c/examples/cpp/test_section.cpp.
 CUSTOM_SECTION = ".emtsec"
+CUSTOM_SECTION_OUTPUT = "Custom section works: 7\nCustom section works: done\n"
+
+
+def _check_custom_section(example_binary: Path, raw_path: str, tmpdir: str) -> None:
+    """Decodes *raw_path*, the output of *example_binary*, using ``--section-name``.
+
+    The binary has to host its single magic, and all its records in `CUSTOM_SECTION`.
+    """
+    pytest_dir = Path(__file__).parent
+    parser_dir = str(pytest_dir.parent / "parser")
+    emtrace_script = str(pytest_dir.parent / "parser/emtrace.py")
+    env = os.environ.copy()
+    env["PYTHONPATH"] = parser_dir + os.pathsep + env.get("PYTHONPATH", "")
+
+    # The default section name finds no `.emtrace` section here - and still
+    # succeeds: load_format_info degrades to scanning the whole file for the
+    # MGIC record when the named section is absent. Locks in that fallback.
+    default_export = subprocess.run(
+        [sys.executable, emtrace_script, "export", str(example_binary)],
+        capture_output=True,
+        timeout=30,
+        env=env,
+    )
+    assert default_export.returncode == 0, (
+        f"whole-file fallback export failed: {default_export.stderr.decode()}"
+    )
+
+    fmt_json = os.path.join(tmpdir, "format.json")
+    try:
+        _ = subprocess.run(
+            [
+                sys.executable,
+                emtrace_script,
+                "export",
+                "--section-name",
+                CUSTOM_SECTION,
+                str(example_binary),
+                "--output",
+                fmt_json,
+            ],
+            capture_output=True,
+            check=True,
+            timeout=30,
+            env=env,
+        )
+    except subprocess.CalledProcessError as e:
+        pytest.fail(f"emtrace export failed: {e.stderr}", pytrace=False)
+
+    decoded = subprocess.run(
+        [
+            sys.executable,
+            emtrace_script,
+            "run",
+            fmt_json,
+            "--input",
+            "file://" + raw_path,
+        ],
+        capture_output=True,
+        check=True,
+        timeout=30,
+        env=env,
+    )
+    assert decoded.stdout.decode() == CUSTOM_SECTION_OUTPUT
+
+    # And the custom section passes conformance checking under its own name.
+    check = subprocess.run(
+        [
+            sys.executable,
+            emtrace_script,
+            "check",
+            "--section-name",
+            CUSTOM_SECTION,
+            str(example_binary),
+        ],
+        capture_output=True,
+        timeout=30,
+        env=env,
+    )
+    assert check.returncode == 0, f"check failed: {check.stderr.decode()}"
 
 
 @pytest.mark.parametrize("profile", ["debug", "release"])
@@ -714,10 +809,6 @@ def test_custom_section(profile: str):
     """
     pytest_dir = Path(__file__).parent
     rust_dir = pytest_dir.parent / "rust"
-    parser_dir = str(pytest_dir.parent / "parser")
-    emtrace_script = str(pytest_dir.parent / "parser/emtrace.py")
-    env = os.environ.copy()
-    env["PYTHONPATH"] = parser_dir + os.pathsep + env.get("PYTHONPATH", "")
 
     profile_dir = "release" if profile == "release" else "debug"
     example_binary = rust_dir / "target" / profile_dir / "examples" / "test_section"
@@ -739,70 +830,32 @@ def test_custom_section(profile: str):
             )
         assert proc.returncode == 0, f"example failed: {proc.stderr.decode()}"
 
-        # The default section name finds no `.emtrace` section here - and still
-        # succeeds: load_format_info degrades to scanning the whole file for the
-        # MGIC record when the named section is absent. Locks in that fallback.
-        default_export = subprocess.run(
-            [sys.executable, emtrace_script, "export", str(example_binary)],
-            capture_output=True,
-            timeout=30,
-            env=env,
-        )
-        assert default_export.returncode == 0, (
-            f"whole-file fallback export failed: {default_export.stderr.decode()}"
-        )
+        _check_custom_section(example_binary, raw_path, tmpdir)
 
-        fmt_json = os.path.join(tmpdir, "format.json")
-        try:
-            _ = subprocess.run(
-                [
-                    sys.executable,
-                    emtrace_script,
-                    "export",
-                    "--section-name",
-                    CUSTOM_SECTION,
-                    str(example_binary),
-                    "--output",
-                    fmt_json,
-                ],
-                capture_output=True,
-                check=True,
+
+@pytest.mark.parametrize("build_dir", C_BUILD_DIRS)
+def test_custom_section_cpp(build_dir: str):
+    """The C++ counterpart of `test_custom_section`.
+
+    ``test_section_cpp`` overrides ``EMT_DEFAULT_SEC_ATTR`` so that the MGIC record and
+    the records of all ``MTRACE`` calls land in ``.emtsec``. Like its Rust counterpart it
+    is deliberately NOT in the generic executable lists.
+    """
+    example_binary = Path(__file__).parent / build_dir / "examples/test_section_cpp"
+    if os.name == "nt":
+        example_binary = example_binary.with_suffix(".exe")
+    if not example_binary.exists():
+        pytest.skip(f"Executable {example_binary} not found. Make sure it is built.")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        raw_path = os.path.join(tmpdir, "raw.bin")
+        with open(raw_path, "wb") as raw:
+            proc = subprocess.run(
+                [str(example_binary)],
+                stdout=raw,
+                stderr=subprocess.PIPE,
                 timeout=30,
-                env=env,
             )
-        except subprocess.CalledProcessError as e:
-            pytest.fail(f"emtrace export failed: {e.stderr}", pytrace=False)
+        assert proc.returncode == 0, f"example failed: {proc.stderr.decode()}"
 
-        decoded = subprocess.run(
-            [
-                sys.executable,
-                emtrace_script,
-                "run",
-                fmt_json,
-                "--input",
-                "file://" + raw_path,
-            ],
-            capture_output=True,
-            check=True,
-            timeout=30,
-            env=env,
-        )
-        assert decoded.stdout.decode() == (
-            "Custom section works: 7\nCustom section works: done\n"
-        )
-
-        # And the custom section passes conformance checking under its own name.
-        check = subprocess.run(
-            [
-                sys.executable,
-                emtrace_script,
-                "check",
-                "--section-name",
-                CUSTOM_SECTION,
-                str(example_binary),
-            ],
-            capture_output=True,
-            timeout=30,
-            env=env,
-        )
-        assert check.returncode == 0, f"check failed: {check.stderr.decode()}"
+        _check_custom_section(example_binary, raw_path, tmpdir)
