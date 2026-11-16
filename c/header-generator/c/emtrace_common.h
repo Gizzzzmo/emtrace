@@ -72,11 +72,11 @@ extern "C" {
 #define EMT_MAGIC_VERSION_MAJOR 1
 #define EMT_MAGIC_VERSION_MINOR 0
 /// Version of the TRCE record type's layout.
-#define EMT_TRACE_VERSION_MAJOR 2
+#define EMT_TRACE_VERSION_MAJOR 3
 #define EMT_TRACE_VERSION_MINOR 0
 
 /// Version of the format of the data output at runtime when emitting a trace
-#define EMT_RUNTIME_DATA_TRACE_VERSION_MAJOR 2
+#define EMT_RUNTIME_DATA_TRACE_VERSION_MAJOR 3
 #define EMT_RUNTIME_DATA_TRACE_VERSION_MINOR 0
 
 /// Endianness probe value stored in every record (truncated to sizeof(emt_size_t)).

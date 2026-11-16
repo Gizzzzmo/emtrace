@@ -130,13 +130,13 @@ static inline void emt_serialize_varint(
 #define EMT_F_COUNT_EMT_TAG_STR(x) +1
 #define EMT_F_COUNT_EMT_TAG_END
 
-// Layout entry count per tag: top-level type entry (4), plus child entry (5) for lists
+// Layout entry count per tag: top-level type entry (5), plus child entry (6) for lists
 // (see TRACE_FORMAT.md)
-#define EMT_F_LAYOUT_SIZE_EMT_TAG_VAL(type, x) +4
-#define EMT_F_LAYOUT_SIZE_EMT_TAG_STR(x) +4
-#define EMT_F_LAYOUT_SIZE_EMT_TAG_ARR(type, x) +9
-#define EMT_F_LAYOUT_SIZE_EMT_TAG_SLC(type, x, len) +9
-#define EMT_F_LAYOUT_SIZE_EMT_TAG_STS(type, x, len) +9
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_VAL(type, x) +5
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_STR(x) +5
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_ARR(type, x) +11
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_SLC(type, x, len) +11
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_STS(type, x, len) +11
 #define EMT_F_LAYOUT_SIZE_EMT_TAG_END
 // NOLINTEND(bugprone-macro-parentheses)
 
@@ -158,23 +158,24 @@ static inline void emt_serialize_varint(
 #define EMT_F_INFO_MEMBER_DISPATCH(name, arg) EMT_APPLY_1(name, EMT_F_INFO_MEMBER_##arg)
 
 // Format-info layout entries per tag:
-// Top-level type entry: [type_id_offset, size, flag, num_children].
-// Child entry: [name_offset, type_id_offset, size, flag, num_children=0].
+// Top-level type entry: [type_id_offset, size, flag, padding, num_children].
+// Child entry: [name_offset, type_id_offset, size, flag, padding, num_children=0].
 #define EMT_F_LAYOUT_VAL(name, type)                                                               \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0, 0,
 #define EMT_F_LAYOUT_STR(name, _unused)                                                            \
     EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1,                      \
-        EMT_FLAG_NULL_TERMINATED, 0,
+        EMT_FLAG_NULL_TERMINATED, 0, 0,
 #define EMT_F_LAYOUT_STATIC_LIST(name, type, len)                                                  \
     EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1 * (len),              \
-        EMT_FLAG_STATIC, 1, EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), \
-        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
-        EMT_FLAG_STATIC, 0,
-#define EMT_F_LAYOUT_SLC(name, type)                                                               \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1,      \
+        EMT_FLAG_STATIC, 0, 1,                                                                     \
         EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
         EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
-        EMT_FLAG_STATIC, 0,
+        EMT_FLAG_STATIC, 0, 0,
+#define EMT_F_LAYOUT_SLC(name, type)                                                               \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 0, 1,   \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
+        EMT_FLAG_STATIC, 0, 0,
 #define EMT_F_LAYOUT_END(name, _unused)
 
 #define EMT_F_LAYOUT_EMT_TAG_VAL(type, x) EMT_F_LAYOUT_VAL, type
