@@ -14,6 +14,7 @@ class Size:
 
 
 class TypeInfo:
+    padding: int = 0
     size: Size
     children: dict[int | str, tuple[str, TypeInfo]]
     runtime_data_version: tuple[int, int]
@@ -24,6 +25,7 @@ class TypeInfo:
                 "kind": self.size.kind,
                 "size": self.size.size,
             },
+            "padding": self.padding,
             "children": {
                 k: {"id": v[0], "type_info": v[1].to_dict()}
                 for k, v in self.children.items()
@@ -36,6 +38,7 @@ class TypeInfo:
         runtime_data_version_major: int,
         runtime_data_version_minor: int,
     ) -> TypeInfo:
+        padding = data.get("padding", 0)
         size_data = data["size"]
         size = Size(
             size_data["kind"],
@@ -54,21 +57,22 @@ class TypeInfo:
             for k, v in children_data.items()
         }
         return TypeInfo(
-            size, runtime_data_version_major, runtime_data_version_minor, children
+            size,
+            (runtime_data_version_major, runtime_data_version_minor),
+            padding,
+            children,
         )
 
     def __init__(
         self,
         size: Size,
-        runtime_data_version_major: int,
-        runtime_data_version_minor: int,
+        runtime_data_version: tuple[int, int],
+        padding: int = 0,
         children: dict[int | str, tuple[str, TypeInfo]] | None = None,
     ) -> None:
         self.size = size
-        self.runtime_data_version = (
-            runtime_data_version_major,
-            runtime_data_version_minor,
-        )
+        self.padding = padding
+        self.runtime_data_version = runtime_data_version
         if children is None:
             self.children = {}
         else:
@@ -81,16 +85,12 @@ class FmtInfo:
     def __init__(
         self,
         fmt_string: str,
-        runtime_data_version_major: int,
-        runtime_data_version_minor: int,
+        runtime_data_version: tuple[int, int],
         formatter: int = 0,
     ) -> None:
         """Initialize the FmtInfo."""
         self.fmt_string: str = fmt_string
-        self.runtime_data_version: tuple[int, int] = (
-            runtime_data_version_major,
-            runtime_data_version_minor,
-        )
+        self.runtime_data_version: tuple[int, int] = runtime_data_version
         self.formatter: int = formatter
         self.type_infos: list[tuple[str, TypeInfo]] = []
         self.file: str = ""
@@ -126,8 +126,7 @@ class FmtInfo:
         runtime_data_version_minor = trace_data_version.get("minor", 0)
         fmt_info = FmtInfo(
             data["fmt_string"],
-            runtime_data_version_major,
-            runtime_data_version_minor,
+            (runtime_data_version_major, runtime_data_version_minor),
             data.get("formatter", 0),
         )
         fmt_info.type_infos = [

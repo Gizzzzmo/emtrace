@@ -42,7 +42,7 @@ def get_record_type(b: bytes) -> RECORD_TYPE | None:
 # are versioned independently (see TRACE_FORMAT.md).
 KNOWN_VERSIONS: dict[RECORD_TYPE, list[tuple[int, int]]] = {
     b"MGIC": [(1, 0)],
-    b"TRCE": [(1, 0), (2, 0)],
+    b"TRCE": [(1, 0), (2, 0), (3, 0)],
 }
 
 
@@ -389,7 +389,7 @@ class RecordParser:
         is used.
         """
 
-        assert (version_major, version_minor) in [(1, 0), (2, 0)]
+        assert (version_major, version_minor) in [(1, 0), (2, 0), (3, 0)]
 
         sz = self.size_t_size if size_t_size is None else size_t_size
         bo = self.byteorder if byteorder is None else byteorder
@@ -435,6 +435,10 @@ class RecordParser:
             runtime_data_version_major = 1
             runtime_data_version_minor = 0
 
+        self.debug_trace(
+            f"  {runtime_data_version_major=} {runtime_data_version_minor=}"
+        )
+
         num_args = consume_size_t()
         self.debug_trace(f"  {num_args=}")
 
@@ -453,10 +457,13 @@ class RecordParser:
             self.debug_trace(f"    {type_id=}")
             raw_size = consume_size_t()
             raw_flag = consume_size_t()
+            padding = 0 if version_major < 3 else consume_size_t()
             type_size = self._size_from_flag(raw_size, raw_flag)
             self.debug_trace(f"    {type_size=}")
             type_info = TypeInfo(
-                type_size, runtime_data_version_major, runtime_data_version_minor
+                type_size,
+                (runtime_data_version_major, runtime_data_version_minor),
+                padding,
             )
             num_children = consume_size_t()
             self.debug_trace(f"    {num_children=}")
@@ -475,19 +482,25 @@ class RecordParser:
                 assert len(stack[0]) == len(stack[1])
                 assert stack[1][-1] > 0
                 self.debug_trace(f"      {stack[1]=}")
+
                 child_offset_name = consume_size_t()
                 child_offset_type_id = consume_size_t()
                 child_raw_size = consume_size_t()
                 child_raw_flag = consume_size_t()
+                child_padding = 0 if version_major < 3 else consume_size_t()
                 child_num_children = consume_size_t()
                 child_name = get_string_at(offset + child_offset_name)
                 child_type_id = get_string_at(offset + child_offset_type_id)
                 child_size = self._size_from_flag(child_raw_size, child_raw_flag)
+
                 self.debug_trace(
                     f"      {child_name=} {child_type_id=} {child_size=} {child_num_children=}"
                 )
+
                 child_type_info = TypeInfo(
-                    child_size, runtime_data_version_major, runtime_data_version_minor
+                    child_size,
+                    (runtime_data_version_major, runtime_data_version_minor),
+                    child_padding,
                 )
 
                 stack[0][-1].children[child_name] = (child_type_id, child_type_info)
@@ -515,8 +528,7 @@ class RecordParser:
 
         info: FmtInfo = FmtInfo(
             fmt_string,
-            runtime_data_version_major,
-            runtime_data_version_minor,
+            (runtime_data_version_major, runtime_data_version_minor),
             formatter_id,
         )
         info.add_source_info(file, line)

@@ -83,7 +83,9 @@ carry their own versions.
   version higher than the one they know may attempt to decode the record with
   the rules of the known minor version.
 
-Currently both existing record types are at version 1.0.
+The descriptions in this document are for versions 1.0 for `MGIC` and 3.0 for
+`TRCE`. For older versions of particular record types, see older versions of
+this document.
 
 ## Record Types
 
@@ -203,11 +205,12 @@ start of the payload*!!):
     description follows
   - the fourth is a pointer to the format string
 - more `size_t` values follow that describe all types and their children; any
-  single type consists of four or five `size_t` values:
+  single type consists of five or six `size_t` values:
   - *only for types that have a parent*: a pointer to the name of the child
   - a pointer to its type id
   - its size
   - its size flag (determines how size to interpret runtime-sizes)
+  - its padding
   - the number of child-types
   - the full type-information is serialized, by walking the trees of top-level
     types in pre-order, one after the other
@@ -237,6 +240,8 @@ At runtime, each time a trace is emitted it writes:
    bound lose bits when shifted and can no longer be distinguished from other
    records.
 2. For each argument, the raw bytes of the argument value:
+   - exactly `offset` bytes which are discarded for decoding purposes, followed
+     by:
    - For `EMT_FLAG_STATIC` arguments without children: exactly `size` bytes.
    - For `EMT_FLAG_STATIC` with children: the concatenation of the streams of
      `size` elements, where each element is encoded as described by the type's
