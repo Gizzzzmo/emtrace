@@ -92,11 +92,11 @@ extern "C" {
 #define EMT_MAGIC_VERSION_MAJOR 1
 #define EMT_MAGIC_VERSION_MINOR 0
 /// Version of the TRCE record type's layout.
-#define EMT_TRACE_VERSION_MAJOR 2
+#define EMT_TRACE_VERSION_MAJOR 3
 #define EMT_TRACE_VERSION_MINOR 0
 
 /// Version of the format of the data output at runtime when emitting a trace
-#define EMT_RUNTIME_DATA_TRACE_VERSION_MAJOR 2
+#define EMT_RUNTIME_DATA_TRACE_VERSION_MAJOR 3
 #define EMT_RUNTIME_DATA_TRACE_VERSION_MINOR 0
 
 /// Endianness probe value stored in every record (truncated to sizeof(emt_size_t)).
@@ -801,15 +801,15 @@ static inline void emtrace_init(void) {
 #ifdef _MSC_VER
 #define EMT_MACRO_ARGS_CAP 127
 #endif
-#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_VAL() 4
+#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_VAL() 5
 
-#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_STR() 4
+#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_STR() 5
 
-#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_ARR() 9
+#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_ARR() 11
 
-#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_SLC() 9
+#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_SLC() 11
 
-#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_STS() 9
+#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_STS() 11
 
 #define EMT_F_LAYOUT_SIZE_DISPATCH_HELPER(_tag) EMT_F_LAYOUT_SIZE_DISPATCH_##_tag()
 
@@ -1793,35 +1793,37 @@ static inline void emtrace_init(void) {
 #define EMT_F_INFO_MEMBER(x, ...) EMT_F_INFO_MEMBER_HELPER(x, __VA_ARGS__)
 #define EMT_F_INFO_MEMBER_HELPER(x, ...) EMT_F_INFO_MEMBER_##x(__VA_ARGS__)
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_VAL(name, len, type)                                         \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_STR(name, len, type)                                         \
     EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1,                      \
-        EMT_FLAG_NULL_TERMINATED, 0,
+        EMT_FLAG_NULL_TERMINATED, 0, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_ARR(name, len, type)                                         \
     EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1 * (len),              \
-        EMT_FLAG_STATIC, 1, EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), \
+        EMT_FLAG_STATIC, 0, 1,                                                                     \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
         EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
-        EMT_FLAG_STATIC, 0,
+        EMT_FLAG_STATIC, 0, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_STS(name, len, type)                                         \
     EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1 * (len),              \
-        EMT_FLAG_STATIC, 1, EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), \
+        EMT_FLAG_STATIC, 0, 1,                                                                     \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
         EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
-        EMT_FLAG_STATIC, 0,
+        EMT_FLAG_STATIC, 0, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_SLC(name, len, type)                                         \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1,      \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 0, 1,   \
         EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
         EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
-        EMT_FLAG_STATIC, 0,
+        EMT_FLAG_STATIC, 0, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_EMT_TAG_ESLC(name, len, type)                                        \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1,      \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 0, 1,   \
         EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
         EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
-        EMT_FLAG_STATIC, 0,
+        EMT_FLAG_STATIC, 0, 0,
 
 #define EMT_F_LAYOUT_DISPATCH_HELPER(name, len, type, _tag)                                        \
     EMT_F_LAYOUT_DISPATCH_##_tag(name, len, type)

@@ -103,13 +103,13 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
             "EMT_F_LAYOUT_SIZE_DISPATCH",
             [],
             {
-                "EMT_TAG_VAL": "4",
-                "EMT_TAG_STR": "4",
-                # top-level type entry (4) + one child entry (5): name offset, type-id
-                # offset, size, flag, num_children (see TRACE_FORMAT.md)
-                "EMT_TAG_ARR": "9",
-                "EMT_TAG_SLC": "9",
-                "EMT_TAG_STS": "9",
+                "EMT_TAG_VAL": "5",
+                "EMT_TAG_STR": "5",
+                # top-level type entry (5) + one child entry (6): name offset, type-id
+                # offset, size, flag, padding, num_children (see TRACE_FORMAT.md)
+                "EMT_TAG_ARR": "11",
+                "EMT_TAG_SLC": "11",
+                "EMT_TAG_STS": "11",
             },
         )
     )
@@ -155,26 +155,26 @@ def generate_macros(fp: TextIOWrapper, max_args: int):
             "EMT_F_LAYOUT_DISPATCH",
             ["name", "len", "type"],
             {
-                "EMT_TAG_VAL": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_STR": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1, EMT_FLAG_NULL_TERMINATED, 0,",
-                # Top-level type entry: [type_id_offset, size, flag, num_children].
-                # Child entry: [name_offset, type_id_offset, size, flag, num_children=0].
-                "EMT_TAG_ARR": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1*(len), EMT_FLAG_STATIC, 1, "
+                "EMT_TAG_VAL": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0, 0,",
+                "EMT_TAG_STR": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1, EMT_FLAG_NULL_TERMINATED, 0, 0,",
+                # Top-level type entry: [type_id_offset, size, flag, padding, num_children].
+                # Child entry: [name_offset, type_id_offset, size, flag, padding, num_children=0].
+                "EMT_TAG_ARR": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1*(len), EMT_FLAG_STATIC, 0, 1, "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
-                + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_STS": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1*(len), EMT_FLAG_STATIC, 1, "
+                + "sizeof(type), EMT_FLAG_STATIC, 0, 0,",
+                "EMT_TAG_STS": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1*(len), EMT_FLAG_STATIC, 0, 1, "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
-                + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_SLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1, "
+                + "sizeof(type), EMT_FLAG_STATIC, 0, 0,",
+                "EMT_TAG_SLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 0, 1, "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
-                + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_ESLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1, "
+                + "sizeof(type), EMT_FLAG_STATIC, 0, 0,",
+                "EMT_TAG_ESLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 0, 1, "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
                 + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
-                + "sizeof(type), EMT_FLAG_STATIC, 0,",
+                + "sizeof(type), EMT_FLAG_STATIC, 0, 0,",
             },
         )
     )

@@ -1171,14 +1171,14 @@ constexpr auto get_type_string_length() -> emt_size_t {
 template <typename... Args>
     requires((IsOpt<Args> || Traceable<Args>) && ...)
 constexpr auto get_type_layout_len() -> emt_size_t {
-    return 7 + (get_num_non_opt_args<Args...>() * 4) + (get_num_descendants<Args...>() * 5);
+    return 7 + (get_num_non_opt_args<Args...>() * 5) + (get_num_descendants<Args...>() * 6);
 }
 
-static_assert(get_type_layout_len<int>() == 11);
-static_assert(get_type_layout_len<int, int>() == 15);
-static_assert(get_type_layout_len<std::vector<int>>() == 16);
-static_assert(get_type_layout_len<int, OptThrow<true>>() == 11);
-static_assert(get_type_layout_len<int, OptThrow<true>, std::vector<int>>() == 20);
+static_assert(get_type_layout_len<int>() == 12);
+static_assert(get_type_layout_len<int, int>() == 17);
+static_assert(get_type_layout_len<std::vector<int>>() == 18);
+static_assert(get_type_layout_len<int, OptThrow<true>>() == 12);
+static_assert(get_type_layout_len<int, OptThrow<true>, std::vector<int>>() == 23);
 
 template <typename... Args>
     requires((IsOpt<Args> || Traceable<Args>) && ...)
@@ -1219,14 +1219,15 @@ constexpr auto get_layout(
             arr[i + 1] = 0;
             arr[i + 2] = 0;
         }
+        arr[i + 3] = 0;
         if constexpr (IsChild<T>) {
-            arr[i + 3] = get_num_children<typename T::Type>();
+            arr[i + 4] = get_num_children<typename T::Type>();
         } else {
-            arr[i + 3] = get_num_children<T>();
+            arr[i + 4] = get_num_children<T>();
         }
 
         index += sizeof(Trce::type_id.value);
-        i += 4;
+        i += 5;
     });
 
     arr[i] = formatter_id;
