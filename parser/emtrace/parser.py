@@ -41,6 +41,12 @@ class Parser:
         self.ptr_byteorder = ptr_byteorder
 
     def parse(self, id: str, info: TypeInfo):
+        if info.runtime_data_version[0] >= 3:
+            _ = self.istream(info.padding)
+        else:
+            assert info.padding == 0, (
+                f"Unexpected padding {info.padding} for version {info.runtime_data_version}"
+            )
         return self.translation[id](self, info)
 
     def read(self, amount: int):
@@ -76,7 +82,7 @@ class Parser:
         match runtime_data_version:
             case (1, 0):
                 return self.read_length_prefix_v1(size)
-            case (2, 0):
+            case (2, 0) | (3, 0):
                 return self.read_length_prefix_v2()
             case _:
                 raise AssertionError(
@@ -247,6 +253,7 @@ def to_list(parser: Parser, info: TypeInfo) -> MyList[Any]:
     parser.debug_trace(f"{size=}")
 
     parsed = []
+    parser.debug_trace(info.children)
     for _ in range(size):
         child_id, child_info = info.children[""]
         parsed.append(parser.parse(child_id, child_info))
