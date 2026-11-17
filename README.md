@@ -108,6 +108,14 @@ auto main() -> int {
 }
 ```
 
+Your own types become traceable by specializing `emt::Trace` for them. Structs
+use the type id `"struct"`, with one `emt::Child<Type, "name", padding>` per
+field, and can be accessed in format strings with `{0.field}`. A *simple* trace
+emits the memory of a trivially copyable struct as a whole, including its
+padding bytes, which are described by the `padding` of the fields. Otherwise,
+the fields can be emitted one by one with `emt::emit_fields`, which leaves out
+the padding. [test_structs.cpp](./c/examples/cpp/test_structs.cpp) shows both.
+
 ### Postprocessing Executables
 
 The `strip` and `nonload` commands can manipulate linked binaries (`strip` works
@@ -158,6 +166,18 @@ emtrace run trace_data.json -i raw_trace
 emtrace run tracing_server -i 127.0.0.1:8000
 ```
 
+JSON exports are tied to the version of emtrace that created them; `run` refuses
+exports of other versions, so re-export after updating emtrace.
+
+### Checking and Inspecting Executables
+
+`emtrace check` validates the `.emtrace` section of an executable (or raw
+section bytes) against the [trace format](TRACE_FORMAT.md). Every problem is
+reported with what was being parsed and a hexdump of the offending bytes.
+`emtrace inspect` summarizes the emtrace data of executables, object files, and
+static archives. Both accept `--debug-script`, which prints an annotated listing
+of every field of every record.
+
 ### As a Python library
 
 The `emtrace` package is also usable as a pure-Python library — the CLI in
@@ -165,11 +185,47 @@ The `emtrace` package is also usable as a pure-Python library — the CLI in
 
 ```python
 from pathlib import Path
-from emtrace.engine import emtrace
+from emtrace import emtrace
 
 path_to_exe = Path("/path/to/a.out")
 emtrace(path_to_exe)
 ```
+
+The package is organized in three subpackages: `emtrace.section` (parsing,
+checking, and exporting the records of `.emtrace` sections), `emtrace.stream`
+(decoding the runtime trace stream), and `emtrace.exe` (reading and editing
+executables).
+
+### Decoding custom types
+
+Decoding a trace happens in two stages: first the bytes of each argument are
+split up into a tree of byte strings, purely based on the sizes, size flags,
+padding, and children described in the trace's record (see
+[TRACE_FORMAT.md](TRACE_FORMAT.md)). Then each node of that tree is turned into
+a Python value by the decoder registered for its *type id*. Decoders for custom
+type ids can be added to a `TypeRegistry`:
+
+```python
+from emtrace import ByteNode, DecodeContext, default_registry, emtrace
+
+registry = default_registry()
+
+
+@registry.register("point")
+def decode_point(node: ByteNode, ctx: DecodeContext) -> str:
+    # composites carry one list of child nodes per element
+    x, y = (ctx.decode(child) for child in node.elements[0])
+    return f"({x}, {y})"
+
+
+emtrace(path_to_exe, registry=registry)
+```
+
+Leaves carry their bytes in `node.data`; decoders signal values they cannot
+decode with `ctx.fail("reason")`. Values without a registered decoder, or whose
+decoder failed, are shown as placeholders like `<point: unknown type id: 01 02>`
+and a warning is printed to stderr. `emtrace run --drop-undecodable` omits such
+traces from the output instead.
 
 ## Format string syntax
 
@@ -177,6 +233,44 @@ By default the format string syntax uses (and also extends in some ways)
 python's
 [`str.format`](https://docs.python.org/3/library/stdtypes.html#str.format)
 function which is similar to rust's `print` and `println` functions.
+
+Besides numbers, characters, strings, and booleans, the builtin decoders produce
+three kinds of composite values, depending on the type id:
+
+- `list`: a sequence with one value per element (or a tuple per element, for
+  elements with several children), rendered like a Python list: `[1, 2]`.
+- `struct`: the fields of a struct, i.e. the named children of the value's
+  single element, rendered like a Python dict: `{'x': 1, 'y': -2}`. Fields of
+  anonymous struct members are merged into the struct, children without a name
+  and content (padding fillers) are skipped, and other unnamed children are
+  keyed by their position.
+- `dict`: a mapping whose elements each consist of a key and a value child (e.g.
+  a hash map), rendered like a Python dict as well.
+
+Fields of structs and dicts are accessible with `{0.x}` or `{0[x]}`, elements of
+lists with `{0[2]}`, and these can be chained (`{0.points[0].x:08x}`).
+Additionally, the composite values support these format specs:
+
+| Format spec                 | Applies to      | Example output            |
+| --------------------------- | --------------- | ------------------------- |
+| `{0:SEP*SPEC}`              | lists           | `{0:, *x}` → `1, a, ff`   |
+| `{0:ENTRY_SEP*KV_SEP*SPEC}` | structs & dicts | `{0:, *=*}` → `x=1, y=-2` |
+| `{0:#}`                     | all composites  | multi-line, see below     |
+
+`SPEC` is applied to every element or value, so these specs can be nested, e.g.
+`{0:; *, *=*d}` renders a list of structs as `x=1, y=2; x=3, y=4`. `#`
+pretty-prints recursively, with every element on its own line, indented by 4
+spaces, or by `N` spaces with `#N`:
+
+```txt
+{
+    'x': 1,
+    'ys': [
+        2,
+        3
+    ]
+}
+```
 
 ## How it works
 
@@ -188,7 +282,7 @@ information in this dedicated section. The section can be completely removed (or
 made no-load) from the final binary (e.g. with objcopy), and the program will
 still run.
 
-The [parser](./emtrace) takes the data output by the program while running and
+The [parser](./parser) takes the data output by the program while running and
 the data from the special `.emtrace` section, and produces the log.
 
 ## Development

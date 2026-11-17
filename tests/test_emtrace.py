@@ -44,6 +44,8 @@ C_TEST_EXECUTABLES = [
     "examples/test_int128_cobs_cpp",
     "examples/test_alignment_cpp",
     "examples/test_alignment_cobs_cpp",
+    "examples/test_structs_cpp",
+    "examples/test_structs_cobs_cpp",
     "examples/test_custom_sink_cpp",
     "examples/test_global_sink_cpp",
     "examples/test_global_sink_factory_cpp",

@@ -21,6 +21,7 @@ if(EMTRACE_ENABLE_CXX)
         src/cpp/test_main.cpp
         src/cpp/test_trace_raw.cpp
         src/cpp/test_trace_containers.cpp
+        src/cpp/test_trace_structs.cpp
         src/cpp/test_cobs.cpp
         src/cpp/test_encoding.cpp
         src/cpp/test_options_errors.cpp
