@@ -13,11 +13,11 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from emtrace import edit
-from emtrace.exemod import ExeError, ExeImage, SectionNotFoundError
-from emtrace.record_parser import RecordParser
+from emtrace.exe import edit, elf_backend
+from emtrace.exe.exemod import ExeError, ExeImage, SectionNotFoundError
+from emtrace.section.records import find_mgic
 
-from .test_record_parser import build_mgic_record, build_trce_record
+from .builders import build_mgic_record, build_trce_record
 
 lief = pytest.importorskip("lief")
 
@@ -546,7 +546,7 @@ def test_experimental_be_allows_genuine_be_elf(tmp_path: Path) -> None:
 
 def test_open_requires_lief(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     blob = _write(tmp_path, "a.so", build_test_exe())
-    monkeypatch.setattr("emtrace.exemod.HAS_LIEF", False)
+    monkeypatch.setattr("emtrace.exe.exemod.HAS_LIEF", False)
     with pytest.raises(ExeError, match="lief"):
         _ = ExeImage.open(blob)
 
@@ -580,7 +580,7 @@ def test_nonload_clears_alloc_and_addr(
     assert int(sec.virtual_address) == 0
 
     content = bytes(sec.content)
-    assert RecordParser(memoryview(content)).find_and_parse_mgic() is not None
+    assert find_mgic(content) is not None
 
     assert not image.make_nonload(".emtrace").changed
 
@@ -669,8 +669,6 @@ def test_strip_refuses_reloc_to_deleted_symbol(
 
 
 def test_strip_refuses_dynsym_reference() -> None:
-    from emtrace import elf_backend
-
     target = _mock_section("target", index=3)
     binary = _mock_binary(
         symbols=[_mock_sym("local", 3)],
@@ -681,8 +679,6 @@ def test_strip_refuses_dynsym_reference() -> None:
 
 
 def test_strip_refuses_reloc_in_range() -> None:
-    from emtrace import elf_backend
-
     target = _mock_section("target", index=3, va=0x1000, size=64)
     binary = _mock_binary(relocs=[SimpleNamespace(address=0x1020)])
     with pytest.raises(ExeError, match="relocation"):
@@ -690,8 +686,6 @@ def test_strip_refuses_reloc_in_range() -> None:
 
 
 def test_strip_refuses_reloc_to_deleted_symbol_mock() -> None:
-    from emtrace import elf_backend
-
     target = _mock_section("target", index=3)
     bound = _mock_sym("doomed", 3)
     reloc = SimpleNamespace(address=0x9999, symbol=_mock_sym("doomed", 3))
@@ -701,8 +695,6 @@ def test_strip_refuses_reloc_to_deleted_symbol_mock() -> None:
 
 
 def test_check_strippable_returns_bound_symbols() -> None:
-    from emtrace import elf_backend
-
     target = _mock_section("target", index=3)
     bound = _mock_sym("local", 3)
     other = _mock_sym("elsewhere", 5)

@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from .. import edit
+from ..exe import edit
 from .output import print_issues
 
 

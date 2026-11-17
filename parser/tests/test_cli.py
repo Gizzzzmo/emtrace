@@ -12,19 +12,22 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from emtrace import __version__
+from emtrace import __version__, provenance
 from emtrace.cli import edit_cmds, read_cmds, run_cmd, version_cmd
 from emtrace.cli.main import build_parser
 
 from .test_inspector import aligned_section, build_archive, build_minimal_elf_o
 
 
-def _check_args(input: str, file_format: str = "binary") -> SimpleNamespace:
+def _check_args(
+    input: str, file_format: str = "binary", debug_script: bool = False
+) -> SimpleNamespace:
     return SimpleNamespace(
         input=input,
         format=file_format,
         section_name=".emtrace",
         error_on_minor=False,
+        debug_script=debug_script,
     )
 
 
@@ -44,6 +47,23 @@ def test_check_raw_bytes_fails(
     _ = section.write_bytes(b"garbage" * 64)
     assert read_cmds.cmd_check(_check_args(str(section))) == 1
     assert "error" in capsys.readouterr().err
+
+
+def test_check_debug_script_prints_trace_and_error_hexdump(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from .builders import build_mgic_record, build_trce_record
+
+    section = bytearray(
+        build_mgic_record() + build_trce_record(args=[("int", 4, 17, [])])
+    )
+    path = tmp_path / "bad-section.bin"
+    _ = path.write_bytes(section)
+    assert read_cmds.cmd_check(_check_args(str(path), debug_script=True)) == 1
+    stderr = capsys.readouterr().err
+    assert "[trace] TRCE record" in stderr
+    assert "[trace]   " in stderr
+    assert "^^" in stderr
 
 
 def test_export_stdout(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -82,7 +102,7 @@ def test_check_exe_format_requires_lief(
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("emtrace.engine.HAS_LIEF", False)
+    monkeypatch.setattr("emtrace.section.loading.HAS_LIEF", False)
     section = tmp_path / "section.bin"
     _ = section.write_bytes(aligned_section())
     assert read_cmds.cmd_check(_check_args(str(section), "exe")) == 1
@@ -94,7 +114,7 @@ def test_inspect_binary_requires_lief(
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("emtrace.inspector.HAS_LIEF", False)
+    monkeypatch.setattr("emtrace.section.inspector.HAS_LIEF", False)
     obj = tmp_path / "test.o"
     _ = obj.write_bytes(build_minimal_elf_o(aligned_section(), sh_addralign=8))
     args = SimpleNamespace(input=str(obj), section_name=".emtrace", debug_script=False)
@@ -107,7 +127,7 @@ def test_strip_requires_lief(
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("emtrace.exemod.HAS_LIEF", False)
+    monkeypatch.setattr("emtrace.exe.exemod.HAS_LIEF", False)
     blob = tmp_path / "blob.bin"
     _ = blob.write_bytes(b"not an executable" * 32)
     args = SimpleNamespace(
@@ -176,8 +196,8 @@ def test_strip_output_flag_leaves_input_untouched(tmp_path: Path) -> None:
 def test_version_prefers_checkout_commit(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(version_cmd, "_git_commit", lambda: ("a" * 40, True))
-    monkeypatch.setattr(version_cmd, "_baked_commit", lambda: ("b" * 40, False))
+    monkeypatch.setattr(provenance, "git_commit", lambda: ("a" * 40, True))
+    monkeypatch.setattr(provenance, "baked_commit", lambda: ("b" * 40, False))
     assert version_cmd.cmd_version(SimpleNamespace()) == 0
     out = capsys.readouterr().out
     assert f"emtrace {__version__}" in out
@@ -188,8 +208,8 @@ def test_version_prefers_checkout_commit(
 def test_version_falls_back_to_baked_commit(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(version_cmd, "_git_commit", lambda: None)
-    monkeypatch.setattr(version_cmd, "_baked_commit", lambda: ("b" * 40, False))
+    monkeypatch.setattr(provenance, "git_commit", lambda: None)
+    monkeypatch.setattr(provenance, "baked_commit", lambda: ("b" * 40, False))
     assert version_cmd.cmd_version(SimpleNamespace()) == 0
     out = capsys.readouterr().out
     assert "b" * 40 in out
@@ -199,8 +219,8 @@ def test_version_falls_back_to_baked_commit(
 def test_version_unknown_without_commit_info(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(version_cmd, "_git_commit", lambda: None)
-    monkeypatch.setattr(version_cmd, "_baked_commit", lambda: None)
+    monkeypatch.setattr(provenance, "git_commit", lambda: None)
+    monkeypatch.setattr(provenance, "baked_commit", lambda: None)
     assert version_cmd.cmd_version(SimpleNamespace()) == 0
     out = capsys.readouterr().out
     assert f"emtrace {__version__}" in out

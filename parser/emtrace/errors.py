@@ -25,20 +25,45 @@ Severity = Literal["error", "warning"]
 
 @dataclass(frozen=True)
 class Issue:
-    """A single diagnostic message produced by a library call."""
+    """A single diagnostic message produced by a library call.
+
+    Issues about specific bytes (e.g. a malformed record) carry the byte
+    ``offset`` and ``length`` they refer to — relative to the data that was
+    being parsed (a section, or the bytes of a single runtime event) — and a
+    ``path`` of breadcrumbs describing what was being parsed at the time.
+    """
 
     severity: Severity
     message: str
+    offset: int | None = None
+    length: int = 0
+    path: tuple[str, ...] = ()
 
     @staticmethod
-    def error(message: str) -> Issue:
+    def error(
+        message: str,
+        offset: int | None = None,
+        length: int = 0,
+        path: tuple[str, ...] = (),
+    ) -> Issue:
         """Create an error-severity issue."""
-        return Issue(severity="error", message=message)
+        return Issue("error", message, offset, length, path)
 
     @staticmethod
-    def warning(message: str) -> Issue:
+    def warning(
+        message: str,
+        offset: int | None = None,
+        length: int = 0,
+        path: tuple[str, ...] = (),
+    ) -> Issue:
         """Create a warning-severity issue."""
-        return Issue(severity="warning", message=message)
+        return Issue("warning", message, offset, length, path)
+
+    def describe(self) -> str:
+        """The message prefixed with the breadcrumb path (if any)."""
+        if not self.path:
+            return self.message
+        return f"{' › '.join(self.path)}: {self.message}"
 
 
 @dataclass
@@ -64,6 +89,13 @@ class Report:
     def warn(self, message: str) -> None:
         """Append a warning issue."""
         self.warnings.append(Issue.warning(message))
+
+    def add(self, issue: Issue) -> None:
+        """Append *issue* to ``errors`` or ``warnings`` depending on its severity."""
+        if issue.severity == "error":
+            self.errors.append(issue)
+        else:
+            self.warnings.append(issue)
 
 
 class ExeError(Exception):

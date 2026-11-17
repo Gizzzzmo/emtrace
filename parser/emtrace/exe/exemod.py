@@ -21,13 +21,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ._lief import HAS_LIEF
-from .errors import (
+from ..errors import (
     ExeError,
     NotSupportedError,
     Report,
     SectionNotFoundError,
 )
+from ._lief import HAS_LIEF
 
 # Re-exported for backward compatibility (import from .errors for new code).
 __all__ = [

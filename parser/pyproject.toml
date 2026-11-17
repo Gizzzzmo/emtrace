@@ -12,6 +12,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
+    "hypothesis>=6.100",
     "pytest>=8.2.2",
     "pytest-xdist>=3.6.1",
 ]
@@ -23,16 +24,16 @@ emtrace = "emtrace.cli.main:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-# Single source of truth for the version is emtrace/__init__.py's __version__.
+# Single source of truth for the version is emtrace/_version.py's __version__.
 [tool.hatch.version]
-path = "emtrace/__init__.py"
+path = "emtrace/_version.py"
 
 # Bake the build's git commit into emtrace/_build_info.py (see hatch_build.py).
 [tool.hatch.build.hooks.custom]
 path = "hatch_build.py"
 
 [tool.hatch.build.targets.sdist]
-include = ["emtrace/*.py", "hatch_build.py"]
+include = ["emtrace/**/*.py", "hatch_build.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

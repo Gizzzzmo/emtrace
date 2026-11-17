@@ -16,7 +16,7 @@ from typing import Any
 
 import lief
 
-from .errors import ExeError
+from ..errors import ExeError
 
 FORMAT = "pe"
 

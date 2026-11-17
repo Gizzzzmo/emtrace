@@ -157,7 +157,12 @@ def build_parser() -> ArgumentParser:
     _ = run_parser.add_argument(
         "--debug-script",
         action="store_true",
-        help="Make the script output trace information for debugging.",
+        help="Make the script output trace information for debugging, including the byte tree of every decoded trace.",
+    )
+    _ = run_parser.add_argument(
+        "--drop-undecodable",
+        action="store_true",
+        help="Don't output traces containing values that could not be decoded (e.g. because of an unknown type id). By default such values are shown as placeholders. Either way a warning is printed to stderr.",
     )
     _ = run_parser.add_argument(
         "--test",
@@ -193,6 +198,11 @@ def build_parser() -> ArgumentParser:
         action="store_true",
         help="Treat records with a higher minor version than known as errors instead of ignoring them.",
     )
+    _ = check_parser.add_argument(
+        "--debug-script",
+        action="store_true",
+        help="Print an annotated listing of every record to stderr (for development use only).",
+    )
     check_parser.set_defaults(func=read_cmds.cmd_check)
 
     # ── export ─────────────────────────────────────────────────────────────
@@ -215,7 +225,7 @@ def build_parser() -> ArgumentParser:
     _ = export_parser.add_argument(
         "--debug-script",
         action="store_true",
-        help="Debug the script by printing internal trace information to stderr (for development use only).",
+        help="Print an annotated listing of every record to stderr (for development use only).",
     )
     export_parser.set_defaults(func=read_cmds.cmd_export)
 
@@ -243,7 +253,11 @@ def build_parser() -> ArgumentParser:
         metavar="NAME",
         help="ELF/PE/MachO section name to inspect (default: .emtrace).",
     )
-    _ = inspect_parser.add_argument("--debug-script", action="store_true")
+    _ = inspect_parser.add_argument(
+        "--debug-script",
+        action="store_true",
+        help="Print an annotated listing of every record to stderr (for development use only).",
+    )
     inspect_parser.set_defaults(func=read_cmds.cmd_inspect)
 
     # ── strip ──────────────────────────────────────────────────────────────

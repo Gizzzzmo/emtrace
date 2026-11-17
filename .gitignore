@@ -1,9 +1,10 @@
 .direnv
 .cache
 __pycache__
-target
 .envrc
 .env
+.nix-bin
+.gdb_history
 
 # pixi environments
 .pixi/*

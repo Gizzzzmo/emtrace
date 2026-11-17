@@ -1,43 +1,37 @@
-"""Unit tests for emtrace.inspector (check, export helpers, inspect)."""
+"""Unit tests for section checking, exporting, and inspection."""
 
 from __future__ import annotations
 
 import struct
 from pathlib import Path
 
+import emtrace
 import pytest
 from emtrace.cli import read_cmds
-from emtrace.inspector import (
-    _check,
+from emtrace.section.export import export_section, load_export
+from emtrace.section.inspector import (
     _detect_input_type,
     _parse_archive,
     _parse_member_elf,
-    _summarize_records,
+    check_section,
+    summarize_records,
 )
-from emtrace.record_parser import RecordParser, RecordVersionError
 
-from .test_record_parser import build_mgic_record, build_trce_record
+from .builders import build_mgic_record, build_trce_record, leaf
 
 # ─────────────────────────────────────────────────────────────────────────────
 # _check
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def run_check(data: bytes) -> tuple[list[str], list[str]]:
-    warnings: list[str] = []
-    errors: list[str] = []
-    mgic = None
-    try:
-        mgic = RecordParser(memoryview(data)).find_and_parse_mgic()
-    except RecordVersionError as e:
-        errors.append(str(e))
-    _check(
-        data,
-        mgic,
-        warnings=warnings,
-        errors=errors,
+def run_check(
+    data: bytes, *, error_on_minor: bool = False
+) -> tuple[list[str], list[str]]:
+    report = check_section(data, error_on_minor=error_on_minor)
+    return (
+        [issue.describe() for issue in report.warnings],
+        [issue.describe() for issue in report.errors],
     )
-    return warnings, errors
 
 
 def aligned_section(alignment_power: int = 0) -> bytes:
@@ -65,7 +59,7 @@ def test_check_valid_section_with_alignment():
 
 def test_check_no_mgic():
     _, errors = run_check(build_trce_record())
-    assert any("No MGIC record found" in e for e in errors)
+    assert any("No MGIC record found." in e for e in errors)
 
 
 def test_check_duplicate_mgic():
@@ -77,17 +71,13 @@ def test_check_duplicate_mgic():
 def test_check_trce_major_version_mismatch():
     data = build_mgic_record() + build_trce_record(trace_version=(255, 0))
     _, errors = run_check(data)
-    assert any(
-        "unsupported record version" in e and "version 255.0" in e for e in errors
-    )
+    assert any("unsupported record version 255.0" in e for e in errors)
 
 
 def test_check_mgic_major_version_mismatch():
     data = build_mgic_record(magic_version=(255, 0))
     _, errors = run_check(data)
-    assert any(
-        "unsupported record version" in e and "version 255.0" in e for e in errors
-    )
+    assert any("unsupported record version 255.0" in e for e in errors)
 
 
 def test_check_minor_version_ignored_by_default():
@@ -101,7 +91,7 @@ def test_check_unknown_record_type_errors():
     unknown[10:14] = b"BLUB"
     data = build_mgic_record() + bytes(unknown)
     _, errors = run_check(data)
-    assert any("b'BLUB' record at offset" in w for w in errors)
+    assert any("unknown record type b'BLUB'" in issue for issue in errors)
 
 
 def test_check_misaligned_record():
@@ -185,9 +175,7 @@ def test_check_framing_overlap():
     # [6]=endianness. Point payload at the record_size piece (offset 14).
     data[trce_start + 5] = 14
     _, errors = run_check(bytes(data))
-    assert any(
-        "pieces overlap" in e or "inside the 14-byte framing" in e for e in errors
-    )
+    assert any("overlap" in e or "inside the 14-byte framing" in e for e in errors)
 
 
 def test_check_mgic_bad_encoding():
@@ -211,15 +199,15 @@ def test_check_trce_bad_formatter():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# _summarize_records
+# summarize_records
 # ─────────────────────────────────────────────────────────────────────────────
 
 
 def test_summarize_valid_section():
-    summary = _summarize_records(aligned_section())
+    summary = summarize_records(aligned_section())
     assert summary.record_counts == {"MGIC": 1, "TRCE": 1}
     assert summary.versions["MGIC"]["1.0"] == 1
-    assert summary.versions["TRCE"]["1.0"] == 1
+    assert summary.versions["TRCE"]["3.0"] == 1
     assert summary.mgic is not None
     assert summary.num_trace_points == 1
     assert summary.size_t_sizes == {8}
@@ -231,13 +219,78 @@ def test_summarize_common_alignment():
     mgic = build_mgic_record()
     trce = build_trce_record()
     pad = b"\x00" * (256 - len(mgic))
-    summary = _summarize_records(mgic + pad + trce)
+    summary = summarize_records(mgic + pad + trce)
     assert summary.common_alignment_power == 8
 
 
 def test_summarize_common_alignment_single_record_at_zero():
-    summary = _summarize_records(build_trce_record())
+    summary = summarize_records(build_trce_record())
     assert summary.common_alignment_power is None
+
+
+def test_error_on_minor_rejects_newer_minor_only_when_requested():
+    data = build_mgic_record() + build_trce_record(trace_version=(3, 1))
+    _, default_errors = run_check(data)
+    _, strict_errors = run_check(data, error_on_minor=True)
+    assert default_errors == []
+    assert any("version 3.1 is newer" in issue for issue in strict_errors)
+
+
+def test_check_reports_junk_emt_between_valid_records():
+    data = build_mgic_record() + b"EMT" + bytes(11) + build_trce_record()
+    _, errors = run_check(data)
+    assert any("size_t width is 0" in issue for issue in errors)
+
+
+def test_check_accepts_v3_padding():
+    data = build_mgic_record() + build_trce_record(args=[leaf("int", 4, padding=5)])
+    _, errors = run_check(data)
+    assert errors == []
+
+
+def test_check_debug_trace_receives_annotated_record_dumps():
+    lines: list[str] = []
+    report = check_section(aligned_section(), debug_trace=lines.append)
+    assert report.ok
+    assert any("format string" in line for line in lines)
+    assert any("MGIC record" in line for line in lines)
+
+
+def test_summarize_records_counts_record_errors():
+    section = build_mgic_record() + build_trce_record(args=[("int", 4, 17, [])])
+    summary = summarize_records(section)
+    assert summary.num_errors == 1
+
+
+def test_export_has_version_and_round_trips_records():
+    section = build_mgic_record() + build_trce_record(
+        fmt_string="export {0}", args=[("int", 4, 0, [])]
+    )
+    report = export_section(section)
+    assert report.ok
+    assert report.output is not None
+    assert report.output["emtrace_version"] == emtrace.__version__
+    loaded = load_export(report.output)
+    assert loaded.ok
+    assert loaded.mgic is not None
+    assert len(loaded.records) == 1
+    assert next(iter(loaded.records.values())).fmt_string == "export {0}"
+
+
+@pytest.mark.parametrize(
+    ("document", "expected"),
+    [
+        ({}, "no 'emtrace_version'"),
+        ({"emtrace_version": "other"}, "exported by emtrace other"),
+        ({"emtrace_version": emtrace.__version__}, "Malformed JSON export"),
+    ],
+)
+def test_load_export_rejects_missing_different_or_malformed_documents(
+    document: dict[str, object], expected: str
+):
+    report = load_export(document)
+    assert not report.ok
+    assert expected in report.errors[0].message
 
 
 # ─────────────────────────────────────────────────────────────────────────────
