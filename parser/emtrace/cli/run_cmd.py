@@ -8,8 +8,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ..engine import emtrace as run_emtrace
-from .output import print_issues
+from ..stream.engine import emtrace as run_emtrace
+from .output import print_issue
 from .streams import dump_file, get_input_stream
 
 
@@ -73,11 +73,17 @@ def cmd_run(args: Any) -> int:
         args.src_hyperlinks,
         args.debug_script,
         args.test,
+        drop_undecodable=args.drop_undecodable,
+        issue_sink=print_issue,
     )
     # flush
     _ = args.dump_input[1]()
 
-    print_issues(report)
+    if report.dropped:
+        print(
+            f"{report.dropped} trace(s) with undecodable values were dropped.",
+            file=sys.stderr,
+        )
     if not report.ok:
         return 1
 

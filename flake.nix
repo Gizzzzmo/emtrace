@@ -57,6 +57,7 @@
           ruff
           python314
           python314Packages.pytest
+          python314Packages.hypothesis
           python314Packages.twine
           python314Packages.wheel
           python314Packages.pytest-xdist

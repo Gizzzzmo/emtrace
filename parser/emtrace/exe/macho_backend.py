@@ -16,7 +16,7 @@ from typing import Any
 
 import lief
 
-from .errors import ExeError
+from ..errors import ExeError
 
 FORMAT = "macho"
 
@@ -60,6 +60,8 @@ def try_parse(path: Path, *, experimental_be: bool = False) -> Any | None:
             f"fat binaries with {fat.size} architectures are not supported"
         )
     binary = fat.at(0)
+    if binary is None:
+        raise ExeError(f"unable to parse '{path}' as Mach-O")
     if binary.header.file_type == lief.MachO.Header.FILE_TYPE.OBJECT:
         raise ExeError(
             "input is an unlinked Mach-O object file; "

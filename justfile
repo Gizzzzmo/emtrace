@@ -61,6 +61,11 @@ pytest *ARGS:
 test_parser *ARGS:
     cd parser && pytest {{ARGS}}
 
+# Run the parser's property-based fuzz tests with many more examples than in
+# the regular test run (Hypothesis profile "fuzz", see parser/tests/conftest.py).
+fuzz *ARGS:
+    cd parser && HYPOTHESIS_PROFILE=fuzz pytest -n auto tests/test_fuzz.py {{ARGS}}
+
 eetest *ARGS: (pytest "-rs" "-n" "auto" ARGS)
 
 # Build and run the cross-language interop demos (rust/examples/interop_*,

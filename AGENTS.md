@@ -10,6 +10,8 @@
 - **CMake run tests**: `just ctest --preset <preset>`
 - **Rust run tests**: `just cargo test`
 - **End-to-end tests**: `just eetest`
+- **Python parser unit tests**: `just test_parser`
+- **Python parser fuzz tests (long-running)**: `just fuzz`
 - **All tests**: `just test`
 - **Rust run binary**: `just cargo run --bin <binary>`
 - **Lint C/C++ code**: `just tidy`

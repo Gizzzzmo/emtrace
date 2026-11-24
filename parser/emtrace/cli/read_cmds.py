@@ -8,16 +8,16 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from .. import inspector
-from ..inspector import _SectionSummary
-from .output import error, print_issue
+from ..section import export, inspector, loading
+from ..section.inspector import SectionSummary
+from .output import debug_trace, print_issue
 
 
 def _fmt_count(counter: Counter[str]) -> str:
     return ", ".join(f"{name}×{count}" for name, count in sorted(counter.items()))
 
 
-def _print_section_summary(summary: _SectionSummary, indent: str = "  ") -> None:
+def _print_section_summary(summary: SectionSummary, indent: str = "  ") -> None:
     counts = summary.record_counts
     print(f"{indent}records:          {_fmt_count(counts) or 'none'}")
     version_parts = [
@@ -32,32 +32,47 @@ def _print_section_summary(summary: _SectionSummary, indent: str = "  ") -> None
     if summary.mgic is not None:
         m = summary.mgic
         print(
-            f"{indent}mgic:             version {m.version_major}.{m.version_minor}, "
+            f"{indent}mgic:             version {m.version[0]}.{m.version[1]}, "
             f"size_t width {m.size_t_size} ({m.byteorder}), ptr width {m.ptr_size}, "
             f"alignment power {m.alignment_power}, encoding id {m.encoding_id}"
         )
     else:
         print(f"{indent}mgic:             none")
+    if summary.num_errors:
+        print(
+            f"{indent}problems:         {summary.num_errors} error(s) in the records "
+            f"(run `emtrace check` for details)"
+        )
+
+
+def _load(args: Any) -> bytes | None:
+    """Load the section bytes for *args*, printing issues on failure."""
+    path = Path(args.input).resolve()
+    loaded = loading.load_section(path, args.format, args.section_name)
+    for issue in loaded.warnings:
+        print_issue(issue)
+    if loaded.data is None:
+        for issue in loaded.errors:
+            print_issue(issue)
+        return None
+    return loaded.data
 
 
 def cmd_check(args: Any) -> int:
     """Check that an emtrace section conforms to the trace format spec."""
-    path = Path(args.input).resolve()
-    loaded = inspector.load_section(path, args.format, args.section_name)
-    if loaded.data is None:
-        for issue in loaded.errors:
-            print_issue(issue)
-        for issue in loaded.warnings:
-            print_issue(issue)
+    data = _load(args)
+    if data is None:
         return 1
 
-    report = inspector.check_section(loaded.data)
-    for issue in loaded.warnings:
-        print_issue(issue)
-    for w in report.warnings:
-        print(w.message, file=sys.stderr)
-    for e in report.errors:
-        error(e.message)
+    report = inspector.check_section(
+        data,
+        error_on_minor=args.error_on_minor,
+        debug_trace=debug_trace(getattr(args, "debug_script", False)),
+    )
+    for issue in report.warnings:
+        print_issue(issue, data)
+    for issue in report.errors:
+        print_issue(issue, data)
 
     if report.errors:
         print(
@@ -79,39 +94,19 @@ def cmd_check(args: Any) -> int:
 
 def cmd_export(args: Any) -> int:
     """Export all trace-point metadata from an emtrace section as JSON."""
-    debug_script = args.debug_script
-
-    def trace(*args: Any, **kwargs: Any):
-        if debug_script:
-            print(
-                " ".join(
-                    [
-                        "\n".join("[trace] " + line for line in str(arg).split("\n"))
-                        for arg in args
-                    ]
-                ),
-                file=sys.stderr,
-                **kwargs,
-            )
-
-    path = Path(args.input).resolve()
-    loaded = inspector.load_section(path, args.format, args.section_name)
-    if loaded.data is None:
-        for issue in loaded.errors:
-            print_issue(issue)
-        for issue in loaded.warnings:
-            print_issue(issue)
+    data = _load(args)
+    if data is None:
         return 1
 
-    report = inspector.export_section(loaded.data, debug_trace=trace)
+    report = export.export_section(data, debug_trace=debug_trace(args.debug_script))
     if not report.ok:
         for issue in report.errors:
-            print_issue(issue)
+            print_issue(issue, data)
         return 1
 
     assert report.output is not None
     for w in report.warnings:
-        print(f"[warning] {w.message}", file=sys.stderr)
+        print_issue(w)
     out_text = json.dumps(report.output, indent=2)
 
     if args.output == "-":
@@ -129,20 +124,9 @@ def cmd_export(args: Any) -> int:
 
 def cmd_inspect(args: Any) -> int:
     """Summarize the emtrace data of an archive, object file, or executable."""
-
-    debug_script: bool = args.debug_script
-
-    def trace(*args: Any, **kwargs: Any):
-        if debug_script:
-            text = " ".join(
-                [
-                    "\n".join("[trace] " + line for line in str(arg).split("\n"))
-                    for arg in args
-                ]
-            )
-            print(text, file=sys.stderr, **kwargs)
-
-    report = inspector.inspect_path(Path(args.input), args.section_name, trace)
+    report = inspector.inspect_path(
+        Path(args.input), args.section_name, debug_trace(args.debug_script)
+    )
     for issue in report.errors:
         print_issue(issue)
     for issue in report.warnings:
@@ -182,10 +166,11 @@ def _render_archive(details: inspector.ArchiveDetails) -> None:
         rec_str = str(entry.rec_power) if entry.rec_power is not None else "-"
         eff_str = str(entry.member_power) if entry.member_power is not None else "?"
         summary = entry.summary
+        problems = f" ({summary.num_errors} error(s))" if summary.num_errors else ""
         print(
             f"  {entry.name:<20} {align_str:>12} {rec_str:>9} "
             f"{eff_str:>9} {'yes' if summary.mgic is not None else 'no':>4}  "
-            f"{_fmt_count(summary.record_counts) or 'none'}"
+            f"{_fmt_count(summary.record_counts) or 'none'}{problems}"
         )
 
     print()

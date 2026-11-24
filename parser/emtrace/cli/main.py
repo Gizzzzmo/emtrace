@@ -157,7 +157,12 @@ def build_parser() -> ArgumentParser:
     _ = run_parser.add_argument(
         "--debug-script",
         action="store_true",
-        help="Make the script output trace information for debugging.",
+        help="Make the script output trace information for debugging, including the byte tree of every decoded trace.",
+    )
+    _ = run_parser.add_argument(
+        "--drop-undecodable",
+        action="store_true",
+        help="Don't output traces containing values that could not be decoded (e.g. because of an unknown type id). By default such values are shown as placeholders. Either way a warning is printed to stderr.",
     )
     _ = run_parser.add_argument(
         "--test",
@@ -178,13 +183,15 @@ def build_parser() -> ArgumentParser:
         "check",
         help="Check that an emtrace section conforms to the trace format specification.",
         description=(
-            "Scans all records in the emtrace section and validates them against the "
-            "trace format specification: framing layout, per-record versions, record "
-            "payloads, MGIC uniqueness, that the MGIC record's alignment power "
-            "does not exceed the alignment power all records actually conform to, "
-            "and that every record's address is representable and unique in a "
-            "emt_ptr_t. Major version incompatibilities are a hard error; minor "
-            "version differences are ignored unless --error-on-minor is given."
+            "Verify that an executable with an emtrace section (or a binary file "
+            "containing the raw contents of such a section) is valid. "
+            "More precisely validates the trace format specification: framing "
+            "layout, per-record versions, record payloads, MGIC uniqueness, that "
+            "the MGIC record's alignment power does not exceed the alignment power "
+            " all records actually conform to, and that every record's address is "
+            "representable and unique in a emt_ptr_t. Major version incompatibilities "
+            "are a hard error; minor version differences are ignored unless "
+            "--error-on-minor is given."
         ),
     )
     _add_input_args(check_parser)
@@ -192,6 +199,11 @@ def build_parser() -> ArgumentParser:
         "--error-on-minor",
         action="store_true",
         help="Treat records with a higher minor version than known as errors instead of ignoring them.",
+    )
+    _ = check_parser.add_argument(
+        "--debug-script",
+        action="store_true",
+        help="Print an annotated listing of every record to stderr (for development use only).",
     )
     check_parser.set_defaults(func=read_cmds.cmd_check)
 
@@ -215,7 +227,7 @@ def build_parser() -> ArgumentParser:
     _ = export_parser.add_argument(
         "--debug-script",
         action="store_true",
-        help="Debug the script by printing internal trace information to stderr (for development use only).",
+        help="Print an annotated listing of every record to stderr (for development use only).",
     )
     export_parser.set_defaults(func=read_cmds.cmd_export)
 
@@ -243,7 +255,11 @@ def build_parser() -> ArgumentParser:
         metavar="NAME",
         help="ELF/PE/MachO section name to inspect (default: .emtrace).",
     )
-    _ = inspect_parser.add_argument("--debug-script", action="store_true")
+    _ = inspect_parser.add_argument(
+        "--debug-script",
+        action="store_true",
+        help="Print an annotated listing of every record to stderr (for development use only).",
+    )
     inspect_parser.set_defaults(func=read_cmds.cmd_inspect)
 
     # ── strip ──────────────────────────────────────────────────────────────
