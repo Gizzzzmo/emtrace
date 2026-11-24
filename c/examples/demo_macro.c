@@ -2,27 +2,24 @@
 
 void foo(void);
 
-#define V EMT_VAL
-#define S EMT_STR
-#define A EMT_SLC
-
 void bar(void);
 void bar(void) {
     int arr[] = {1, 2, 3};
     EMTRACE_F(
-        "", A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3),
-        A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3),
-        A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3),
-        A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3),
-        A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3),
-        A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3), A(int, arr, 3),
-        A(int, arr, 3), A(int, arr, 3)
+        "", SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3),
+        SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3),
+        SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3),
+        SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3),
+        SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3),
+        SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3),
+        SLC(int, arr, 3), SLC(int, arr, 3), SLC(int, arr, 3)
     );
     EMTRACE_F(
-        "", V(int, 1), V(int, 2), V(int, 3), V(int, 4), V(int, 5), V(int, 6), V(int, 7), V(int, 8),
-        V(int, 9), V(int, 10), V(int, 11), V(int, 12), V(int, 13), V(int, 14), V(int, 15),
-        V(int, 16), V(int, 17), V(int, 18), V(int, 19), V(int, 20), V(int, 21), V(int, 22),
-        V(int, 23), V(int, 24), V(int, 25), V(int, 26), V(int, 27), V(int, 28), V(int, 29),
-        V(int, 30), V(int, 31), V(int, 32)
+        "", VAL(int, 1), VAL(int, 2), VAL(int, 3), VAL(int, 4), VAL(int, 5), VAL(int, 6),
+        VAL(int, 7), VAL(int, 8), VAL(int, 9), VAL(int, 10), VAL(int, 11), VAL(int, 12),
+        VAL(int, 13), VAL(int, 14), VAL(int, 15), VAL(int, 16), VAL(int, 17), VAL(int, 18),
+        VAL(int, 19), VAL(int, 20), VAL(int, 21), VAL(int, 22), VAL(int, 23), VAL(int, 24),
+        VAL(int, 25), VAL(int, 26), VAL(int, 27), VAL(int, 28), VAL(int, 29), VAL(int, 30),
+        VAL(int, 31), VAL(int, 32)
     );
 }

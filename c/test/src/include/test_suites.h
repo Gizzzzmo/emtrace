@@ -13,6 +13,7 @@ test_fn_t* emt_get_double_tests(size_t* count);
 test_fn_t* emt_get_string_tests(size_t* count);
 test_fn_t* emt_get_mixed_tests(size_t* count);
 test_fn_t* emt_get_cobs_tests(size_t* count);
+test_fn_t* emt_get_collision_tests(size_t* count);
 
 #ifdef __cplusplus
 }

@@ -33,9 +33,13 @@ static inline void serialize_pointer(
 
 #define DUMMY(a, b, c)
 
-#define EMT_TEST_TRACE_F(buffer, formatter, ...)                                                   \
-    EMT_TRACE_F(                                                                                   \
-        const, formatter, to_buffer, serialize_pointer, DUMMY, DUMMY, (&buffer), "", __VA_ARGS__   \
+#define EMT_TEST_TRACE(buffer, formatter, str)                                                     \
+    EMT_TRACE(const, formatter, to_buffer, serialize_pointer, DUMMY, DUMMY, (&(buffer)), "", str)
+
+#define EMT_TEST_TRACE_F(buffer, formatter, fmt, ...)                                              \
+    EMT_TRACE_F_FORWARD(                                                                           \
+        const, formatter, to_buffer, serialize_pointer, DUMMY, DUMMY, (&(buffer)), "", fmt,        \
+        EMT_ARG_##__VA_ARGS__, EMT_END                                                             \
     )
 
 #endif // TEST_UTILS_H

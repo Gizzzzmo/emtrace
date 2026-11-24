@@ -102,61 +102,192 @@ static inline void emt_serialize_varint(
 }
 #endif
 
-#define EMT_NTH_ARG(                                                                               \
-    a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, x, y, z, aa, bb, cc, dd, ee, \
-    ff, gg, hh, ii, jj, kk, ll, mm, nn, oo, pp, qq, rr, ss, tt, uu, vv, ww, xx, yy, zz, aaa, bbb,  \
-    ccc, ddd, eee, fff, ggg, hhh, iii, jjj, kkk, lll, mmm, nnn, ooo, ppp, qqq, rrr, sss, ttt, uuu, \
-    vvv, www, xxx, yyy, zzz, aaaa, bbbb, cccc, dddd, eeee, ffff, gggg, hhhh, iiii, jjjj, kkkk,     \
-    llll, mmmm, nnnn, oooo, pppp, qqqq, rrrr, ssss, tttt, uuuu, vvvv, wwww, xxxx, yyyy, zzzz,      \
-    aaaaa, bbbbb, ccccc, ddddd, eeeee, fffff, ggggg, hhhhh, iiiii, jjjjj, kkkkk, lllll, mmmmm,     \
-    nnnnn, ooooo, ppppp, qqqqq, rrrrr, sssss, ttttt, uuuuu, vvvvv, wwwww, xxxxx, yyyyy, zzzzz,     \
-    aaaaaa, bbbbbb, cccccc, dddddd, eeeeee, ffffff, gggggg, hhhhhh, iiiiii, jjjjjj, kkkkkk,        \
-    llllll, mmmmmm, nnnnnn, oooooo, pppppp, qqqqqq, rrrrrr, ssssss, tttttt, uuuuuu, vvvvvv,        \
-    wwwwww, xxxxxx, yyyyyy, zzzzzz, aaaaaaa, bbbbbbb, ccccccc, ddddddd, eeeeeee, fffffff, ggggggg, \
-    hhhhhhh, iiiiiii, jjjjjjj, kkkkkkk, lllllll, mmmmmmm, nnnnnnn, ooooooo, ppppppp, qqqqqqq,      \
-    rrrrrrr, sssssss, ttttttt, uuuuuuu, vvvvvvv, wwwwwww, xxxxxxx, yyyyyyy, zzzzzzz, aaaaaaaa,     \
-    bbbbbbbb, cccccccc, dddddddd, eeeeeeee, ffffffff, gggggggg, hhhhhhhh, iiiiiiii, jjjjjjjj,      \
-    kkkkkkkk, llllllll, mmmmmmmm, nnnnnnnn, oooooooo, pppppppp, qqqqqqqq, ...                      \
-)                                                                                                  \
-    qqqqqqqq
-
-#define EMT_NUM_ARGS_REST(...)                                                                     \
-    EMT_NTH_ARG(                                                                                   \
-        __VA_ARGS__, 196, 195, 194, 193, 192, 191, 190, 189, 188, 187, 186, 185, 184, 183, 182,    \
-        181, 180, 179, 178, 177, 176, 175, 174, 173, 172, 171, 170, 169, 168, 167, 166, 165, 164,  \
-        163, 162, 161, 160, 159, 158, 157, 156, 155, 154, 153, 152, 151, 150, 149, 148, 147, 146,  \
-        145, 144, 143, 142, 141, 140, 139, 138, 137, 136, 135, 134, 133, 132, 131, 130, 129, 128,  \
-        127, 126, 125, 124, 123, 122, 121, 120, 119, 118, 117, 116, 115, 114, 113, 112, 111, 110,  \
-        109, 108, 107, 106, 105, 104, 103, 102, 101, 100, 99, 98, 97, 96, 95, 94, 93, 92, 91, 90,  \
-        89, 88, 87, 86, 85, 84, 83, 82, 81, 80, 79, 78, 77, 76, 75, 74, 73, 72, 71, 70, 69, 68,    \
-        67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46,    \
-        45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24,    \
-        23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0    \
-    )
-
-#define EMT_FIRST_ARG(a, ...) a
-#define EMT_REST_ARGS(a, ...) __VA_ARGS__
-
 // clang-format off
-#define EMT_VAL(type, x)                    type,        x, sizeof(type),             EMT_TAG_VAL
-#define EMT_ARR(type, x)                    type,        x, sizeof(x) / sizeof(type), EMT_TAG_ARR
-#define EMT_STS(type, x, len)               type,        x, len,                      EMT_TAG_STS
-#define EMT_SLC(type, x, len)               type,        x, len,                      EMT_TAG_SLC
-#define EMT_STR(x)                          const char*, x, EMT_STRLEN(x) + 1,        EMT_TAG_STR
+#define EMT_ARG_VAL(type, x)      EMT_TAG_VAL(type, x)
+#define EMT_ARG_ARR(type, x)      EMT_TAG_ARR(type, x)
+#define EMT_ARG_STS(type, x, len) EMT_TAG_STS(type, x, len)
+#define EMT_ARG_SLC(type, x, len) EMT_TAG_SLC(type, x, len)
+#define EMT_ARG_STR(x)            EMT_TAG_STR(x)
 // clang-format on
 
-#ifndef EMT_NO_SIMPLE_MACROS
-// NOLINTBEGIN(readability-identifier-naming)
-#define VAL EMT_VAL
-#define ARR EMT_ARR
-#define STS EMT_STS
-#define SLC EMT_SLC
-#define STR EMT_STR
-// NOLINTEND(readability-identifier-naming)
-#endif
+// NOLINTNEXTLINE(readability-identifier-naming) -- produced by EMT_ARG_## when __VA_ARGS__ is empty
+#define EMT_ARG_ EMT_TAG_END
+#define EMT_ARG_EMT_END EMT_TAG_END
+#define EMT_OVERFLOW_EMT_END
+#define EMT_OVERFLOW_EMT_ARG_EMT_END
+
+#define EMT_APPLY_1_CALL(a, fn, ...) fn(a, __VA_ARGS__)
+#define EMT_APPLY_1(a, ...) EMT_APPLY_1_CALL(a, __VA_ARGS__)
+#define EMT_APPLY_2_CALL(a, b, fn, ...) fn(a, b, __VA_ARGS__)
+#define EMT_APPLY_2(a, b, ...) EMT_APPLY_2_CALL(a, b, __VA_ARGS__)
+
+// NOLINTBEGIN(bugprone-macro-parentheses) -- additive fragments expanded inside `(0 ...)`
+// Argument count per tag
+#define EMT_F_COUNT_EMT_TAG_VAL(type, x) +1
+#define EMT_F_COUNT_EMT_TAG_ARR(type, x) +1
+#define EMT_F_COUNT_EMT_TAG_STS(type, x, len) +1
+#define EMT_F_COUNT_EMT_TAG_SLC(type, x, len) +1
+#define EMT_F_COUNT_EMT_TAG_STR(x) +1
+#define EMT_F_COUNT_EMT_TAG_END
+
+// Layout entry count per tag: top-level type entry (4), plus child entry (5) for lists
+// (see TRACE_FORMAT.md)
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_VAL(type, x) +4
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_STR(x) +4
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_ARR(type, x) +9
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_SLC(type, x, len) +9
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_STS(type, x, len) +9
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_END
+// NOLINTEND(bugprone-macro-parentheses)
+
+// Format-info struct member declarations per tag
+#define EMT_F_INFO_MEMBER_VAL(name, type) char name[sizeof(#type)];
+#define EMT_F_INFO_MEMBER_STR(name, _unused) char name[sizeof("string")];
+#define EMT_F_INFO_MEMBER_LIST(name, type)                                                         \
+    char name[sizeof("list")];                                                                     \
+    char name##_child_name[sizeof("")];                                                            \
+    char name##_child_type_id[sizeof(#type)];
+#define EMT_F_INFO_MEMBER_END(name, _unused)
+
+#define EMT_F_INFO_MEMBER_EMT_TAG_VAL(type, x) EMT_F_INFO_MEMBER_VAL, type
+#define EMT_F_INFO_MEMBER_EMT_TAG_STR(x) EMT_F_INFO_MEMBER_STR, 0
+#define EMT_F_INFO_MEMBER_EMT_TAG_ARR(type, x) EMT_F_INFO_MEMBER_LIST, type
+#define EMT_F_INFO_MEMBER_EMT_TAG_SLC(type, x, len) EMT_F_INFO_MEMBER_LIST, type
+#define EMT_F_INFO_MEMBER_EMT_TAG_STS(type, x, len) EMT_F_INFO_MEMBER_LIST, type
+#define EMT_F_INFO_MEMBER_EMT_TAG_END EMT_F_INFO_MEMBER_END, 0
+#define EMT_F_INFO_MEMBER_DISPATCH(name, arg) EMT_APPLY_1(name, EMT_F_INFO_MEMBER_##arg)
+
+// Format-info layout entries per tag:
+// Top-level type entry: [type_id_offset, size, flag, num_children].
+// Child entry: [name_offset, type_id_offset, size, flag, num_children=0].
+#define EMT_F_LAYOUT_VAL(name, type)                                                               \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,
+#define EMT_F_LAYOUT_STR(name, _unused)                                                            \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1,                      \
+        EMT_FLAG_NULL_TERMINATED, 0,
+#define EMT_F_LAYOUT_STATIC_LIST(name, type, len)                                                  \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1 * (len),              \
+        EMT_FLAG_STATIC, 1, EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
+        EMT_FLAG_STATIC, 0,
+#define EMT_F_LAYOUT_SLC(name, type)                                                               \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1,      \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
+        EMT_FLAG_STATIC, 0,
+#define EMT_F_LAYOUT_END(name, _unused)
+
+#define EMT_F_LAYOUT_EMT_TAG_VAL(type, x) EMT_F_LAYOUT_VAL, type
+#define EMT_F_LAYOUT_EMT_TAG_STR(x) EMT_F_LAYOUT_STR, 0
+#define EMT_F_LAYOUT_EMT_TAG_ARR(type, x) EMT_F_LAYOUT_STATIC_LIST, type, sizeof(x) / sizeof(type)
+#define EMT_F_LAYOUT_EMT_TAG_STS(type, x, len) EMT_F_LAYOUT_STATIC_LIST, type, len
+#define EMT_F_LAYOUT_EMT_TAG_SLC(type, x, len) EMT_F_LAYOUT_SLC, type
+#define EMT_F_LAYOUT_EMT_TAG_END EMT_F_LAYOUT_END, 0
+#define EMT_F_LAYOUT_DISPATCH(name, arg) EMT_APPLY_1(name, EMT_F_LAYOUT_##arg)
+
+// Format-info type-id string initializers per tag
+#define EMT_F_INFO_EMT_TAG_VAL(type, x) #type,
+#define EMT_F_INFO_EMT_TAG_STR(x) "string",
+#define EMT_F_INFO_EMT_TAG_ARR(type, x) "list", "", #type,
+#define EMT_F_INFO_EMT_TAG_SLC(type, x, len) "list", "", #type,
+#define EMT_F_INFO_EMT_TAG_STS(type, x, len) "list", "", #type,
+#define EMT_F_INFO_EMT_TAG_END
+
+// NOLINTBEGIN(bugprone-macro-parentheses) -- additive fragments expanded inside `(0 ...)`
+// Estimated serialized size contribution per tag
+#define EMT_F_TOTAL_SIZE_EMT_TAG_VAL(type, x) +sizeof(type)
+#define EMT_F_TOTAL_SIZE_EMT_TAG_STR(x) +(EMT_STRLEN(x) + 1)
+#define EMT_F_TOTAL_SIZE_EMT_TAG_ARR(type, x) +(sizeof(x) / sizeof(type))
+#define EMT_F_TOTAL_SIZE_EMT_TAG_SLC(type, x, len) +(len)
+#define EMT_F_TOTAL_SIZE_EMT_TAG_STS(type, x, len) +(len)
+#define EMT_F_TOTAL_SIZE_EMT_TAG_END
+// NOLINTEND(bugprone-macro-parentheses)
+
+// Runtime serialization per tag
+#define EMT_F_VAL(out_fn, extra_arg, type, x)                                                      \
+    {                                                                                              \
+        type temp = (x);                                                                           \
+        out_fn((const void*) &temp, sizeof(type), extra_arg);                                      \
+    }
+#define EMT_F_STR(out_fn, extra_arg, x)                                                            \
+    {                                                                                              \
+        const char* temp = (x);                                                                    \
+        out_fn(temp, EMT_STRLEN(temp) + 1, extra_arg);                                             \
+    }
+#define EMT_F_ARR(out_fn, extra_arg, type, x)                                                      \
+    {                                                                                              \
+        const type(*temp)[] = &(x);                                                                \
+        out_fn(temp, sizeof(x), extra_arg);                                                        \
+    }
+#define EMT_F_SLC(out_fn, extra_arg, type, x, len)                                                 \
+    {                                                                                              \
+        const type* emt_temp_unlikely_to_shadow = (x);                                             \
+        emt_size_t size = (len);                                                                   \
+        emt_serialize_varint(size, out_fn, extra_arg);                                             \
+        out_fn(emt_temp_unlikely_to_shadow, size * sizeof(type), extra_arg);                       \
+    }
+#define EMT_F_STS(out_fn, extra_arg, type, x, len)                                                 \
+    {                                                                                              \
+        const type* temp = (x);                                                                    \
+        out_fn(temp, sizeof(type) * (len), extra_arg);                                             \
+    }
+#define EMT_F_END(out_fn, extra_arg, _unused)
+
+#define EMT_F_EMT_TAG_VAL(type, x) EMT_F_VAL, type, x
+#define EMT_F_EMT_TAG_STR(x) EMT_F_STR, x
+#define EMT_F_EMT_TAG_ARR(type, x) EMT_F_ARR, type, x
+#define EMT_F_EMT_TAG_SLC(type, x, len) EMT_F_SLC, type, x, len
+#define EMT_F_EMT_TAG_STS(type, x, len) EMT_F_STS, type, x, len
+#define EMT_F_EMT_TAG_END EMT_F_END, 0
+#define EMT_F_DISPATCH(out_fn, extra_arg, arg) EMT_APPLY_2(out_fn, extra_arg, EMT_F_##arg)
+
+#define EMT_TRACE_F_IMPL(                                                                          \
+    fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix,     \
+    fmt_str, ...                                                                                   \
+)                                                                                                  \
+    do {                                                                                           \
+                                                                                                   \
+        struct emt_info_unlikely_to_shadow_t {                                                     \
+            unsigned char framing[14];                                                             \
+            emt_size_t record_size;                                                                \
+            emt_size_t endianness_probe;                                                           \
+            emt_size_t layout[7 + EMT_F_LAYOUT_SIZE(__VA_ARGS__)];                                 \
+            char fmt[sizeof(fmt_str postfix)];                                                     \
+            EMT_F_INFO_MEMBER(__VA_ARGS__)                                                         \
+            char file[sizeof(__FILE__)];                                                           \
+        };                                                                                         \
+        fmt_info_attributes static struct emt_info_unlikely_to_shadow_t                            \
+            emt_info_unlikely_to_shadow = {                                                        \
+                {'E', 'M', 'T', 10,                                                                \
+                 (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, record_size),  \
+                 (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, layout),       \
+                 (unsigned char)                                                                   \
+                     EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, endianness_probe),         \
+                 (unsigned char) sizeof(emt_size_t), EMT_TRACE_VERSION_MAJOR,                      \
+                 EMT_TRACE_VERSION_MINOR, 'T', 'R', 'C', 'E'},                                     \
+                sizeof(struct emt_info_unlikely_to_shadow_t),                                      \
+                EMT_ENDIANNESS_PROBE,                                                              \
+                {EMT_RUNTIME_DATA_TRACE_VERSION_MAJOR, EMT_RUNTIME_DATA_TRACE_VERSION_MINOR,       \
+                 EMT_F_COUNT(__VA_ARGS__),                                                         \
+                 EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, fmt),                          \
+                 EMT_F_LAYOUT(__VA_ARGS__) formatter,                                              \
+                 EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, file), __LINE__},              \
+                fmt_str postfix,                                                                   \
+                EMT_F_INFO(__VA_ARGS__) __FILE__,                                                  \
+        };                                                                                         \
+        begin(                                                                                     \
+            (const void*) &emt_info_unlikely_to_shadow, EMT_F_TOTAL_SIZE(__VA_ARGS__), extra_arg   \
+        );                                                                                         \
+        ptr_serializer(&emt_info_unlikely_to_shadow, out_fn, extra_arg);                           \
+                                                                                                   \
+        EMT_F(out_fn, extra_arg, __VA_ARGS__)                                                      \
+        finish(                                                                                    \
+            (const void*) &emt_info_unlikely_to_shadow, EMT_F_TOTAL_SIZE(__VA_ARGS__), extra_arg   \
+        );                                                                                         \
+    } while (0)
 
 /**
- * @brief Emit a trace.
+ * @brief Emit a trace with format arguments.
  *
  * Outputs a sequence of bytes, and creates a static variable (the `format-info`) through the
  * contents of which, the sequence of bytes can be decoded to the intended trace.
@@ -200,68 +331,75 @@ static inline void emt_serialize_varint(
  *
  * @param postfix             is expanded after the format string in the format-info.
  *
- * @param ...                 The first vararg is the format string that, together with `postfix`,
- *                            ends up in the format-info, the rest of the varargs must each be an
- *                            invocation of either of the following macros:
- *                            EMT_VAL, EMT_ARR, EMT_STS, EMT_SLC, EMT_STR
+ * @param fmt                 The format string that, together with `postfix`, ends up in the
+ *                            format-info.
+ *
+ * @param ...                 One or more format arguments, each written using one of the tagged
+ *                            forms: `VAL(type, x)`, `ARR(type, x)`, `STS(type, x, len)`,
+ *                            `SLC(type, x, len)`, or `STR(x)`. These tags are recognized via token
+ *                            pasting before macro expansion and are not defined in the global
+ *                            namespace, so colliding user identifiers or macros do not interfere.
+ *                            For traces without format arguments, use `EMT_TRACE`.
  *                            *Passing anything else is not stable across versions of this C header*
  */
 #define EMT_TRACE_F(                                                                               \
-    fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix, ... \
+    fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix,     \
+    fmt, ...                                                                                       \
 )                                                                                                  \
-    do {                                                                                           \
-                                                                                                   \
-        struct emt_info_unlikely_to_shadow_t {                                                     \
-            unsigned char framing[14];                                                             \
-            emt_size_t record_size;                                                                \
-            emt_size_t endianness_probe;                                                           \
-            emt_size_t layout                                                                      \
-                [7 + EMT_F_LAYOUT_SIZE(                                                            \
-                         EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)             \
-                     )];                                                                           \
-            char fmt[sizeof(EMT_FIRST_ARG(__VA_ARGS__, 0) postfix)];                               \
-            EMT_F_INFO_MEMBER(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))       \
-            char file[sizeof(__FILE__)];                                                           \
-        };                                                                                         \
-        fmt_info_attributes static struct emt_info_unlikely_to_shadow_t                            \
-            emt_info_unlikely_to_shadow = {                                                        \
-                {'E', 'M', 'T', 10,                                                                \
-                 (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, record_size),  \
-                 (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, layout),       \
-                 (unsigned char)                                                                   \
-                     EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, endianness_probe),         \
-                 (unsigned char) sizeof(emt_size_t), EMT_TRACE_VERSION_MAJOR,                      \
-                 EMT_TRACE_VERSION_MINOR, 'T', 'R', 'C', 'E'},                                     \
-                sizeof(struct emt_info_unlikely_to_shadow_t),                                      \
-                EMT_ENDIANNESS_PROBE,                                                              \
-                {EMT_RUNTIME_DATA_TRACE_VERSION_MAJOR, EMT_RUNTIME_DATA_TRACE_VERSION_MINOR,       \
-                 EMT_NUM_ARGS_REST(__VA_ARGS__) / 4,                                               \
-                 EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, fmt),                          \
-                 EMT_F_LAYOUT(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))       \
-                     formatter,                                                                    \
-                 EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, file), __LINE__},              \
-                EMT_FIRST_ARG(__VA_ARGS__, 0) postfix,                                             \
-                EMT_F_INFO(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))          \
-                    __FILE__,                                                                      \
-        };                                                                                         \
-        begin(                                                                                     \
-            (const void*) &emt_info_unlikely_to_shadow,                                            \
-            EMT_F_TOTAL_SIZE(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)),       \
-            extra_arg                                                                              \
-        );                                                                                         \
-        ptr_serializer(&emt_info_unlikely_to_shadow, out_fn, extra_arg);                           \
-                                                                                                   \
-        EMT_F(out_fn, extra_arg, EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))    \
-        finish(                                                                                    \
-            (const void*) &emt_info_unlikely_to_shadow,                                            \
-            EMT_F_TOTAL_SIZE(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)),       \
-            extra_arg                                                                              \
-        );                                                                                         \
-    } while (0)
+    EMT_TRACE_F_FORWARD(                                                                           \
+        fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix, \
+        fmt, EMT_ARG_##__VA_ARGS__, EMT_END                                                        \
+    )
+
+/**
+ * @brief Forwarding helper for custom wrapper macros around `EMT_TRACE_F`.
+ *
+ * When defining a custom variadic wrapper macro around `EMT_TRACE_F`, a plain forwarding call
+ * (`EMT_TRACE_F(..., fmt, __VA_ARGS__)`) *can* work, but only if, in the preprocessor context of
+ * the caller, the identifiers VAL, ARR, SLC, STS, and STR aren't defined as some other macro. 
+ *
+ * Instead one should use this macro, which prevents these identifiers from being expanded to
+ * possibly existing macro definitions:
+ *
+ * ```
+ * #define MY_TRACE_F(ctx, fmt, ...)                                                              \
+ *     EMT_TRACE_F_FORWARD(                                                                       \
+ *         EMT_DEFAULT_ATTR, EMT_PY_FORMAT, my_out, my_ptr_ser, my_begin, my_finish, ctx, "",     \
+ *         fmt, EMT_ARG_##__VA_ARGS__, EMT_END                                                    \
+ *     )
+ * ```
+ *
+ * @param a0  The first trace argument, already token-pasted with `EMT_ARG_`.
+ * @param ... Remaining unexpanded trace arguments followed by a trailing `EMT_END`.
+ * 
+ * For macro arguments preceding `a0` see documentation of EMT_TRACE_F
+ */
+#define EMT_TRACE_F_FORWARD(                                                                       \
+    fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix,     \
+    fmt, a0, ...                                                                                   \
+)                                                                                                  \
+    EMT_TRACE_F_IMPL(                                                                              \
+        fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix, \
+        fmt, a0 EMT_NORM_TAIL(EMT_ARG_##__VA_ARGS__, EMT_END)                                      \
+    )
+
+/**
+ * @brief Emit a trace without format arguments.
+ *
+ * Companion to `EMT_TRACE_F` for emitting a static string trace with no format arguments (strict
+ * C99 compliant without relying on empty `__VA_ARGS__`). All parameters have the same meaning as
+ * in `EMT_TRACE_F`, with `str` being the string stored in the format-info alongside `postfix`.
+ */
+#define EMT_TRACE(                                                                                 \
+    fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix, str \
+)                                                                                                  \
+    EMT_TRACE_F_FORWARD(                                                                           \
+        fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix, \
+        str, EMT_TAG_END, EMT_END                                                                  \
+    )
 
 /**
  * @brief Create a MGIC record.
- *
  *
  * More precisely: This evaluates to an expression that can be assigned to variables of type
  * `emt_magic_t`. Defining the variable is what creates the MGIC record.
@@ -513,24 +651,24 @@ static inline void emt_serialize_varint(
 
 #if defined(EMT_DEFAULT_ATTR) && defined(EMT_DEFAULT_ALIGNMENT_POWER)
 
-#define EMTRACE_F(...)                                                                             \
-    EMT_TRACE_F(                                                                                   \
+#define EMTRACE_F(fmt, ...)                                                                        \
+    EMT_TRACE_F_FORWARD(                                                                           \
         EMT_DEFAULT_ATTR, EMT_PY_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
-        emt_default_begin, emt_default_finish, NULL, "", __VA_ARGS__                               \
+        emt_default_begin, emt_default_finish, NULL, "", fmt, EMT_ARG_##__VA_ARGS__, EMT_END       \
     )
 #define EMTRACE(str)                                                                               \
-    EMT_TRACE_F(                                                                                   \
+    EMT_TRACE(                                                                                     \
         EMT_DEFAULT_ATTR, EMT_NO_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
         emt_default_begin, emt_default_finish, NULL, "", str                                       \
     )
 
-#define EMTRACELN_F(...)                                                                           \
-    EMT_TRACE_F(                                                                                   \
+#define EMTRACELN_F(fmt, ...)                                                                      \
+    EMT_TRACE_F_FORWARD(                                                                           \
         EMT_DEFAULT_ATTR, EMT_PY_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
-        emt_default_begin, emt_default_finish, NULL, "\n", __VA_ARGS__                             \
+        emt_default_begin, emt_default_finish, NULL, "\n", fmt, EMT_ARG_##__VA_ARGS__, EMT_END     \
     )
 #define EMTRACELN(str)                                                                             \
-    EMT_TRACE_F(                                                                                   \
+    EMT_TRACE(                                                                                     \
         EMT_DEFAULT_ATTR, EMT_NO_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
         emt_default_begin, emt_default_finish, NULL, "", str "\n"                                  \
     )

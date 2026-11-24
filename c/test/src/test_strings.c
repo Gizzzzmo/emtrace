@@ -11,7 +11,7 @@ static bool test_string_trace(test_context_t* ctx) {
     test_buffer_t buffer = {.data = raw_buffer, .capacity = sizeof(raw_buffer), .size = 0};
 
     const char* test_string = "Hello, C!";
-    EMT_TEST_TRACE_F(buffer, EMT_PY_FORMAT, "{}", EMT_STR(test_string));
+    EMT_TEST_TRACE_F(buffer, EMT_PY_FORMAT, "{}", STR(test_string));
 
     TEST_ASSERT_EQ(
         ctx, buffer.size, sizeof(emt_ptr_t) + strlen(test_string) + 1,

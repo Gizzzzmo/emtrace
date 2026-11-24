@@ -59,6 +59,18 @@ int main(void) {
     total_result.passed += result.passed;
     total_result.failed += result.failed;
 
+    const char* test_names_collisions[] = {
+        "test_c_identifier_collisions",
+        "test_object_macro_collisions",
+        "test_function_macro_collisions",
+        "test_max_args_with_collision",
+    };
+    tests = emt_get_collision_tests(&count);
+    result = run_tests(&ctx, tests, count, test_names_collisions);
+    total_result.total += result.total;
+    total_result.passed += result.passed;
+    total_result.failed += result.failed;
+
     printf("\n========================================\n");
     printf("Test Results: %zu/%zu passed", total_result.passed, total_result.total);
     if (total_result.failed > 0) {

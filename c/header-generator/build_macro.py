@@ -4,260 +4,156 @@ from io import TextIOWrapper
 from pathlib import Path
 
 
-def build_recursive_macro(
+def _wrap_define_header(name: str, params: list[str], width: int = 98) -> list[str]:
+    one_line = f"#define {name}({', '.join(params)})"
+    if len(one_line) <= width:
+        return [one_line]
+    lines = [f"#define {name}("]
+    cur = "    "
+    for idx, param in enumerate(params):
+        piece = param if idx == 0 else ", " + param
+        if cur.strip() and len(cur) + len(piece) > width:
+            lines.append(cur + ",")
+            cur = "    " + param
+        else:
+            cur += piece
+    lines.append(cur)
+    lines.append(")")
+    return lines
+
+
+def _format_macro(
     name: str,
-    args: list[str],
-    body: str,
-    body_rec: str,
-    body_empty: str,
-    depth: int,
-    global_args: list[str] | None = None,
+    params: list[str],
+    items: list[str],
+    sep: str = " ",
+    prefix: str = "",
+    suffix: str = "",
+    width: int = 98,
 ) -> str:
-    for arg in args:
-        assert arg[0] != "_"
+    hdr_lines = _wrap_define_header(name, params, width=width)
+    body_lines: list[str] = []
+    cur = "    " + prefix
+    for idx, item in enumerate(items):
+        piece = item if idx == 0 else sep + item
+        if cur.strip() and len(cur) + len(piece) > width:
+            body_lines.append(cur + ("," if sep == ", " else ""))
+            cur = "    " + item
+        else:
+            cur += piece
+    if suffix and len(cur) + len(suffix) > width:
+        body_lines.append(cur)
+        body_lines.append("    " + suffix.lstrip())
+    else:
+        body_lines.append(cur + suffix)
 
-    assert depth > 0
-    assert len(args) > 0
+    all_lines = [*hdr_lines, *body_lines]
+    padded = [f"{line:<99}\\" for line in all_lines[:-1]] + [all_lines[-1]]
+    return "\n".join(padded)
 
-    if global_args is None:
-        global_args = []
 
-    for arg in global_args:
-        assert arg[0] != "_"
+def _emit_flat_macros(max_args: int) -> str:
+    assert max_args > 0
+    macros: list[str] = []
 
-    body = body.replace("\n", " ")
-    body_rec = body_rec.replace("\n", " ")
-    body_empty = body_empty.replace("\n", " ")
-
-    global_arg_string = ", ".join(global_args)
-    total_n_args = len(global_args)
-
-    if total_n_args > 0:
-        global_arg_string += ", "
-
-    # to account for _dummy
-    total_n_args += 1
-
-    generated: str = ""
-
-    def append_wrapped(s: str):
-        nonlocal total_n_args
-        nonlocal generated
-        generated += f"#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= {total_n_args}\n"
-        generated += f"{s}\n"
-        generated += "#endif\n\n"
-
-    append_wrapped(f"#define {name}_0({global_arg_string}_dummy) {body_empty}")
-
-    total_n_args += len(args)
-    arg_string = ", ".join(args)
-
-    append_wrapped(
-        f"#define {name}_{len(args)}({global_arg_string}{arg_string}, _dummy) {body}"
-    )
-
-    for i in range(2, depth + 1):
-        postfix: int = i * len(args)
-        passthrough_args = [f"_{j:x}" for j in range(postfix - len(args))]
-        passthrough_string = ", ".join(passthrough_args)
-
-        prev: str = (
-            f"{name}_{postfix - len(args)}({global_arg_string}{passthrough_string}, 0)"
+    if max_args == 1:
+        macros.append("#define EMT_NORM_TAIL(overflow, ...) EMT_OVERFLOW_##overflow")
+    elif max_args == 2:
+        macros.append("#define EMT_NORM_REST(overflow, ...) EMT_OVERFLOW_##overflow")
+        macros.append(
+            "#define EMT_NORM_TAIL(a1, ...) , a1 EMT_NORM_REST(EMT_ARG_##__VA_ARGS__, EMT_END)"
+        )
+    else:
+        rest_params = [*(f"a{i}" for i in range(2, max_args)), "overflow", "..."]
+        rest_items = ["a2", *(f"EMT_ARG_##a{i}" for i in range(3, max_args))]
+        macros.append(
+            _format_macro(
+                "EMT_NORM_REST",
+                rest_params,
+                rest_items,
+                sep=", ",
+                prefix=", ",
+                suffix=" EMT_OVERFLOW_##overflow",
+            )
+        )
+        macros.append(
+            _format_macro(
+                "EMT_NORM_TAIL",
+                ["a1", "..."],
+                ["EMT_ARG_##__VA_ARGS__", *(["EMT_END"] * (max_args - 1))],
+                sep=", ",
+                prefix=", a1 EMT_NORM_REST(",
+                suffix=")",
+            )
         )
 
-        expanded_body = body_rec.format(prev=prev, i=i - 1)
-
-        macro: str = f"#define {name}_{postfix}({global_arg_string}{passthrough_string}, {arg_string}, _dummy) {expanded_body}"
-
-        total_n_args += len(args)
-        append_wrapped(macro)
-
-    generated += f"#define {name}({global_arg_string}x, ...) {name}_HELPER({global_arg_string}x, __VA_ARGS__)\n"
-    generated += f"#define {name}_HELPER({global_arg_string}x, ...) {name}_##x({global_arg_string}__VA_ARGS__)\n"
-
-    return generated
-
-
-def build_dispatch_macro(name: str, args: list[str], choices: dict[str, str]) -> str:
-    generated: str = ""
-
-    arg_string = ", ".join(args)
-    for tag, body in choices.items():
-        body = str(body).replace("\n", " ")
-
-        generated += f"#define {name}_{tag}({arg_string}) {body}\n\n"
-
-    param_string = f"{arg_string}, _tag" if len(args) > 0 else "_tag"
-
-    generated += (
-        f"#define {name}_HELPER({param_string}) {name}_##_tag({arg_string})\n\n"
+    params = [f"a{i}" for i in range(max_args)]
+    macros.extend(
+        [
+            _format_macro(
+                "EMT_F_COUNT",
+                params,
+                [f"EMT_F_COUNT_##a{i}" for i in range(max_args)],
+                prefix="(0 ",
+                suffix=")",
+            ),
+            _format_macro(
+                "EMT_F_LAYOUT_SIZE",
+                params,
+                [f"EMT_F_LAYOUT_SIZE_##a{i}" for i in range(max_args)],
+                prefix="(0 ",
+                suffix=")",
+            ),
+            _format_macro(
+                "EMT_F_INFO_MEMBER",
+                params,
+                [f"EMT_F_INFO_MEMBER_DISPATCH(type{i}, a{i})" for i in range(max_args)],
+            ),
+            _format_macro(
+                "EMT_F_LAYOUT",
+                params,
+                [f"EMT_F_LAYOUT_DISPATCH(type{i}, a{i})" for i in range(max_args)],
+            ),
+            _format_macro(
+                "EMT_F_INFO",
+                params,
+                [f"EMT_F_INFO_##a{i}" for i in range(max_args)],
+            ),
+            _format_macro(
+                "EMT_F_TOTAL_SIZE",
+                params,
+                [f"EMT_F_TOTAL_SIZE_##a{i}" for i in range(max_args)],
+                prefix="(0 ",
+                suffix=")",
+            ),
+            _format_macro(
+                "EMT_F",
+                ["out_fn", "extra_arg", *params],
+                [f"EMT_F_DISPATCH(out_fn, extra_arg, a{i})" for i in range(max_args)],
+            ),
+        ]
     )
-    generated += f"#define {name}({param_string}) {name}_HELPER({param_string})\n\n"
 
-    return generated
+    return "// clang-format off\n" + "\n\n".join(macros) + "\n// clang-format on\n\n"
 
 
 def generate_macros(fp: TextIOWrapper, max_args: int):
-    _ = fp.write(
-        build_dispatch_macro(
-            "EMT_F_LAYOUT_SIZE_DISPATCH",
-            [],
-            {
-                "EMT_TAG_VAL": "4",
-                "EMT_TAG_STR": "4",
-                # top-level type entry (4) + one child entry (5): name offset, type-id
-                # offset, size, flag, num_children (see TRACE_FORMAT.md)
-                "EMT_TAG_ARR": "9",
-                "EMT_TAG_SLC": "9",
-                "EMT_TAG_STS": "9",
-            },
+    assert max_args > 0
+    # At `max_args` trace arguments, EMT_NORM_REST receives 2 * max_args - 1 arguments and
+    # EMT_TRACE_F_IMPL receives max_args + 9 arguments.
+    max_invocation_args = max(2 * max_args - 1, max_args + 9)
+    if max_invocation_args > 127:
+        # Cap at 64 under MSVC's 127-argument limit (2 * 64 - 1 = 127, 64 + 9 = 73).
+        capped_args = min(max_args, 64)
+        _ = fp.write(
+            f"#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= {max_invocation_args}\n"
+            f"{_emit_flat_macros(max_args)}"
+            "#else\n"
+            f"{_emit_flat_macros(capped_args)}"
+            "#endif\n\n"
         )
-    )
-
-    _ = fp.write(
-        build_recursive_macro(
-            "EMT_F_LAYOUT_SIZE",
-            ["type", "x", "len", "tag"],
-            "EMT_F_LAYOUT_SIZE_DISPATCH(tag)",
-            "{prev} + EMT_F_LAYOUT_SIZE_DISPATCH(tag)",
-            "0",
-            max_args,
-        )
-    )
-
-    _ = fp.write(
-        build_dispatch_macro(
-            "EMT_F_INFO_MEMBER_DISPATCH",
-            ["type", "name"],
-            {
-                "EMT_TAG_VAL": "char name[sizeof(#type)];",
-                "EMT_TAG_STR": 'char name[sizeof("string")];',
-                "EMT_TAG_ARR": 'char name[sizeof("list")]; char name##_child_name[sizeof("")]; char name##_child_type_id[sizeof(#type)];',
-                "EMT_TAG_SLC": 'char name[sizeof("list")]; char name##_child_name[sizeof("")]; char name##_child_type_id[sizeof(#type)];',
-                "EMT_TAG_STS": 'char name[sizeof("list")]; char name##_child_name[sizeof("")]; char name##_child_type_id[sizeof(#type)];',
-            },
-        )
-    )
-
-    _ = fp.write(
-        build_recursive_macro(
-            "EMT_F_INFO_MEMBER",
-            ["type", "x", "len", "tag"],
-            "EMT_F_INFO_MEMBER_DISPATCH(type, type0, tag)",
-            "{prev} EMT_F_INFO_MEMBER_DISPATCH(type, type{i}, tag)",
-            "",
-            depth=max_args,
-        )
-    )
-
-    _ = fp.write(
-        build_dispatch_macro(
-            "EMT_F_LAYOUT_DISPATCH",
-            ["name", "len", "type"],
-            {
-                "EMT_TAG_VAL": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_STR": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1, EMT_FLAG_NULL_TERMINATED, 0,",
-                # Top-level type entry: [type_id_offset, size, flag, num_children].
-                # Child entry: [name_offset, type_id_offset, size, flag, num_children=0].
-                "EMT_TAG_ARR": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1*(len), EMT_FLAG_STATIC, 1, "
-                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
-                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
-                + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_STS": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t)1*(len), EMT_FLAG_STATIC, 1, "
-                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
-                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
-                + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_SLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1, "
-                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
-                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
-                + "sizeof(type), EMT_FLAG_STATIC, 0,",
-                "EMT_TAG_ESLC": "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1, "
-                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), "
-                + "EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), "
-                + "sizeof(type), EMT_FLAG_STATIC, 0,",
-            },
-        )
-    )
-
-    _ = fp.write(
-        build_recursive_macro(
-            "EMT_F_LAYOUT",
-            ["type", "x", "len", "tag"],
-            "EMT_F_LAYOUT_DISPATCH(type0, len, type, tag)",
-            "{prev} EMT_F_LAYOUT_DISPATCH(type{i}, len, type, tag)",
-            "",
-            depth=max_args,
-        )
-    )
-
-    _ = fp.write(
-        build_dispatch_macro(
-            "EMT_F_INFO_DISPATCH",
-            ["type"],
-            {
-                "EMT_TAG_VAL": "#type,",
-                "EMT_TAG_STR": '"string",',
-                "EMT_TAG_ARR": '"list", "", #type,',
-                "EMT_TAG_SLC": '"list", "", #type,',
-                "EMT_TAG_ESLC": '"list", "", #type,',
-                "EMT_TAG_STS": '"list", "", #type,',
-            },
-        )
-    )
-
-    _ = fp.write(
-        build_recursive_macro(
-            "EMT_F_INFO",
-            ["type", "x", "len", "tag"],
-            "EMT_F_INFO_DISPATCH(type, tag)",
-            "{prev} EMT_F_INFO_DISPATCH(type, tag)",
-            "",
-            max_args,
-        )
-    )
-
-    _ = fp.write(
-        build_recursive_macro(
-            "EMT_F_TOTAL_SIZE",
-            ["type", "x", "len", "tag"],
-            body="(len)",
-            body_rec="{prev} + (len)",
-            body_empty="0",
-            depth=max_args,
-        )
-    )
-
-    _ = fp.write(
-        build_dispatch_macro(
-            "EMT_F_DISPATCH",
-            [
-                "type",
-                "x",
-                "len",
-                "out_fn",
-                "extra_arg",
-            ],
-            {
-                "EMT_TAG_VAL": "{type temp = x; out_fn((const void*)&temp, sizeof(type), extra_arg);}",
-                "EMT_TAG_STR": "{const char* temp = x; out_fn(temp, strlen(temp) + 1, extra_arg);}",
-                "EMT_TAG_ARR": "{const type (*temp)[] = &(x); out_fn(temp, sizeof(x), extra_arg);}",
-                "EMT_TAG_SLC": "{const type* emt_temp_unlikely_to_shadow = x; emt_size_t size = len; emt_serialize_varint(size, out_fn, extra_arg); out_fn(emt_temp_unlikely_to_shadow, size * sizeof(type), extra_arg);}",
-                "EMT_TAG_STS": "{const type* temp = x; out_fn(temp,  sizeof(type)*(len), extra_arg);}",
-            },
-        )
-    )
-
-    _ = fp.write(
-        build_recursive_macro(
-            "EMT_F",
-            ["type", "x", "len", "tag"],
-            "EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)",
-            "{prev} EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)",
-            "",
-            depth=max_args,
-            global_args=["out_fn", "extra_arg"],
-        )
-    )
+    else:
+        _ = fp.write(_emit_flat_macros(max_args))
 
 
 C_HEADER_TEMPLATE_PATH = (Path(__file__).parent / "c/emtrace_template.h").resolve()
@@ -355,7 +251,7 @@ if __name__ == "__main__":
         default=None,
     )
     _ = parser.add_argument("--cpp", action="store_true")
-    _ = parser.add_argument("--c-max-args", nargs="?", default=32, type=int)
+    _ = parser.add_argument("--c-max-args", nargs="?", default=64, type=int)
     args = parser.parse_args()
 
     if args.output is None:

@@ -5,6 +5,7 @@ add_executable(
     src/test_strings.c
     src/test_mixed.c
     src/test_cobs.c
+    src/test_collisions.c
     src/test_all.c
     src/include/test_framework.h
     src/include/test_suites.h

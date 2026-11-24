@@ -26,10 +26,16 @@ static void begin(const void* info, size_t total_size, int connfd) {
 
 #define DUMMY(x, y, z) ((void) 0)
 
-#define TRACEF(connfd, ...)                                                                        \
-    EMT_TRACE_F(                                                                                   \
+#define TRACE(connfd, str)                                                                         \
+    EMT_TRACE(                                                                                     \
+        __attribute__((used)) __attribute__((section(".emtrace"))) const, EMT_NO_FORMAT, out,      \
+        SERIALIZE_POINTER, begin, DUMMY, connfd, "", str                                           \
+    )
+
+#define TRACEF(connfd, fmt, ...)                                                                   \
+    EMT_TRACE_F_FORWARD(                                                                           \
         __attribute__((used)) __attribute__((section(".emtrace"))) const, EMT_PY_FORMAT, out,      \
-        SERIALIZE_POINTER, begin, DUMMY, connfd, "", __VA_ARGS__                                   \
+        SERIALIZE_POINTER, begin, DUMMY, connfd, "", fmt, EMT_ARG_##__VA_ARGS__, EMT_END           \
     )
 
 int main(void) {
@@ -83,7 +89,7 @@ int main(void) {
         int y = 2;
         for (int i = 0; i < 15; i++) {
             TRACEF(connfd, "Hello, World! {:d}", VAL(int, y));
-            TRACEF(connfd, "  test\n");
+            TRACE(connfd, "  test\n");
             TRACEF(
                 connfd, "Hello, World! 0x{0:x} {2:d} {1:d}\n", //
                 VAL(int, i), VAL(int, 'a'), VAL(void*, &x)
@@ -92,14 +98,14 @@ int main(void) {
             for (int j = i; j > 3; j--) {
                 TRACEF(connfd, "|{:^18d}|\n", VAL(int, j));
             }
-            TRACEF(
+            TRACE(
                 connfd, "--------------------\n"
                         "|                  |\n"
                         "--------------------\n"
             );
         }
 
-        TRACEF(connfd, "Hello World!\n");
+        TRACE(connfd, "Hello World!\n");
         close(connfd);
     }
 

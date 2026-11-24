@@ -14,7 +14,7 @@ EMTRACE_MAGIC_COBS_PASSTHROUGH(3);
 static int run(void) {
     emtrace_init();
 
-    EMTRACE_F("Hello, World from emtrace!\n");
+    EMTRACE("Hello, World from emtrace!\n");
     printf("Hello, World from printf!\n");
     // Two successive null bytes should be escaped to a single null byte by emtrace
     putchar(0);

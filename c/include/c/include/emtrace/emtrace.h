@@ -1,6 +1,6 @@
 // DO NOT MODIFY DIRECTLY! Header is auto-generated from c/header-generator/c/emtrace_template.h and
 // c/header-generator/c/emtrace_common.h using this python script: c/header-generator/build_macro.py
-// Script arguments were: max_args=32
+// Script arguments were: max_args=64
 #ifndef EMTRACE_EMTRACE_H
 #define EMTRACE_EMTRACE_H
 #ifdef EMTRACE_COMMON
@@ -334,61 +334,223 @@ static inline void emt_serialize_varint(
 }
 #endif
 
-#define EMT_NTH_ARG(                                                                               \
-    a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, x, y, z, aa, bb, cc, dd, ee, \
-    ff, gg, hh, ii, jj, kk, ll, mm, nn, oo, pp, qq, rr, ss, tt, uu, vv, ww, xx, yy, zz, aaa, bbb,  \
-    ccc, ddd, eee, fff, ggg, hhh, iii, jjj, kkk, lll, mmm, nnn, ooo, ppp, qqq, rrr, sss, ttt, uuu, \
-    vvv, www, xxx, yyy, zzz, aaaa, bbbb, cccc, dddd, eeee, ffff, gggg, hhhh, iiii, jjjj, kkkk,     \
-    llll, mmmm, nnnn, oooo, pppp, qqqq, rrrr, ssss, tttt, uuuu, vvvv, wwww, xxxx, yyyy, zzzz,      \
-    aaaaa, bbbbb, ccccc, ddddd, eeeee, fffff, ggggg, hhhhh, iiiii, jjjjj, kkkkk, lllll, mmmmm,     \
-    nnnnn, ooooo, ppppp, qqqqq, rrrrr, sssss, ttttt, uuuuu, vvvvv, wwwww, xxxxx, yyyyy, zzzzz,     \
-    aaaaaa, bbbbbb, cccccc, dddddd, eeeeee, ffffff, gggggg, hhhhhh, iiiiii, jjjjjj, kkkkkk,        \
-    llllll, mmmmmm, nnnnnn, oooooo, pppppp, qqqqqq, rrrrrr, ssssss, tttttt, uuuuuu, vvvvvv,        \
-    wwwwww, xxxxxx, yyyyyy, zzzzzz, aaaaaaa, bbbbbbb, ccccccc, ddddddd, eeeeeee, fffffff, ggggggg, \
-    hhhhhhh, iiiiiii, jjjjjjj, kkkkkkk, lllllll, mmmmmmm, nnnnnnn, ooooooo, ppppppp, qqqqqqq,      \
-    rrrrrrr, sssssss, ttttttt, uuuuuuu, vvvvvvv, wwwwwww, xxxxxxx, yyyyyyy, zzzzzzz, aaaaaaaa,     \
-    bbbbbbbb, cccccccc, dddddddd, eeeeeeee, ffffffff, gggggggg, hhhhhhhh, iiiiiiii, jjjjjjjj,      \
-    kkkkkkkk, llllllll, mmmmmmmm, nnnnnnnn, oooooooo, pppppppp, qqqqqqqq, ...                      \
-)                                                                                                  \
-    qqqqqqqq
-
-#define EMT_NUM_ARGS_REST(...)                                                                     \
-    EMT_NTH_ARG(                                                                                   \
-        __VA_ARGS__, 196, 195, 194, 193, 192, 191, 190, 189, 188, 187, 186, 185, 184, 183, 182,    \
-        181, 180, 179, 178, 177, 176, 175, 174, 173, 172, 171, 170, 169, 168, 167, 166, 165, 164,  \
-        163, 162, 161, 160, 159, 158, 157, 156, 155, 154, 153, 152, 151, 150, 149, 148, 147, 146,  \
-        145, 144, 143, 142, 141, 140, 139, 138, 137, 136, 135, 134, 133, 132, 131, 130, 129, 128,  \
-        127, 126, 125, 124, 123, 122, 121, 120, 119, 118, 117, 116, 115, 114, 113, 112, 111, 110,  \
-        109, 108, 107, 106, 105, 104, 103, 102, 101, 100, 99, 98, 97, 96, 95, 94, 93, 92, 91, 90,  \
-        89, 88, 87, 86, 85, 84, 83, 82, 81, 80, 79, 78, 77, 76, 75, 74, 73, 72, 71, 70, 69, 68,    \
-        67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46,    \
-        45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24,    \
-        23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0    \
-    )
-
-#define EMT_FIRST_ARG(a, ...) a
-#define EMT_REST_ARGS(a, ...) __VA_ARGS__
-
 // clang-format off
-#define EMT_VAL(type, x)                    type,        x, sizeof(type),             EMT_TAG_VAL
-#define EMT_ARR(type, x)                    type,        x, sizeof(x) / sizeof(type), EMT_TAG_ARR
-#define EMT_STS(type, x, len)               type,        x, len,                      EMT_TAG_STS
-#define EMT_SLC(type, x, len)               type,        x, len,                      EMT_TAG_SLC
-#define EMT_STR(x)                          const char*, x, EMT_STRLEN(x) + 1,        EMT_TAG_STR
+#define EMT_ARG_VAL(type, x)      EMT_TAG_VAL(type, x)
+#define EMT_ARG_ARR(type, x)      EMT_TAG_ARR(type, x)
+#define EMT_ARG_STS(type, x, len) EMT_TAG_STS(type, x, len)
+#define EMT_ARG_SLC(type, x, len) EMT_TAG_SLC(type, x, len)
+#define EMT_ARG_STR(x)            EMT_TAG_STR(x)
 // clang-format on
 
-#ifndef EMT_NO_SIMPLE_MACROS
-// NOLINTBEGIN(readability-identifier-naming)
-#define VAL EMT_VAL
-#define ARR EMT_ARR
-#define STS EMT_STS
-#define SLC EMT_SLC
-#define STR EMT_STR
-// NOLINTEND(readability-identifier-naming)
-#endif
+// NOLINTNEXTLINE(readability-identifier-naming) -- produced by EMT_ARG_## when __VA_ARGS__ is empty
+#define EMT_ARG_ EMT_TAG_END
+#define EMT_ARG_EMT_END EMT_TAG_END
+#define EMT_OVERFLOW_EMT_END
+#define EMT_OVERFLOW_EMT_ARG_EMT_END
+
+#define EMT_APPLY_1_CALL(a, fn, ...) fn(a, __VA_ARGS__)
+#define EMT_APPLY_1(a, ...) EMT_APPLY_1_CALL(a, __VA_ARGS__)
+#define EMT_APPLY_2_CALL(a, b, fn, ...) fn(a, b, __VA_ARGS__)
+#define EMT_APPLY_2(a, b, ...) EMT_APPLY_2_CALL(a, b, __VA_ARGS__)
+
+// NOLINTBEGIN(bugprone-macro-parentheses) -- additive fragments expanded inside `(0 ...)`
+// Argument count per tag
+#define EMT_F_COUNT_EMT_TAG_VAL(type, x) +1
+#define EMT_F_COUNT_EMT_TAG_ARR(type, x) +1
+#define EMT_F_COUNT_EMT_TAG_STS(type, x, len) +1
+#define EMT_F_COUNT_EMT_TAG_SLC(type, x, len) +1
+#define EMT_F_COUNT_EMT_TAG_STR(x) +1
+#define EMT_F_COUNT_EMT_TAG_END
+
+// Layout entry count per tag: top-level type entry (4), plus child entry (5) for lists
+// (see TRACE_FORMAT.md)
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_VAL(type, x) +4
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_STR(x) +4
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_ARR(type, x) +9
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_SLC(type, x, len) +9
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_STS(type, x, len) +9
+#define EMT_F_LAYOUT_SIZE_EMT_TAG_END
+// NOLINTEND(bugprone-macro-parentheses)
+
+// Format-info struct member declarations per tag
+#define EMT_F_INFO_MEMBER_VAL(name, type) char name[sizeof(#type)];
+#define EMT_F_INFO_MEMBER_STR(name, _unused) char name[sizeof("string")];
+#define EMT_F_INFO_MEMBER_LIST(name, type)                                                         \
+    char name[sizeof("list")];                                                                     \
+    char name##_child_name[sizeof("")];                                                            \
+    char name##_child_type_id[sizeof(#type)];
+#define EMT_F_INFO_MEMBER_END(name, _unused)
+
+#define EMT_F_INFO_MEMBER_EMT_TAG_VAL(type, x) EMT_F_INFO_MEMBER_VAL, type
+#define EMT_F_INFO_MEMBER_EMT_TAG_STR(x) EMT_F_INFO_MEMBER_STR, 0
+#define EMT_F_INFO_MEMBER_EMT_TAG_ARR(type, x) EMT_F_INFO_MEMBER_LIST, type
+#define EMT_F_INFO_MEMBER_EMT_TAG_SLC(type, x, len) EMT_F_INFO_MEMBER_LIST, type
+#define EMT_F_INFO_MEMBER_EMT_TAG_STS(type, x, len) EMT_F_INFO_MEMBER_LIST, type
+#define EMT_F_INFO_MEMBER_EMT_TAG_END EMT_F_INFO_MEMBER_END, 0
+#define EMT_F_INFO_MEMBER_DISPATCH(name, arg) EMT_APPLY_1(name, EMT_F_INFO_MEMBER_##arg)
+
+// Format-info layout entries per tag:
+// Top-level type entry: [type_id_offset, size, flag, num_children].
+// Child entry: [name_offset, type_id_offset, size, flag, num_children=0].
+#define EMT_F_LAYOUT_VAL(name, type)                                                               \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,
+#define EMT_F_LAYOUT_STR(name, _unused)                                                            \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1,                      \
+        EMT_FLAG_NULL_TERMINATED, 0,
+#define EMT_F_LAYOUT_STATIC_LIST(name, type, len)                                                  \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1 * (len),              \
+        EMT_FLAG_STATIC, 1, EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
+        EMT_FLAG_STATIC, 0,
+#define EMT_F_LAYOUT_SLC(name, type)                                                               \
+    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1,      \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
+        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
+        EMT_FLAG_STATIC, 0,
+#define EMT_F_LAYOUT_END(name, _unused)
+
+#define EMT_F_LAYOUT_EMT_TAG_VAL(type, x) EMT_F_LAYOUT_VAL, type
+#define EMT_F_LAYOUT_EMT_TAG_STR(x) EMT_F_LAYOUT_STR, 0
+#define EMT_F_LAYOUT_EMT_TAG_ARR(type, x) EMT_F_LAYOUT_STATIC_LIST, type, sizeof(x) / sizeof(type)
+#define EMT_F_LAYOUT_EMT_TAG_STS(type, x, len) EMT_F_LAYOUT_STATIC_LIST, type, len
+#define EMT_F_LAYOUT_EMT_TAG_SLC(type, x, len) EMT_F_LAYOUT_SLC, type
+#define EMT_F_LAYOUT_EMT_TAG_END EMT_F_LAYOUT_END, 0
+#define EMT_F_LAYOUT_DISPATCH(name, arg) EMT_APPLY_1(name, EMT_F_LAYOUT_##arg)
+
+// Format-info type-id string initializers per tag
+#define EMT_F_INFO_EMT_TAG_VAL(type, x) #type,
+#define EMT_F_INFO_EMT_TAG_STR(x) "string",
+#define EMT_F_INFO_EMT_TAG_ARR(type, x) "list", "", #type,
+#define EMT_F_INFO_EMT_TAG_SLC(type, x, len) "list", "", #type,
+#define EMT_F_INFO_EMT_TAG_STS(type, x, len) "list", "", #type,
+#define EMT_F_INFO_EMT_TAG_END
+
+// NOLINTBEGIN(bugprone-macro-parentheses) -- additive fragments expanded inside `(0 ...)`
+// Estimated serialized size contribution per tag
+#define EMT_F_TOTAL_SIZE_EMT_TAG_VAL(type, x) +sizeof(type)
+#define EMT_F_TOTAL_SIZE_EMT_TAG_STR(x) +(EMT_STRLEN(x) + 1)
+#define EMT_F_TOTAL_SIZE_EMT_TAG_ARR(type, x) +(sizeof(x) / sizeof(type))
+#define EMT_F_TOTAL_SIZE_EMT_TAG_SLC(type, x, len) +(len)
+#define EMT_F_TOTAL_SIZE_EMT_TAG_STS(type, x, len) +(len)
+#define EMT_F_TOTAL_SIZE_EMT_TAG_END
+// NOLINTEND(bugprone-macro-parentheses)
+
+// Runtime serialization per tag
+#define EMT_F_VAL(out_fn, extra_arg, type, x)                                                      \
+    {                                                                                              \
+        type temp = (x);                                                                           \
+        out_fn((const void*) &temp, sizeof(type), extra_arg);                                      \
+    }
+#define EMT_F_STR(out_fn, extra_arg, x)                                                            \
+    {                                                                                              \
+        const char* temp = (x);                                                                    \
+        out_fn(temp, EMT_STRLEN(temp) + 1, extra_arg);                                             \
+    }
+#define EMT_F_ARR(out_fn, extra_arg, type, x)                                                      \
+    {                                                                                              \
+        const type(*temp)[] = &(x);                                                                \
+        out_fn(temp, sizeof(x), extra_arg);                                                        \
+    }
+#define EMT_F_SLC(out_fn, extra_arg, type, x, len)                                                 \
+    {                                                                                              \
+        const type* emt_temp_unlikely_to_shadow = (x);                                             \
+        emt_size_t size = (len);                                                                   \
+        emt_serialize_varint(size, out_fn, extra_arg);                                             \
+        out_fn(emt_temp_unlikely_to_shadow, size * sizeof(type), extra_arg);                       \
+    }
+#define EMT_F_STS(out_fn, extra_arg, type, x, len)                                                 \
+    {                                                                                              \
+        const type* temp = (x);                                                                    \
+        out_fn(temp, sizeof(type) * (len), extra_arg);                                             \
+    }
+#define EMT_F_END(out_fn, extra_arg, _unused)
+
+#define EMT_F_EMT_TAG_VAL(type, x) EMT_F_VAL, type, x
+#define EMT_F_EMT_TAG_STR(x) EMT_F_STR, x
+#define EMT_F_EMT_TAG_ARR(type, x) EMT_F_ARR, type, x
+#define EMT_F_EMT_TAG_SLC(type, x, len) EMT_F_SLC, type, x, len
+#define EMT_F_EMT_TAG_STS(type, x, len) EMT_F_STS, type, x, len
+#define EMT_F_EMT_TAG_END EMT_F_END, 0
+#define EMT_F_DISPATCH(out_fn, extra_arg, arg) EMT_APPLY_2(out_fn, extra_arg, EMT_F_##arg)
+
+#define EMT_TRACE_F_IMPL(                                                                          \
+    fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix,     \
+    fmt_str, ...                                                                                   \
+)                                                                                                  \
+    do {                                                                                           \
+                                                                                                   \
+        struct emt_info_unlikely_to_shadow_t {                                                     \
+            unsigned char framing[14];                                                             \
+            emt_size_t record_size;                                                                \
+            emt_size_t endianness_probe;                                                           \
+            emt_size_t layout[7 + EMT_F_LAYOUT_SIZE(__VA_ARGS__)];                                 \
+            char fmt[sizeof(fmt_str postfix)];                                                     \
+            EMT_F_INFO_MEMBER(__VA_ARGS__)                                                         \
+            char file[sizeof(__FILE__)];                                                           \
+        };                                                                                         \
+        fmt_info_attributes static struct emt_info_unlikely_to_shadow_t                            \
+            emt_info_unlikely_to_shadow = {                                                        \
+                {'E', 'M', 'T', 10,                                                                \
+                 (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, record_size),  \
+                 (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, layout),       \
+                 (unsigned char)                                                                   \
+                     EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, endianness_probe),         \
+                 (unsigned char) sizeof(emt_size_t), EMT_TRACE_VERSION_MAJOR,                      \
+                 EMT_TRACE_VERSION_MINOR, 'T', 'R', 'C', 'E'},                                     \
+                sizeof(struct emt_info_unlikely_to_shadow_t),                                      \
+                EMT_ENDIANNESS_PROBE,                                                              \
+                {EMT_RUNTIME_DATA_TRACE_VERSION_MAJOR, EMT_RUNTIME_DATA_TRACE_VERSION_MINOR,       \
+                 EMT_F_COUNT(__VA_ARGS__),                                                         \
+                 EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, fmt),                          \
+                 EMT_F_LAYOUT(__VA_ARGS__) formatter,                                              \
+                 EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, file), __LINE__},              \
+                fmt_str postfix,                                                                   \
+                EMT_F_INFO(__VA_ARGS__) __FILE__,                                                  \
+        };                                                                                         \
+        begin(                                                                                     \
+            (const void*) &emt_info_unlikely_to_shadow, EMT_F_TOTAL_SIZE(__VA_ARGS__), extra_arg   \
+        );                                                                                         \
+        ptr_serializer(&emt_info_unlikely_to_shadow, out_fn, extra_arg);                           \
+                                                                                                   \
+        EMT_F(out_fn, extra_arg, __VA_ARGS__)                                                      \
+        finish(                                                                                    \
+            (const void*) &emt_info_unlikely_to_shadow, EMT_F_TOTAL_SIZE(__VA_ARGS__), extra_arg   \
+        );                                                                                         \
+    } while (0)
 
 /**
- * @brief Emit a trace.
+ * @brief Forwarding helper for custom wrapper macros around `EMT_TRACE_F`.
+ *
+ * When defining a custom variadic wrapper macro around `EMT_TRACE_F`, a plain forwarding call
+ * (`EMT_TRACE_F(..., fmt, __VA_ARGS__)`) still avoids polluting the global namespace, but if the
+ * caller has a conflicting `#define VAL ...` (or `ARR`, `STS`, `SLC`, `STR`) macro in scope, the
+ * wrapper's own argument prescan would expand it before `EMT_TRACE_F` sees it.
+ *
+ * Forwarding through `EMT_TRACE_F_FORWARD` with `EMT_ARG_##__VA_ARGS__, EMT_END` prevents prescan
+ * of the tag tokens so even conflicting user macros do not interfere:
+ *
+ * @code
+ * #define MY_TRACE_F(ctx, fmt, ...)                                                              \
+ *     EMT_TRACE_F_FORWARD(                                                                       \
+ *         EMT_DEFAULT_ATTR, EMT_PY_FORMAT, my_out, my_ptr_ser, my_begin, my_finish, ctx, "",     \
+ *         fmt, EMT_ARG_##__VA_ARGS__, EMT_END                                                    \
+ *     )
+ * @endcode
+ *
+ * @param a0  The first trace argument, already token-pasted with `EMT_ARG_`.
+ * @param ... Remaining unexpanded trace arguments followed by a trailing `EMT_END`.
+ */
+#define EMT_TRACE_F_FORWARD(                                                                       \
+    fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix,     \
+    fmt, a0, ...                                                                                   \
+)                                                                                                  \
+    EMT_TRACE_F_IMPL(                                                                              \
+        fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix, \
+        fmt, a0 EMT_NORM_TAIL(EMT_ARG_##__VA_ARGS__, EMT_END)                                      \
+    )
+
+/**
+ * @brief Emit a trace with format arguments.
  *
  * Outputs a sequence of bytes, and creates a static variable (the `format-info`) through the
  * contents of which, the sequence of bytes can be decoded to the intended trace.
@@ -432,64 +594,40 @@ static inline void emt_serialize_varint(
  *
  * @param postfix             is expanded after the format string in the format-info.
  *
- * @param ...                 The first vararg is the format string that, together with `postfix`,
- *                            ends up in the format-info, the rest of the varargs must each be an
- *                            invocation of either of the following macros:
- *                            EMT_VAL, EMT_ARR, EMT_STS, EMT_SLC, EMT_STR
+ * @param fmt                 The format string that, together with `postfix`, ends up in the
+ *                            format-info.
+ *
+ * @param ...                 One or more format arguments, each written using one of the tagged
+ *                            forms: `VAL(type, x)`, `ARR(type, x)`, `STS(type, x, len)`,
+ *                            `SLC(type, x, len)`, or `STR(x)`. These tags are recognized via token
+ *                            pasting before macro expansion and are not defined in the global
+ *                            namespace, so colliding user identifiers or macros do not interfere.
+ *                            For traces without format arguments, use `EMT_TRACE`.
  *                            *Passing anything else is not stable across versions of this C header*
  */
 #define EMT_TRACE_F(                                                                               \
-    fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix, ... \
+    fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix,     \
+    fmt, ...                                                                                       \
 )                                                                                                  \
-    do {                                                                                           \
-                                                                                                   \
-        struct emt_info_unlikely_to_shadow_t {                                                     \
-            unsigned char framing[14];                                                             \
-            emt_size_t record_size;                                                                \
-            emt_size_t endianness_probe;                                                           \
-            emt_size_t layout                                                                      \
-                [7 + EMT_F_LAYOUT_SIZE(                                                            \
-                         EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)             \
-                     )];                                                                           \
-            char fmt[sizeof(EMT_FIRST_ARG(__VA_ARGS__, 0) postfix)];                               \
-            EMT_F_INFO_MEMBER(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))       \
-            char file[sizeof(__FILE__)];                                                           \
-        };                                                                                         \
-        fmt_info_attributes static struct emt_info_unlikely_to_shadow_t                            \
-            emt_info_unlikely_to_shadow = {                                                        \
-                {'E', 'M', 'T', 10,                                                                \
-                 (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, record_size),  \
-                 (unsigned char) EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, layout),       \
-                 (unsigned char)                                                                   \
-                     EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, endianness_probe),         \
-                 (unsigned char) sizeof(emt_size_t), EMT_TRACE_VERSION_MAJOR,                      \
-                 EMT_TRACE_VERSION_MINOR, 'T', 'R', 'C', 'E'},                                     \
-                sizeof(struct emt_info_unlikely_to_shadow_t),                                      \
-                EMT_ENDIANNESS_PROBE,                                                              \
-                {EMT_RUNTIME_DATA_TRACE_VERSION_MAJOR, EMT_RUNTIME_DATA_TRACE_VERSION_MINOR,       \
-                 EMT_NUM_ARGS_REST(__VA_ARGS__) / 4,                                               \
-                 EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, fmt),                          \
-                 EMT_F_LAYOUT(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))       \
-                     formatter,                                                                    \
-                 EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, file), __LINE__},              \
-                EMT_FIRST_ARG(__VA_ARGS__, 0) postfix,                                             \
-                EMT_F_INFO(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))          \
-                    __FILE__,                                                                      \
-        };                                                                                         \
-        begin(                                                                                     \
-            (const void*) &emt_info_unlikely_to_shadow,                                            \
-            EMT_F_TOTAL_SIZE(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)),       \
-            extra_arg                                                                              \
-        );                                                                                         \
-        ptr_serializer(&emt_info_unlikely_to_shadow, out_fn, extra_arg);                           \
-                                                                                                   \
-        EMT_F(out_fn, extra_arg, EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0))    \
-        finish(                                                                                    \
-            (const void*) &emt_info_unlikely_to_shadow,                                            \
-            EMT_F_TOTAL_SIZE(EMT_NUM_ARGS_REST(__VA_ARGS__), EMT_REST_ARGS(__VA_ARGS__, 0)),       \
-            extra_arg                                                                              \
-        );                                                                                         \
-    } while (0)
+    EMT_TRACE_F_FORWARD(                                                                           \
+        fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix, \
+        fmt, EMT_ARG_##__VA_ARGS__, EMT_END                                                        \
+    )
+
+/**
+ * @brief Emit a trace without format arguments.
+ *
+ * Companion to `EMT_TRACE_F` for emitting a static string trace with no format arguments (strict
+ * C99 compliant without relying on empty `__VA_ARGS__`). All parameters have the same meaning as
+ * in `EMT_TRACE_F`, with `str` being the string stored in the format-info alongside `postfix`.
+ */
+#define EMT_TRACE(                                                                                 \
+    fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix, str \
+)                                                                                                  \
+    EMT_TRACE_F_FORWARD(                                                                           \
+        fmt_info_attributes, formatter, out_fn, ptr_serializer, begin, finish, extra_arg, postfix, \
+        str, EMT_TAG_END, EMT_END                                                                  \
+    )
 
 /**
  * @brief Create a MGIC record.
@@ -745,24 +883,24 @@ static inline void emt_serialize_varint(
 
 #if defined(EMT_DEFAULT_ATTR) && defined(EMT_DEFAULT_ALIGNMENT_POWER)
 
-#define EMTRACE_F(...)                                                                             \
-    EMT_TRACE_F(                                                                                   \
+#define EMTRACE_F(fmt, ...)                                                                        \
+    EMT_TRACE_F_FORWARD(                                                                           \
         EMT_DEFAULT_ATTR, EMT_PY_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
-        emt_default_begin, emt_default_finish, NULL, "", __VA_ARGS__                               \
+        emt_default_begin, emt_default_finish, NULL, "", fmt, EMT_ARG_##__VA_ARGS__, EMT_END       \
     )
 #define EMTRACE(str)                                                                               \
-    EMT_TRACE_F(                                                                                   \
+    EMT_TRACE(                                                                                     \
         EMT_DEFAULT_ATTR, EMT_NO_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
         emt_default_begin, emt_default_finish, NULL, "", str                                       \
     )
 
-#define EMTRACELN_F(...)                                                                           \
-    EMT_TRACE_F(                                                                                   \
+#define EMTRACELN_F(fmt, ...)                                                                      \
+    EMT_TRACE_F_FORWARD(                                                                           \
         EMT_DEFAULT_ATTR, EMT_PY_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
-        emt_default_begin, emt_default_finish, NULL, "\n", __VA_ARGS__                             \
+        emt_default_begin, emt_default_finish, NULL, "\n", fmt, EMT_ARG_##__VA_ARGS__, EMT_END     \
     )
 #define EMTRACELN(str)                                                                             \
-    EMT_TRACE_F(                                                                                   \
+    EMT_TRACE(                                                                                     \
         EMT_DEFAULT_ATTR, EMT_NO_FORMAT, emt_default_out, emt_default_serialize_pointer,           \
         emt_default_begin, emt_default_finish, NULL, "", str "\n"                                  \
     )
@@ -801,3025 +939,243 @@ static inline void emtrace_init(void) {
 #ifdef _MSC_VER
 #define EMT_MACRO_ARGS_CAP 127
 #endif
-#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_VAL() 4
+// clang-format off
+#define EMT_NORM_REST(                                                                             \
+    a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21,    \
+    a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, \
+    a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, a59, \
+    a60, a61, a62, a63, overflow, ...                                                              \
+)                                                                                                  \
+    , a2, EMT_ARG_##a3, EMT_ARG_##a4, EMT_ARG_##a5, EMT_ARG_##a6, EMT_ARG_##a7, EMT_ARG_##a8,      \
+    EMT_ARG_##a9, EMT_ARG_##a10, EMT_ARG_##a11, EMT_ARG_##a12, EMT_ARG_##a13, EMT_ARG_##a14,       \
+    EMT_ARG_##a15, EMT_ARG_##a16, EMT_ARG_##a17, EMT_ARG_##a18, EMT_ARG_##a19, EMT_ARG_##a20,      \
+    EMT_ARG_##a21, EMT_ARG_##a22, EMT_ARG_##a23, EMT_ARG_##a24, EMT_ARG_##a25, EMT_ARG_##a26,      \
+    EMT_ARG_##a27, EMT_ARG_##a28, EMT_ARG_##a29, EMT_ARG_##a30, EMT_ARG_##a31, EMT_ARG_##a32,      \
+    EMT_ARG_##a33, EMT_ARG_##a34, EMT_ARG_##a35, EMT_ARG_##a36, EMT_ARG_##a37, EMT_ARG_##a38,      \
+    EMT_ARG_##a39, EMT_ARG_##a40, EMT_ARG_##a41, EMT_ARG_##a42, EMT_ARG_##a43, EMT_ARG_##a44,      \
+    EMT_ARG_##a45, EMT_ARG_##a46, EMT_ARG_##a47, EMT_ARG_##a48, EMT_ARG_##a49, EMT_ARG_##a50,      \
+    EMT_ARG_##a51, EMT_ARG_##a52, EMT_ARG_##a53, EMT_ARG_##a54, EMT_ARG_##a55, EMT_ARG_##a56,      \
+    EMT_ARG_##a57, EMT_ARG_##a58, EMT_ARG_##a59, EMT_ARG_##a60, EMT_ARG_##a61, EMT_ARG_##a62,      \
+    EMT_ARG_##a63 EMT_OVERFLOW_##overflow
+
+#define EMT_NORM_TAIL(a1, ...)                                                                     \
+    , a1 EMT_NORM_REST(EMT_ARG_##__VA_ARGS__, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END,\
+    EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END,      \
+    EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END,      \
+    EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END,      \
+    EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END,      \
+    EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END,      \
+    EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END, EMT_END)
+
+#define EMT_F_COUNT(                                                                               \
+    a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, \
+    a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, \
+    a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, \
+    a59, a60, a61, a62, a63                                                                        \
+)                                                                                                  \
+    (0 EMT_F_COUNT_##a0 EMT_F_COUNT_##a1 EMT_F_COUNT_##a2 EMT_F_COUNT_##a3 EMT_F_COUNT_##a4        \
+    EMT_F_COUNT_##a5 EMT_F_COUNT_##a6 EMT_F_COUNT_##a7 EMT_F_COUNT_##a8 EMT_F_COUNT_##a9           \
+    EMT_F_COUNT_##a10 EMT_F_COUNT_##a11 EMT_F_COUNT_##a12 EMT_F_COUNT_##a13 EMT_F_COUNT_##a14      \
+    EMT_F_COUNT_##a15 EMT_F_COUNT_##a16 EMT_F_COUNT_##a17 EMT_F_COUNT_##a18 EMT_F_COUNT_##a19      \
+    EMT_F_COUNT_##a20 EMT_F_COUNT_##a21 EMT_F_COUNT_##a22 EMT_F_COUNT_##a23 EMT_F_COUNT_##a24      \
+    EMT_F_COUNT_##a25 EMT_F_COUNT_##a26 EMT_F_COUNT_##a27 EMT_F_COUNT_##a28 EMT_F_COUNT_##a29      \
+    EMT_F_COUNT_##a30 EMT_F_COUNT_##a31 EMT_F_COUNT_##a32 EMT_F_COUNT_##a33 EMT_F_COUNT_##a34      \
+    EMT_F_COUNT_##a35 EMT_F_COUNT_##a36 EMT_F_COUNT_##a37 EMT_F_COUNT_##a38 EMT_F_COUNT_##a39      \
+    EMT_F_COUNT_##a40 EMT_F_COUNT_##a41 EMT_F_COUNT_##a42 EMT_F_COUNT_##a43 EMT_F_COUNT_##a44      \
+    EMT_F_COUNT_##a45 EMT_F_COUNT_##a46 EMT_F_COUNT_##a47 EMT_F_COUNT_##a48 EMT_F_COUNT_##a49      \
+    EMT_F_COUNT_##a50 EMT_F_COUNT_##a51 EMT_F_COUNT_##a52 EMT_F_COUNT_##a53 EMT_F_COUNT_##a54      \
+    EMT_F_COUNT_##a55 EMT_F_COUNT_##a56 EMT_F_COUNT_##a57 EMT_F_COUNT_##a58 EMT_F_COUNT_##a59      \
+    EMT_F_COUNT_##a60 EMT_F_COUNT_##a61 EMT_F_COUNT_##a62 EMT_F_COUNT_##a63)
+
+#define EMT_F_LAYOUT_SIZE(                                                                         \
+    a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, \
+    a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, \
+    a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, \
+    a59, a60, a61, a62, a63                                                                        \
+)                                                                                                  \
+    (0 EMT_F_LAYOUT_SIZE_##a0 EMT_F_LAYOUT_SIZE_##a1 EMT_F_LAYOUT_SIZE_##a2 EMT_F_LAYOUT_SIZE_##a3 \
+    EMT_F_LAYOUT_SIZE_##a4 EMT_F_LAYOUT_SIZE_##a5 EMT_F_LAYOUT_SIZE_##a6 EMT_F_LAYOUT_SIZE_##a7    \
+    EMT_F_LAYOUT_SIZE_##a8 EMT_F_LAYOUT_SIZE_##a9 EMT_F_LAYOUT_SIZE_##a10 EMT_F_LAYOUT_SIZE_##a11  \
+    EMT_F_LAYOUT_SIZE_##a12 EMT_F_LAYOUT_SIZE_##a13 EMT_F_LAYOUT_SIZE_##a14                        \
+    EMT_F_LAYOUT_SIZE_##a15 EMT_F_LAYOUT_SIZE_##a16 EMT_F_LAYOUT_SIZE_##a17                        \
+    EMT_F_LAYOUT_SIZE_##a18 EMT_F_LAYOUT_SIZE_##a19 EMT_F_LAYOUT_SIZE_##a20                        \
+    EMT_F_LAYOUT_SIZE_##a21 EMT_F_LAYOUT_SIZE_##a22 EMT_F_LAYOUT_SIZE_##a23                        \
+    EMT_F_LAYOUT_SIZE_##a24 EMT_F_LAYOUT_SIZE_##a25 EMT_F_LAYOUT_SIZE_##a26                        \
+    EMT_F_LAYOUT_SIZE_##a27 EMT_F_LAYOUT_SIZE_##a28 EMT_F_LAYOUT_SIZE_##a29                        \
+    EMT_F_LAYOUT_SIZE_##a30 EMT_F_LAYOUT_SIZE_##a31 EMT_F_LAYOUT_SIZE_##a32                        \
+    EMT_F_LAYOUT_SIZE_##a33 EMT_F_LAYOUT_SIZE_##a34 EMT_F_LAYOUT_SIZE_##a35                        \
+    EMT_F_LAYOUT_SIZE_##a36 EMT_F_LAYOUT_SIZE_##a37 EMT_F_LAYOUT_SIZE_##a38                        \
+    EMT_F_LAYOUT_SIZE_##a39 EMT_F_LAYOUT_SIZE_##a40 EMT_F_LAYOUT_SIZE_##a41                        \
+    EMT_F_LAYOUT_SIZE_##a42 EMT_F_LAYOUT_SIZE_##a43 EMT_F_LAYOUT_SIZE_##a44                        \
+    EMT_F_LAYOUT_SIZE_##a45 EMT_F_LAYOUT_SIZE_##a46 EMT_F_LAYOUT_SIZE_##a47                        \
+    EMT_F_LAYOUT_SIZE_##a48 EMT_F_LAYOUT_SIZE_##a49 EMT_F_LAYOUT_SIZE_##a50                        \
+    EMT_F_LAYOUT_SIZE_##a51 EMT_F_LAYOUT_SIZE_##a52 EMT_F_LAYOUT_SIZE_##a53                        \
+    EMT_F_LAYOUT_SIZE_##a54 EMT_F_LAYOUT_SIZE_##a55 EMT_F_LAYOUT_SIZE_##a56                        \
+    EMT_F_LAYOUT_SIZE_##a57 EMT_F_LAYOUT_SIZE_##a58 EMT_F_LAYOUT_SIZE_##a59                        \
+    EMT_F_LAYOUT_SIZE_##a60 EMT_F_LAYOUT_SIZE_##a61 EMT_F_LAYOUT_SIZE_##a62                        \
+    EMT_F_LAYOUT_SIZE_##a63)
+
+#define EMT_F_INFO_MEMBER(                                                                         \
+    a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, \
+    a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, \
+    a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, \
+    a59, a60, a61, a62, a63                                                                        \
+)                                                                                                  \
+    EMT_F_INFO_MEMBER_DISPATCH(type0, a0) EMT_F_INFO_MEMBER_DISPATCH(type1, a1)                    \
+    EMT_F_INFO_MEMBER_DISPATCH(type2, a2) EMT_F_INFO_MEMBER_DISPATCH(type3, a3)                    \
+    EMT_F_INFO_MEMBER_DISPATCH(type4, a4) EMT_F_INFO_MEMBER_DISPATCH(type5, a5)                    \
+    EMT_F_INFO_MEMBER_DISPATCH(type6, a6) EMT_F_INFO_MEMBER_DISPATCH(type7, a7)                    \
+    EMT_F_INFO_MEMBER_DISPATCH(type8, a8) EMT_F_INFO_MEMBER_DISPATCH(type9, a9)                    \
+    EMT_F_INFO_MEMBER_DISPATCH(type10, a10) EMT_F_INFO_MEMBER_DISPATCH(type11, a11)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type12, a12) EMT_F_INFO_MEMBER_DISPATCH(type13, a13)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type14, a14) EMT_F_INFO_MEMBER_DISPATCH(type15, a15)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type16, a16) EMT_F_INFO_MEMBER_DISPATCH(type17, a17)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type18, a18) EMT_F_INFO_MEMBER_DISPATCH(type19, a19)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type20, a20) EMT_F_INFO_MEMBER_DISPATCH(type21, a21)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type22, a22) EMT_F_INFO_MEMBER_DISPATCH(type23, a23)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type24, a24) EMT_F_INFO_MEMBER_DISPATCH(type25, a25)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type26, a26) EMT_F_INFO_MEMBER_DISPATCH(type27, a27)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type28, a28) EMT_F_INFO_MEMBER_DISPATCH(type29, a29)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type30, a30) EMT_F_INFO_MEMBER_DISPATCH(type31, a31)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type32, a32) EMT_F_INFO_MEMBER_DISPATCH(type33, a33)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type34, a34) EMT_F_INFO_MEMBER_DISPATCH(type35, a35)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type36, a36) EMT_F_INFO_MEMBER_DISPATCH(type37, a37)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type38, a38) EMT_F_INFO_MEMBER_DISPATCH(type39, a39)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type40, a40) EMT_F_INFO_MEMBER_DISPATCH(type41, a41)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type42, a42) EMT_F_INFO_MEMBER_DISPATCH(type43, a43)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type44, a44) EMT_F_INFO_MEMBER_DISPATCH(type45, a45)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type46, a46) EMT_F_INFO_MEMBER_DISPATCH(type47, a47)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type48, a48) EMT_F_INFO_MEMBER_DISPATCH(type49, a49)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type50, a50) EMT_F_INFO_MEMBER_DISPATCH(type51, a51)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type52, a52) EMT_F_INFO_MEMBER_DISPATCH(type53, a53)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type54, a54) EMT_F_INFO_MEMBER_DISPATCH(type55, a55)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type56, a56) EMT_F_INFO_MEMBER_DISPATCH(type57, a57)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type58, a58) EMT_F_INFO_MEMBER_DISPATCH(type59, a59)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type60, a60) EMT_F_INFO_MEMBER_DISPATCH(type61, a61)                \
+    EMT_F_INFO_MEMBER_DISPATCH(type62, a62) EMT_F_INFO_MEMBER_DISPATCH(type63, a63)
+
+#define EMT_F_LAYOUT(                                                                              \
+    a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, \
+    a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, \
+    a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, \
+    a59, a60, a61, a62, a63                                                                        \
+)                                                                                                  \
+    EMT_F_LAYOUT_DISPATCH(type0, a0) EMT_F_LAYOUT_DISPATCH(type1, a1)                              \
+    EMT_F_LAYOUT_DISPATCH(type2, a2) EMT_F_LAYOUT_DISPATCH(type3, a3)                              \
+    EMT_F_LAYOUT_DISPATCH(type4, a4) EMT_F_LAYOUT_DISPATCH(type5, a5)                              \
+    EMT_F_LAYOUT_DISPATCH(type6, a6) EMT_F_LAYOUT_DISPATCH(type7, a7)                              \
+    EMT_F_LAYOUT_DISPATCH(type8, a8) EMT_F_LAYOUT_DISPATCH(type9, a9)                              \
+    EMT_F_LAYOUT_DISPATCH(type10, a10) EMT_F_LAYOUT_DISPATCH(type11, a11)                          \
+    EMT_F_LAYOUT_DISPATCH(type12, a12) EMT_F_LAYOUT_DISPATCH(type13, a13)                          \
+    EMT_F_LAYOUT_DISPATCH(type14, a14) EMT_F_LAYOUT_DISPATCH(type15, a15)                          \
+    EMT_F_LAYOUT_DISPATCH(type16, a16) EMT_F_LAYOUT_DISPATCH(type17, a17)                          \
+    EMT_F_LAYOUT_DISPATCH(type18, a18) EMT_F_LAYOUT_DISPATCH(type19, a19)                          \
+    EMT_F_LAYOUT_DISPATCH(type20, a20) EMT_F_LAYOUT_DISPATCH(type21, a21)                          \
+    EMT_F_LAYOUT_DISPATCH(type22, a22) EMT_F_LAYOUT_DISPATCH(type23, a23)                          \
+    EMT_F_LAYOUT_DISPATCH(type24, a24) EMT_F_LAYOUT_DISPATCH(type25, a25)                          \
+    EMT_F_LAYOUT_DISPATCH(type26, a26) EMT_F_LAYOUT_DISPATCH(type27, a27)                          \
+    EMT_F_LAYOUT_DISPATCH(type28, a28) EMT_F_LAYOUT_DISPATCH(type29, a29)                          \
+    EMT_F_LAYOUT_DISPATCH(type30, a30) EMT_F_LAYOUT_DISPATCH(type31, a31)                          \
+    EMT_F_LAYOUT_DISPATCH(type32, a32) EMT_F_LAYOUT_DISPATCH(type33, a33)                          \
+    EMT_F_LAYOUT_DISPATCH(type34, a34) EMT_F_LAYOUT_DISPATCH(type35, a35)                          \
+    EMT_F_LAYOUT_DISPATCH(type36, a36) EMT_F_LAYOUT_DISPATCH(type37, a37)                          \
+    EMT_F_LAYOUT_DISPATCH(type38, a38) EMT_F_LAYOUT_DISPATCH(type39, a39)                          \
+    EMT_F_LAYOUT_DISPATCH(type40, a40) EMT_F_LAYOUT_DISPATCH(type41, a41)                          \
+    EMT_F_LAYOUT_DISPATCH(type42, a42) EMT_F_LAYOUT_DISPATCH(type43, a43)                          \
+    EMT_F_LAYOUT_DISPATCH(type44, a44) EMT_F_LAYOUT_DISPATCH(type45, a45)                          \
+    EMT_F_LAYOUT_DISPATCH(type46, a46) EMT_F_LAYOUT_DISPATCH(type47, a47)                          \
+    EMT_F_LAYOUT_DISPATCH(type48, a48) EMT_F_LAYOUT_DISPATCH(type49, a49)                          \
+    EMT_F_LAYOUT_DISPATCH(type50, a50) EMT_F_LAYOUT_DISPATCH(type51, a51)                          \
+    EMT_F_LAYOUT_DISPATCH(type52, a52) EMT_F_LAYOUT_DISPATCH(type53, a53)                          \
+    EMT_F_LAYOUT_DISPATCH(type54, a54) EMT_F_LAYOUT_DISPATCH(type55, a55)                          \
+    EMT_F_LAYOUT_DISPATCH(type56, a56) EMT_F_LAYOUT_DISPATCH(type57, a57)                          \
+    EMT_F_LAYOUT_DISPATCH(type58, a58) EMT_F_LAYOUT_DISPATCH(type59, a59)                          \
+    EMT_F_LAYOUT_DISPATCH(type60, a60) EMT_F_LAYOUT_DISPATCH(type61, a61)                          \
+    EMT_F_LAYOUT_DISPATCH(type62, a62) EMT_F_LAYOUT_DISPATCH(type63, a63)
+
+#define EMT_F_INFO(                                                                                \
+    a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, \
+    a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, \
+    a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, \
+    a59, a60, a61, a62, a63                                                                        \
+)                                                                                                  \
+    EMT_F_INFO_##a0 EMT_F_INFO_##a1 EMT_F_INFO_##a2 EMT_F_INFO_##a3 EMT_F_INFO_##a4                \
+    EMT_F_INFO_##a5 EMT_F_INFO_##a6 EMT_F_INFO_##a7 EMT_F_INFO_##a8 EMT_F_INFO_##a9                \
+    EMT_F_INFO_##a10 EMT_F_INFO_##a11 EMT_F_INFO_##a12 EMT_F_INFO_##a13 EMT_F_INFO_##a14           \
+    EMT_F_INFO_##a15 EMT_F_INFO_##a16 EMT_F_INFO_##a17 EMT_F_INFO_##a18 EMT_F_INFO_##a19           \
+    EMT_F_INFO_##a20 EMT_F_INFO_##a21 EMT_F_INFO_##a22 EMT_F_INFO_##a23 EMT_F_INFO_##a24           \
+    EMT_F_INFO_##a25 EMT_F_INFO_##a26 EMT_F_INFO_##a27 EMT_F_INFO_##a28 EMT_F_INFO_##a29           \
+    EMT_F_INFO_##a30 EMT_F_INFO_##a31 EMT_F_INFO_##a32 EMT_F_INFO_##a33 EMT_F_INFO_##a34           \
+    EMT_F_INFO_##a35 EMT_F_INFO_##a36 EMT_F_INFO_##a37 EMT_F_INFO_##a38 EMT_F_INFO_##a39           \
+    EMT_F_INFO_##a40 EMT_F_INFO_##a41 EMT_F_INFO_##a42 EMT_F_INFO_##a43 EMT_F_INFO_##a44           \
+    EMT_F_INFO_##a45 EMT_F_INFO_##a46 EMT_F_INFO_##a47 EMT_F_INFO_##a48 EMT_F_INFO_##a49           \
+    EMT_F_INFO_##a50 EMT_F_INFO_##a51 EMT_F_INFO_##a52 EMT_F_INFO_##a53 EMT_F_INFO_##a54           \
+    EMT_F_INFO_##a55 EMT_F_INFO_##a56 EMT_F_INFO_##a57 EMT_F_INFO_##a58 EMT_F_INFO_##a59           \
+    EMT_F_INFO_##a60 EMT_F_INFO_##a61 EMT_F_INFO_##a62 EMT_F_INFO_##a63
+
+#define EMT_F_TOTAL_SIZE(                                                                          \
+    a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, \
+    a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, \
+    a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, \
+    a59, a60, a61, a62, a63                                                                        \
+)                                                                                                  \
+    (0 EMT_F_TOTAL_SIZE_##a0 EMT_F_TOTAL_SIZE_##a1 EMT_F_TOTAL_SIZE_##a2 EMT_F_TOTAL_SIZE_##a3     \
+    EMT_F_TOTAL_SIZE_##a4 EMT_F_TOTAL_SIZE_##a5 EMT_F_TOTAL_SIZE_##a6 EMT_F_TOTAL_SIZE_##a7        \
+    EMT_F_TOTAL_SIZE_##a8 EMT_F_TOTAL_SIZE_##a9 EMT_F_TOTAL_SIZE_##a10 EMT_F_TOTAL_SIZE_##a11      \
+    EMT_F_TOTAL_SIZE_##a12 EMT_F_TOTAL_SIZE_##a13 EMT_F_TOTAL_SIZE_##a14 EMT_F_TOTAL_SIZE_##a15    \
+    EMT_F_TOTAL_SIZE_##a16 EMT_F_TOTAL_SIZE_##a17 EMT_F_TOTAL_SIZE_##a18 EMT_F_TOTAL_SIZE_##a19    \
+    EMT_F_TOTAL_SIZE_##a20 EMT_F_TOTAL_SIZE_##a21 EMT_F_TOTAL_SIZE_##a22 EMT_F_TOTAL_SIZE_##a23    \
+    EMT_F_TOTAL_SIZE_##a24 EMT_F_TOTAL_SIZE_##a25 EMT_F_TOTAL_SIZE_##a26 EMT_F_TOTAL_SIZE_##a27    \
+    EMT_F_TOTAL_SIZE_##a28 EMT_F_TOTAL_SIZE_##a29 EMT_F_TOTAL_SIZE_##a30 EMT_F_TOTAL_SIZE_##a31    \
+    EMT_F_TOTAL_SIZE_##a32 EMT_F_TOTAL_SIZE_##a33 EMT_F_TOTAL_SIZE_##a34 EMT_F_TOTAL_SIZE_##a35    \
+    EMT_F_TOTAL_SIZE_##a36 EMT_F_TOTAL_SIZE_##a37 EMT_F_TOTAL_SIZE_##a38 EMT_F_TOTAL_SIZE_##a39    \
+    EMT_F_TOTAL_SIZE_##a40 EMT_F_TOTAL_SIZE_##a41 EMT_F_TOTAL_SIZE_##a42 EMT_F_TOTAL_SIZE_##a43    \
+    EMT_F_TOTAL_SIZE_##a44 EMT_F_TOTAL_SIZE_##a45 EMT_F_TOTAL_SIZE_##a46 EMT_F_TOTAL_SIZE_##a47    \
+    EMT_F_TOTAL_SIZE_##a48 EMT_F_TOTAL_SIZE_##a49 EMT_F_TOTAL_SIZE_##a50 EMT_F_TOTAL_SIZE_##a51    \
+    EMT_F_TOTAL_SIZE_##a52 EMT_F_TOTAL_SIZE_##a53 EMT_F_TOTAL_SIZE_##a54 EMT_F_TOTAL_SIZE_##a55    \
+    EMT_F_TOTAL_SIZE_##a56 EMT_F_TOTAL_SIZE_##a57 EMT_F_TOTAL_SIZE_##a58 EMT_F_TOTAL_SIZE_##a59    \
+    EMT_F_TOTAL_SIZE_##a60 EMT_F_TOTAL_SIZE_##a61 EMT_F_TOTAL_SIZE_##a62 EMT_F_TOTAL_SIZE_##a63)
+
+#define EMT_F(                                                                                     \
+    out_fn, extra_arg, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16,  \
+    a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, \
+    a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, \
+    a55, a56, a57, a58, a59, a60, a61, a62, a63                                                    \
+)                                                                                                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a0) EMT_F_DISPATCH(out_fn, extra_arg, a1)                    \
+    EMT_F_DISPATCH(out_fn, extra_arg, a2) EMT_F_DISPATCH(out_fn, extra_arg, a3)                    \
+    EMT_F_DISPATCH(out_fn, extra_arg, a4) EMT_F_DISPATCH(out_fn, extra_arg, a5)                    \
+    EMT_F_DISPATCH(out_fn, extra_arg, a6) EMT_F_DISPATCH(out_fn, extra_arg, a7)                    \
+    EMT_F_DISPATCH(out_fn, extra_arg, a8) EMT_F_DISPATCH(out_fn, extra_arg, a9)                    \
+    EMT_F_DISPATCH(out_fn, extra_arg, a10) EMT_F_DISPATCH(out_fn, extra_arg, a11)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a12) EMT_F_DISPATCH(out_fn, extra_arg, a13)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a14) EMT_F_DISPATCH(out_fn, extra_arg, a15)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a16) EMT_F_DISPATCH(out_fn, extra_arg, a17)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a18) EMT_F_DISPATCH(out_fn, extra_arg, a19)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a20) EMT_F_DISPATCH(out_fn, extra_arg, a21)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a22) EMT_F_DISPATCH(out_fn, extra_arg, a23)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a24) EMT_F_DISPATCH(out_fn, extra_arg, a25)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a26) EMT_F_DISPATCH(out_fn, extra_arg, a27)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a28) EMT_F_DISPATCH(out_fn, extra_arg, a29)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a30) EMT_F_DISPATCH(out_fn, extra_arg, a31)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a32) EMT_F_DISPATCH(out_fn, extra_arg, a33)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a34) EMT_F_DISPATCH(out_fn, extra_arg, a35)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a36) EMT_F_DISPATCH(out_fn, extra_arg, a37)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a38) EMT_F_DISPATCH(out_fn, extra_arg, a39)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a40) EMT_F_DISPATCH(out_fn, extra_arg, a41)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a42) EMT_F_DISPATCH(out_fn, extra_arg, a43)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a44) EMT_F_DISPATCH(out_fn, extra_arg, a45)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a46) EMT_F_DISPATCH(out_fn, extra_arg, a47)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a48) EMT_F_DISPATCH(out_fn, extra_arg, a49)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a50) EMT_F_DISPATCH(out_fn, extra_arg, a51)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a52) EMT_F_DISPATCH(out_fn, extra_arg, a53)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a54) EMT_F_DISPATCH(out_fn, extra_arg, a55)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a56) EMT_F_DISPATCH(out_fn, extra_arg, a57)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a58) EMT_F_DISPATCH(out_fn, extra_arg, a59)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a60) EMT_F_DISPATCH(out_fn, extra_arg, a61)                  \
+    EMT_F_DISPATCH(out_fn, extra_arg, a62) EMT_F_DISPATCH(out_fn, extra_arg, a63)
+// clang-format on
 
-#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_STR() 4
-
-#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_ARR() 9
-
-#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_SLC() 9
-
-#define EMT_F_LAYOUT_SIZE_DISPATCH_EMT_TAG_STS() 9
-
-#define EMT_F_LAYOUT_SIZE_DISPATCH_HELPER(_tag) EMT_F_LAYOUT_SIZE_DISPATCH_##_tag()
-
-#define EMT_F_LAYOUT_SIZE_DISPATCH(_tag) EMT_F_LAYOUT_SIZE_DISPATCH_HELPER(_tag)
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 1
-#define EMT_F_LAYOUT_SIZE_0(_dummy) 0
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 5
-#define EMT_F_LAYOUT_SIZE_4(type, x, len, tag, _dummy) EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 9
-#define EMT_F_LAYOUT_SIZE_8(_0, _1, _2, _3, type, x, len, tag, _dummy)                             \
-    EMT_F_LAYOUT_SIZE_4(_0, _1, _2, _3, 0) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 13
-#define EMT_F_LAYOUT_SIZE_12(_0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)            \
-    EMT_F_LAYOUT_SIZE_8(_0, _1, _2, _3, _4, _5, _6, _7, 0) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 17
-#define EMT_F_LAYOUT_SIZE_16(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy                      \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_12(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, 0) +                      \
-        EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 21
-#define EMT_F_LAYOUT_SIZE_20(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x, len, tag, _dummy      \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, 0) +      \
-        EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 25
-#define EMT_F_LAYOUT_SIZE_24(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, type, x,   \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_20(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, 0      \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 29
-#define EMT_F_LAYOUT_SIZE_28(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_24(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, 0                                                                           \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 33
-#define EMT_F_LAYOUT_SIZE_32(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_28(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, 0                                                       \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 37
-#define EMT_F_LAYOUT_SIZE_36(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_32(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, 0                                   \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 41
-#define EMT_F_LAYOUT_SIZE_40(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_36(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, 0               \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 45
-#define EMT_F_LAYOUT_SIZE_44(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_40(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, 0                                                                                     \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 49
-#define EMT_F_LAYOUT_SIZE_48(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_44(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, 0                                                                 \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 53
-#define EMT_F_LAYOUT_SIZE_52(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_48(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, 0                                             \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 57
-#define EMT_F_LAYOUT_SIZE_56(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, type, x, len, tag, _dummy               \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_52(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, 0                         \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 61
-#define EMT_F_LAYOUT_SIZE_60(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, type, x, len, tag,  \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_56(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, 0     \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 65
-#define EMT_F_LAYOUT_SIZE_64(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_60(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, 0                                                                           \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 69
-#define EMT_F_LAYOUT_SIZE_68(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, type, x, len, tag, _dummy                                                  \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_64(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, 0                                                       \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 73
-#define EMT_F_LAYOUT_SIZE_72(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, type, x, len, tag, _dummy                              \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_68(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, 0                                   \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 77
-#define EMT_F_LAYOUT_SIZE_76(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, type, x, len, tag, _dummy          \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_72(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, 0               \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 81
-#define EMT_F_LAYOUT_SIZE_80(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, type, x, len,  \
-    tag, _dummy                                                                                    \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_76(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, 0                                                                                     \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 85
-#define EMT_F_LAYOUT_SIZE_84(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, type, x, len, tag, _dummy                                                                 \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_80(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, 0                                                                 \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 89
-#define EMT_F_LAYOUT_SIZE_88(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, type, x, len, tag, _dummy                                             \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_84(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, 0                                             \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 93
-#define EMT_F_LAYOUT_SIZE_92(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, type, x, len, tag, _dummy                         \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_88(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, 0                         \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 97
-#define EMT_F_LAYOUT_SIZE_96(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, type, x, len, tag, _dummy     \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_92(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, 0     \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 101
-#define EMT_F_LAYOUT_SIZE_100(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, type, x,  \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_96(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, 0                                                                           \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 105
-#define EMT_F_LAYOUT_SIZE_104(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_100(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, 0                                                       \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 109
-#define EMT_F_LAYOUT_SIZE_108(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_104(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, 0                                   \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 113
-#define EMT_F_LAYOUT_SIZE_112(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_108(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, 0               \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 117
-#define EMT_F_LAYOUT_SIZE_116(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_112(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, 0                                                                                     \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 121
-#define EMT_F_LAYOUT_SIZE_120(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_116(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, 0                                                                 \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 125
-#define EMT_F_LAYOUT_SIZE_124(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, \
-    _75, _76, _77, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_120(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, _74, _75, _76, _77, 0                                             \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 129
-#define EMT_F_LAYOUT_SIZE_128(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, \
-    _75, _76, _77, _78, _79, _7a, _7b, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_LAYOUT_SIZE_124(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, _74, _75, _76, _77, _78, _79, _7a, _7b, 0                         \
-    ) + EMT_F_LAYOUT_SIZE_DISPATCH(tag)
-#endif
-
-#define EMT_F_LAYOUT_SIZE(x, ...) EMT_F_LAYOUT_SIZE_HELPER(x, __VA_ARGS__)
-#define EMT_F_LAYOUT_SIZE_HELPER(x, ...) EMT_F_LAYOUT_SIZE_##x(__VA_ARGS__)
-#define EMT_F_INFO_MEMBER_DISPATCH_EMT_TAG_VAL(type, name) char name[sizeof(#type)];
-
-#define EMT_F_INFO_MEMBER_DISPATCH_EMT_TAG_STR(type, name) char name[sizeof("string")];
-
-#define EMT_F_INFO_MEMBER_DISPATCH_EMT_TAG_ARR(type, name)                                         \
-    char name[sizeof("list")];                                                                     \
-    char name##_child_name[sizeof("")];                                                            \
-    char name##_child_type_id[sizeof(#type)];
-
-#define EMT_F_INFO_MEMBER_DISPATCH_EMT_TAG_SLC(type, name)                                         \
-    char name[sizeof("list")];                                                                     \
-    char name##_child_name[sizeof("")];                                                            \
-    char name##_child_type_id[sizeof(#type)];
-
-#define EMT_F_INFO_MEMBER_DISPATCH_EMT_TAG_STS(type, name)                                         \
-    char name[sizeof("list")];                                                                     \
-    char name##_child_name[sizeof("")];                                                            \
-    char name##_child_type_id[sizeof(#type)];
-
-#define EMT_F_INFO_MEMBER_DISPATCH_HELPER(type, name, _tag)                                        \
-    EMT_F_INFO_MEMBER_DISPATCH_##_tag(type, name)
-
-#define EMT_F_INFO_MEMBER_DISPATCH(type, name, _tag)                                               \
-    EMT_F_INFO_MEMBER_DISPATCH_HELPER(type, name, _tag)
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 1
-#define EMT_F_INFO_MEMBER_0(_dummy)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 5
-#define EMT_F_INFO_MEMBER_4(type, x, len, tag, _dummy) EMT_F_INFO_MEMBER_DISPATCH(type, type0, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 9
-#define EMT_F_INFO_MEMBER_8(_0, _1, _2, _3, type, x, len, tag, _dummy)                             \
-    EMT_F_INFO_MEMBER_4(_0, _1, _2, _3, 0) EMT_F_INFO_MEMBER_DISPATCH(type, type1, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 13
-#define EMT_F_INFO_MEMBER_12(_0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)            \
-    EMT_F_INFO_MEMBER_8(_0, _1, _2, _3, _4, _5, _6, _7, 0)                                         \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type2, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 17
-#define EMT_F_INFO_MEMBER_16(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy                      \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_12(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, 0)                        \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type3, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 21
-#define EMT_F_INFO_MEMBER_20(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x, len, tag, _dummy      \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, 0)        \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type4, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 25
-#define EMT_F_INFO_MEMBER_24(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, type, x,   \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_20(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, 0      \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type5, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 29
-#define EMT_F_INFO_MEMBER_28(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_24(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, 0                                                                           \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type6, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 33
-#define EMT_F_INFO_MEMBER_32(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_28(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, 0                                                       \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type7, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 37
-#define EMT_F_INFO_MEMBER_36(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_32(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, 0                                   \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type8, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 41
-#define EMT_F_INFO_MEMBER_40(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_36(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, 0               \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type9, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 45
-#define EMT_F_INFO_MEMBER_44(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_40(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type10, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 49
-#define EMT_F_INFO_MEMBER_48(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_44(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, 0                                                                 \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type11, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 53
-#define EMT_F_INFO_MEMBER_52(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_48(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, 0                                             \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type12, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 57
-#define EMT_F_INFO_MEMBER_56(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, type, x, len, tag, _dummy               \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_52(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, 0                         \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type13, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 61
-#define EMT_F_INFO_MEMBER_60(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, type, x, len, tag,  \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_56(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, 0     \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type14, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 65
-#define EMT_F_INFO_MEMBER_64(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_60(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, 0                                                                           \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type15, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 69
-#define EMT_F_INFO_MEMBER_68(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, type, x, len, tag, _dummy                                                  \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_64(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, 0                                                       \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type16, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 73
-#define EMT_F_INFO_MEMBER_72(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, type, x, len, tag, _dummy                              \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_68(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, 0                                   \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type17, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 77
-#define EMT_F_INFO_MEMBER_76(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, type, x, len, tag, _dummy          \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_72(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, 0               \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type18, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 81
-#define EMT_F_INFO_MEMBER_80(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, type, x, len,  \
-    tag, _dummy                                                                                    \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_76(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type19, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 85
-#define EMT_F_INFO_MEMBER_84(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, type, x, len, tag, _dummy                                                                 \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_80(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, 0                                                                 \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type20, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 89
-#define EMT_F_INFO_MEMBER_88(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, type, x, len, tag, _dummy                                             \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_84(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, 0                                             \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type21, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 93
-#define EMT_F_INFO_MEMBER_92(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, type, x, len, tag, _dummy                         \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_88(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, 0                         \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type22, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 97
-#define EMT_F_INFO_MEMBER_96(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, type, x, len, tag, _dummy     \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_92(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, 0     \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type23, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 101
-#define EMT_F_INFO_MEMBER_100(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, type, x,  \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_96(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, 0                                                                           \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type24, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 105
-#define EMT_F_INFO_MEMBER_104(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_100(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, 0                                                       \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type25, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 109
-#define EMT_F_INFO_MEMBER_108(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_104(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, 0                                   \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type26, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 113
-#define EMT_F_INFO_MEMBER_112(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_108(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, 0               \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type27, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 117
-#define EMT_F_INFO_MEMBER_116(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_112(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type28, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 121
-#define EMT_F_INFO_MEMBER_120(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_116(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, 0                                                                 \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type29, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 125
-#define EMT_F_INFO_MEMBER_124(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, \
-    _75, _76, _77, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_120(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, _74, _75, _76, _77, 0                                             \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type30, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 129
-#define EMT_F_INFO_MEMBER_128(                                                                     \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, \
-    _75, _76, _77, _78, _79, _7a, _7b, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_INFO_MEMBER_124(                                                                         \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, _74, _75, _76, _77, _78, _79, _7a, _7b, 0                         \
-    )                                                                                              \
-    EMT_F_INFO_MEMBER_DISPATCH(type, type31, tag)
-#endif
-
-#define EMT_F_INFO_MEMBER(x, ...) EMT_F_INFO_MEMBER_HELPER(x, __VA_ARGS__)
-#define EMT_F_INFO_MEMBER_HELPER(x, ...) EMT_F_INFO_MEMBER_##x(__VA_ARGS__)
-#define EMT_F_LAYOUT_DISPATCH_EMT_TAG_VAL(name, len, type)                                         \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), sizeof(type), EMT_FLAG_STATIC, 0,
-
-#define EMT_F_LAYOUT_DISPATCH_EMT_TAG_STR(name, len, type)                                         \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1,                      \
-        EMT_FLAG_NULL_TERMINATED, 0,
-
-#define EMT_F_LAYOUT_DISPATCH_EMT_TAG_ARR(name, len, type)                                         \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1 * (len),              \
-        EMT_FLAG_STATIC, 1, EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), \
-        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
-        EMT_FLAG_STATIC, 0,
-
-#define EMT_F_LAYOUT_DISPATCH_EMT_TAG_STS(name, len, type)                                         \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), (emt_size_t) 1 * (len),              \
-        EMT_FLAG_STATIC, 1, EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name), \
-        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
-        EMT_FLAG_STATIC, 0,
-
-#define EMT_F_LAYOUT_DISPATCH_EMT_TAG_SLC(name, len, type)                                         \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1,      \
-        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
-        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
-        EMT_FLAG_STATIC, 0,
-
-#define EMT_F_LAYOUT_DISPATCH_EMT_TAG_ESLC(name, len, type)                                        \
-    EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name), 0, EMT_FLAG_LENGTH_PREFIXED, 1,      \
-        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_name),                     \
-        EMT_OFFSETOF(struct emt_info_unlikely_to_shadow_t, name##_child_type_id), sizeof(type),    \
-        EMT_FLAG_STATIC, 0,
-
-#define EMT_F_LAYOUT_DISPATCH_HELPER(name, len, type, _tag)                                        \
-    EMT_F_LAYOUT_DISPATCH_##_tag(name, len, type)
-
-#define EMT_F_LAYOUT_DISPATCH(name, len, type, _tag)                                               \
-    EMT_F_LAYOUT_DISPATCH_HELPER(name, len, type, _tag)
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 1
-#define EMT_F_LAYOUT_0(_dummy)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 5
-#define EMT_F_LAYOUT_4(type, x, len, tag, _dummy) EMT_F_LAYOUT_DISPATCH(type0, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 9
-#define EMT_F_LAYOUT_8(_0, _1, _2, _3, type, x, len, tag, _dummy)                                  \
-    EMT_F_LAYOUT_4(_0, _1, _2, _3, 0) EMT_F_LAYOUT_DISPATCH(type1, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 13
-#define EMT_F_LAYOUT_12(_0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)                 \
-    EMT_F_LAYOUT_8(_0, _1, _2, _3, _4, _5, _6, _7, 0) EMT_F_LAYOUT_DISPATCH(type2, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 17
-#define EMT_F_LAYOUT_16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy) \
-    EMT_F_LAYOUT_12(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, 0)                             \
-    EMT_F_LAYOUT_DISPATCH(type3, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 21
-#define EMT_F_LAYOUT_20(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x, len, tag, _dummy      \
-)                                                                                                  \
-    EMT_F_LAYOUT_16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, 0)             \
-    EMT_F_LAYOUT_DISPATCH(type4, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 25
-#define EMT_F_LAYOUT_24(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, type, x,   \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_LAYOUT_20(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, 0      \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type5, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 29
-#define EMT_F_LAYOUT_28(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_LAYOUT_24(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, 0                                                                           \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type6, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 33
-#define EMT_F_LAYOUT_32(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_LAYOUT_28(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, 0                                                       \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type7, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 37
-#define EMT_F_LAYOUT_36(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_LAYOUT_32(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, 0                                   \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type8, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 41
-#define EMT_F_LAYOUT_40(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_LAYOUT_36(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, 0               \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type9, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 45
-#define EMT_F_LAYOUT_44(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_LAYOUT_40(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type10, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 49
-#define EMT_F_LAYOUT_48(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_LAYOUT_44(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, 0                                                                 \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type11, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 53
-#define EMT_F_LAYOUT_52(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_LAYOUT_48(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, 0                                             \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type12, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 57
-#define EMT_F_LAYOUT_56(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, type, x, len, tag, _dummy               \
-)                                                                                                  \
-    EMT_F_LAYOUT_52(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, 0                         \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type13, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 61
-#define EMT_F_LAYOUT_60(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, type, x, len, tag,  \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_LAYOUT_56(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, 0     \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type14, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 65
-#define EMT_F_LAYOUT_64(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_LAYOUT_60(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, 0                                                                           \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type15, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 69
-#define EMT_F_LAYOUT_68(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, type, x, len, tag, _dummy                                                  \
-)                                                                                                  \
-    EMT_F_LAYOUT_64(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, 0                                                       \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type16, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 73
-#define EMT_F_LAYOUT_72(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, type, x, len, tag, _dummy                              \
-)                                                                                                  \
-    EMT_F_LAYOUT_68(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, 0                                   \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type17, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 77
-#define EMT_F_LAYOUT_76(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, type, x, len, tag, _dummy          \
-)                                                                                                  \
-    EMT_F_LAYOUT_72(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, 0               \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type18, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 81
-#define EMT_F_LAYOUT_80(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, type, x, len,  \
-    tag, _dummy                                                                                    \
-)                                                                                                  \
-    EMT_F_LAYOUT_76(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type19, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 85
-#define EMT_F_LAYOUT_84(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, type, x, len, tag, _dummy                                                                 \
-)                                                                                                  \
-    EMT_F_LAYOUT_80(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, 0                                                                 \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type20, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 89
-#define EMT_F_LAYOUT_88(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, type, x, len, tag, _dummy                                             \
-)                                                                                                  \
-    EMT_F_LAYOUT_84(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, 0                                             \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type21, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 93
-#define EMT_F_LAYOUT_92(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, type, x, len, tag, _dummy                         \
-)                                                                                                  \
-    EMT_F_LAYOUT_88(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, 0                         \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type22, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 97
-#define EMT_F_LAYOUT_96(                                                                           \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, type, x, len, tag, _dummy     \
-)                                                                                                  \
-    EMT_F_LAYOUT_92(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, 0     \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type23, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 101
-#define EMT_F_LAYOUT_100(                                                                          \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, type, x,  \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_LAYOUT_96(                                                                               \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, 0                                                                           \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type24, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 105
-#define EMT_F_LAYOUT_104(                                                                          \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_LAYOUT_100(                                                                              \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, 0                                                       \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type25, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 109
-#define EMT_F_LAYOUT_108(                                                                          \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_LAYOUT_104(                                                                              \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, 0                                   \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type26, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 113
-#define EMT_F_LAYOUT_112(                                                                          \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_LAYOUT_108(                                                                              \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, 0               \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type27, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 117
-#define EMT_F_LAYOUT_116(                                                                          \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_LAYOUT_112(                                                                              \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type28, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 121
-#define EMT_F_LAYOUT_120(                                                                          \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_LAYOUT_116(                                                                              \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, 0                                                                 \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type29, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 125
-#define EMT_F_LAYOUT_124(                                                                          \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, \
-    _75, _76, _77, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_LAYOUT_120(                                                                              \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, _74, _75, _76, _77, 0                                             \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type30, len, type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 129
-#define EMT_F_LAYOUT_128(                                                                          \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, \
-    _75, _76, _77, _78, _79, _7a, _7b, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_LAYOUT_124(                                                                              \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, _74, _75, _76, _77, _78, _79, _7a, _7b, 0                         \
-    )                                                                                              \
-    EMT_F_LAYOUT_DISPATCH(type31, len, type, tag)
-#endif
-
-#define EMT_F_LAYOUT(x, ...) EMT_F_LAYOUT_HELPER(x, __VA_ARGS__)
-#define EMT_F_LAYOUT_HELPER(x, ...) EMT_F_LAYOUT_##x(__VA_ARGS__)
-#define EMT_F_INFO_DISPATCH_EMT_TAG_VAL(type) #type,
-
-#define EMT_F_INFO_DISPATCH_EMT_TAG_STR(type) "string",
-
-#define EMT_F_INFO_DISPATCH_EMT_TAG_ARR(type) "list", "", #type,
-
-#define EMT_F_INFO_DISPATCH_EMT_TAG_SLC(type) "list", "", #type,
-
-#define EMT_F_INFO_DISPATCH_EMT_TAG_ESLC(type) "list", "", #type,
-
-#define EMT_F_INFO_DISPATCH_EMT_TAG_STS(type) "list", "", #type,
-
-#define EMT_F_INFO_DISPATCH_HELPER(type, _tag) EMT_F_INFO_DISPATCH_##_tag(type)
-
-#define EMT_F_INFO_DISPATCH(type, _tag) EMT_F_INFO_DISPATCH_HELPER(type, _tag)
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 1
-#define EMT_F_INFO_0(_dummy)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 5
-#define EMT_F_INFO_4(type, x, len, tag, _dummy) EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 9
-#define EMT_F_INFO_8(_0, _1, _2, _3, type, x, len, tag, _dummy)                                    \
-    EMT_F_INFO_4(_0, _1, _2, _3, 0) EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 13
-#define EMT_F_INFO_12(_0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)                   \
-    EMT_F_INFO_8(_0, _1, _2, _3, _4, _5, _6, _7, 0) EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 17
-#define EMT_F_INFO_16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy)   \
-    EMT_F_INFO_12(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, 0) EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 21
-#define EMT_F_INFO_20(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x, len, tag, _dummy      \
-)                                                                                                  \
-    EMT_F_INFO_16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, 0)               \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 25
-#define EMT_F_INFO_24(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, type, x,   \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_INFO_20(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, 0      \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 29
-#define EMT_F_INFO_28(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_INFO_24(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, 0                                                                           \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 33
-#define EMT_F_INFO_32(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_INFO_28(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, 0                                                       \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 37
-#define EMT_F_INFO_36(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_INFO_32(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, 0                                   \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 41
-#define EMT_F_INFO_40(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_INFO_36(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, 0               \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 45
-#define EMT_F_INFO_44(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_INFO_40(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 49
-#define EMT_F_INFO_48(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_INFO_44(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, 0                                                                 \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 53
-#define EMT_F_INFO_52(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_INFO_48(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, 0                                             \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 57
-#define EMT_F_INFO_56(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, type, x, len, tag, _dummy               \
-)                                                                                                  \
-    EMT_F_INFO_52(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, 0                         \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 61
-#define EMT_F_INFO_60(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, type, x, len, tag,  \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_INFO_56(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, 0     \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 65
-#define EMT_F_INFO_64(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_INFO_60(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, 0                                                                           \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 69
-#define EMT_F_INFO_68(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, type, x, len, tag, _dummy                                                  \
-)                                                                                                  \
-    EMT_F_INFO_64(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, 0                                                       \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 73
-#define EMT_F_INFO_72(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, type, x, len, tag, _dummy                              \
-)                                                                                                  \
-    EMT_F_INFO_68(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, 0                                   \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 77
-#define EMT_F_INFO_76(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, type, x, len, tag, _dummy          \
-)                                                                                                  \
-    EMT_F_INFO_72(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, 0               \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 81
-#define EMT_F_INFO_80(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, type, x, len,  \
-    tag, _dummy                                                                                    \
-)                                                                                                  \
-    EMT_F_INFO_76(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 85
-#define EMT_F_INFO_84(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, type, x, len, tag, _dummy                                                                 \
-)                                                                                                  \
-    EMT_F_INFO_80(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, 0                                                                 \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 89
-#define EMT_F_INFO_88(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, type, x, len, tag, _dummy                                             \
-)                                                                                                  \
-    EMT_F_INFO_84(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, 0                                             \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 93
-#define EMT_F_INFO_92(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, type, x, len, tag, _dummy                         \
-)                                                                                                  \
-    EMT_F_INFO_88(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, 0                         \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 97
-#define EMT_F_INFO_96(                                                                             \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, type, x, len, tag, _dummy     \
-)                                                                                                  \
-    EMT_F_INFO_92(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, 0     \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 101
-#define EMT_F_INFO_100(                                                                            \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, type, x,  \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_INFO_96(                                                                                 \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, 0                                                                           \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 105
-#define EMT_F_INFO_104(                                                                            \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_INFO_100(                                                                                \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, 0                                                       \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 109
-#define EMT_F_INFO_108(                                                                            \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_INFO_104(                                                                                \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, 0                                   \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 113
-#define EMT_F_INFO_112(                                                                            \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_INFO_108(                                                                                \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, 0               \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 117
-#define EMT_F_INFO_116(                                                                            \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_INFO_112(                                                                                \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 121
-#define EMT_F_INFO_120(                                                                            \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_INFO_116(                                                                                \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, 0                                                                 \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 125
-#define EMT_F_INFO_124(                                                                            \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, \
-    _75, _76, _77, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_INFO_120(                                                                                \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, _74, _75, _76, _77, 0                                             \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 129
-#define EMT_F_INFO_128(                                                                            \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, \
-    _75, _76, _77, _78, _79, _7a, _7b, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_INFO_124(                                                                                \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, _74, _75, _76, _77, _78, _79, _7a, _7b, 0                         \
-    )                                                                                              \
-    EMT_F_INFO_DISPATCH(type, tag)
-#endif
-
-#define EMT_F_INFO(x, ...) EMT_F_INFO_HELPER(x, __VA_ARGS__)
-#define EMT_F_INFO_HELPER(x, ...) EMT_F_INFO_##x(__VA_ARGS__)
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 1
-#define EMT_F_TOTAL_SIZE_0(_dummy) 0
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 5
-#define EMT_F_TOTAL_SIZE_4(type, x, len, tag, _dummy) (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 9
-#define EMT_F_TOTAL_SIZE_8(_0, _1, _2, _3, type, x, len, tag, _dummy)                              \
-    EMT_F_TOTAL_SIZE_4(_0, _1, _2, _3, 0) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 13
-#define EMT_F_TOTAL_SIZE_12(_0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)             \
-    EMT_F_TOTAL_SIZE_8(_0, _1, _2, _3, _4, _5, _6, _7, 0) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 17
-#define EMT_F_TOTAL_SIZE_16(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy                      \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_12(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, 0) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 21
-#define EMT_F_TOTAL_SIZE_20(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x, len, tag, _dummy      \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, 0) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 25
-#define EMT_F_TOTAL_SIZE_24(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, type, x,   \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_20(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, 0      \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 29
-#define EMT_F_TOTAL_SIZE_28(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_24(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, 0                                                                           \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 33
-#define EMT_F_TOTAL_SIZE_32(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_28(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, 0                                                       \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 37
-#define EMT_F_TOTAL_SIZE_36(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_32(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, 0                                   \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 41
-#define EMT_F_TOTAL_SIZE_40(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_36(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, 0               \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 45
-#define EMT_F_TOTAL_SIZE_44(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_40(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, 0                                                                                     \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 49
-#define EMT_F_TOTAL_SIZE_48(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_44(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, 0                                                                 \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 53
-#define EMT_F_TOTAL_SIZE_52(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_48(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, 0                                             \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 57
-#define EMT_F_TOTAL_SIZE_56(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, type, x, len, tag, _dummy               \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_52(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, 0                         \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 61
-#define EMT_F_TOTAL_SIZE_60(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, type, x, len, tag,  \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_56(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, 0     \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 65
-#define EMT_F_TOTAL_SIZE_64(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_60(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, 0                                                                           \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 69
-#define EMT_F_TOTAL_SIZE_68(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, type, x, len, tag, _dummy                                                  \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_64(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, 0                                                       \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 73
-#define EMT_F_TOTAL_SIZE_72(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, type, x, len, tag, _dummy                              \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_68(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, 0                                   \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 77
-#define EMT_F_TOTAL_SIZE_76(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, type, x, len, tag, _dummy          \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_72(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, 0               \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 81
-#define EMT_F_TOTAL_SIZE_80(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, type, x, len,  \
-    tag, _dummy                                                                                    \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_76(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, 0                                                                                     \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 85
-#define EMT_F_TOTAL_SIZE_84(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, type, x, len, tag, _dummy                                                                 \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_80(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, 0                                                                 \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 89
-#define EMT_F_TOTAL_SIZE_88(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, type, x, len, tag, _dummy                                             \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_84(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, 0                                             \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 93
-#define EMT_F_TOTAL_SIZE_92(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, type, x, len, tag, _dummy                         \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_88(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, 0                         \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 97
-#define EMT_F_TOTAL_SIZE_96(                                                                       \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, type, x, len, tag, _dummy     \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_92(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, 0     \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 101
-#define EMT_F_TOTAL_SIZE_100(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, type, x,  \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_96(                                                                           \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, 0                                                                           \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 105
-#define EMT_F_TOTAL_SIZE_104(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_100(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, 0                                                       \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 109
-#define EMT_F_TOTAL_SIZE_108(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_104(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, 0                                   \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 113
-#define EMT_F_TOTAL_SIZE_112(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_108(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, 0               \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 117
-#define EMT_F_TOTAL_SIZE_116(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_112(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, 0                                                                                     \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 121
-#define EMT_F_TOTAL_SIZE_120(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_116(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, 0                                                                 \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 125
-#define EMT_F_TOTAL_SIZE_124(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, \
-    _75, _76, _77, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_120(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, _74, _75, _76, _77, 0                                             \
-    ) + (len)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 129
-#define EMT_F_TOTAL_SIZE_128(                                                                      \
-    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14, _15,  \
-    _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26, _27, _28, \
-    _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _3a, _3b, \
-    _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, _4b, _4c, _4d, _4e, \
-    _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, \
-    _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, \
-    _75, _76, _77, _78, _79, _7a, _7b, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_TOTAL_SIZE_124(                                                                          \
-        _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11, _12, _13, _14,   \
-        _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, _25, _26,  \
-        _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, _38,  \
-        _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a,  \
-        _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c,  \
-        _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e,  \
-        _6f, _70, _71, _72, _73, _74, _75, _76, _77, _78, _79, _7a, _7b, 0                         \
-    ) + (len)
-#endif
-
-#define EMT_F_TOTAL_SIZE(x, ...) EMT_F_TOTAL_SIZE_HELPER(x, __VA_ARGS__)
-#define EMT_F_TOTAL_SIZE_HELPER(x, ...) EMT_F_TOTAL_SIZE_##x(__VA_ARGS__)
-#define EMT_F_DISPATCH_EMT_TAG_VAL(type, x, len, out_fn, extra_arg)                                \
-    {                                                                                              \
-        type temp = x;                                                                             \
-        out_fn((const void*) &temp, sizeof(type), extra_arg);                                      \
-    }
-
-#define EMT_F_DISPATCH_EMT_TAG_STR(type, x, len, out_fn, extra_arg)                                \
-    {                                                                                              \
-        const char* temp = x;                                                                      \
-        out_fn(temp, strlen(temp) + 1, extra_arg);                                                 \
-    }
-
-#define EMT_F_DISPATCH_EMT_TAG_ARR(type, x, len, out_fn, extra_arg)                                \
-    {                                                                                              \
-        const type(*temp)[] = &(x);                                                                \
-        out_fn(temp, sizeof(x), extra_arg);                                                        \
-    }
-
-#define EMT_F_DISPATCH_EMT_TAG_SLC(type, x, len, out_fn, extra_arg)                                \
-    {                                                                                              \
-        const type* emt_temp_unlikely_to_shadow = x;                                               \
-        emt_size_t size = len;                                                                     \
-        emt_serialize_varint(size, out_fn, extra_arg);                                             \
-        out_fn(emt_temp_unlikely_to_shadow, size * sizeof(type), extra_arg);                       \
-    }
-
-#define EMT_F_DISPATCH_EMT_TAG_STS(type, x, len, out_fn, extra_arg)                                \
-    {                                                                                              \
-        const type* temp = x;                                                                      \
-        out_fn(temp, sizeof(type) * (len), extra_arg);                                             \
-    }
-
-#define EMT_F_DISPATCH_HELPER(type, x, len, out_fn, extra_arg, _tag)                               \
-    EMT_F_DISPATCH_##_tag(type, x, len, out_fn, extra_arg)
-
-#define EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, _tag)                                      \
-    EMT_F_DISPATCH_HELPER(type, x, len, out_fn, extra_arg, _tag)
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 3
-#define EMT_F_0(out_fn, extra_arg, _dummy)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 7
-#define EMT_F_4(out_fn, extra_arg, type, x, len, tag, _dummy)                                      \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 11
-#define EMT_F_8(out_fn, extra_arg, _0, _1, _2, _3, type, x, len, tag, _dummy)                      \
-    EMT_F_4(out_fn, extra_arg, _0, _1, _2, _3, 0)                                                  \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 15
-#define EMT_F_12(out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, type, x, len, tag, _dummy)     \
-    EMT_F_8(out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, 0)                                  \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 19
-#define EMT_F_16(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, type, x, len, tag, _dummy   \
-)                                                                                                  \
-    EMT_F_12(out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, 0)                 \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 23
-#define EMT_F_20(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, type, x,    \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_16(out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, 0) \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 27
-#define EMT_F_24(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_20(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, 0                                                                           \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 31
-#define EMT_F_28(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_24(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, 0                                                       \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 35
-#define EMT_F_32(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_28(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, 0                                   \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 39
-#define EMT_F_36(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_32(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, 0               \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 43
-#define EMT_F_40(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_36(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 47
-#define EMT_F_44(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_40(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, 0                                                                 \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 51
-#define EMT_F_48(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_44(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, 0                                             \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 55
-#define EMT_F_52(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, type, x, len, tag, _dummy               \
-)                                                                                                  \
-    EMT_F_48(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, 0                         \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 59
-#define EMT_F_56(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, type, x, len, tag,  \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_52(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, 0     \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 63
-#define EMT_F_60(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_56(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, 0                                                                           \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 67
-#define EMT_F_64(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, type, x, len, tag, _dummy                                                  \
-)                                                                                                  \
-    EMT_F_60(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, 0                                                       \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 71
-#define EMT_F_68(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, type, x, len, tag, _dummy                              \
-)                                                                                                  \
-    EMT_F_64(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, 0                                   \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 75
-#define EMT_F_72(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, type, x, len, tag, _dummy          \
-)                                                                                                  \
-    EMT_F_68(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, 0               \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 79
-#define EMT_F_76(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, type, x, len,  \
-    tag, _dummy                                                                                    \
-)                                                                                                  \
-    EMT_F_72(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 83
-#define EMT_F_80(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, type, x, len, tag, _dummy                                                                 \
-)                                                                                                  \
-    EMT_F_76(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, 0                                                                 \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 87
-#define EMT_F_84(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, type, x, len, tag, _dummy                                             \
-)                                                                                                  \
-    EMT_F_80(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, 0                                             \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 91
-#define EMT_F_88(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, type, x, len, tag, _dummy                         \
-)                                                                                                  \
-    EMT_F_84(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, 0                         \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 95
-#define EMT_F_92(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, type, x, len, tag, _dummy     \
-)                                                                                                  \
-    EMT_F_88(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, 0     \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 99
-#define EMT_F_96(                                                                                  \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, type, x,  \
-    len, tag, _dummy                                                                               \
-)                                                                                                  \
-    EMT_F_92(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58,  \
-        _59, _5a, _5b, 0                                                                           \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 103
-#define EMT_F_100(                                                                                 \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, \
-    _5e, _5f, type, x, len, tag, _dummy                                                            \
-)                                                                                                  \
-    EMT_F_96(                                                                                      \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58,  \
-        _59, _5a, _5b, _5c, _5d, _5e, _5f, 0                                                       \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 107
-#define EMT_F_104(                                                                                 \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, \
-    _5e, _5f, _60, _61, _62, _63, type, x, len, tag, _dummy                                        \
-)                                                                                                  \
-    EMT_F_100(                                                                                     \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58,  \
-        _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, _62, _63, 0                                   \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 111
-#define EMT_F_108(                                                                                 \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, \
-    _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, type, x, len, tag, _dummy                    \
-)                                                                                                  \
-    EMT_F_104(                                                                                     \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58,  \
-        _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, 0               \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 115
-#define EMT_F_112(                                                                                 \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, \
-    _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, type, x, len, tag,       \
-    _dummy                                                                                         \
-)                                                                                                  \
-    EMT_F_108(                                                                                     \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58,  \
-        _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a,  \
-        _6b, 0                                                                                     \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 119
-#define EMT_F_116(                                                                                 \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, \
-    _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f,      \
-    type, x, len, tag, _dummy                                                                      \
-)                                                                                                  \
-    EMT_F_112(                                                                                     \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58,  \
-        _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a,  \
-        _6b, _6c, _6d, _6e, _6f, 0                                                                 \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 123
-#define EMT_F_120(                                                                                 \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, \
-    _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, \
-    _71, _72, _73, type, x, len, tag, _dummy                                                       \
-)                                                                                                  \
-    EMT_F_116(                                                                                     \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58,  \
-        _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a,  \
-        _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, 0                                             \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 127
-#define EMT_F_124(                                                                                 \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, \
-    _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, \
-    _71, _72, _73, _74, _75, _76, _77, type, x, len, tag, _dummy                                   \
-)                                                                                                  \
-    EMT_F_120(                                                                                     \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58,  \
-        _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a,  \
-        _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, _75, _76, _77, 0                         \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#if !defined(EMT_MACRO_ARGS_CAP) || EMT_MACRO_ARGS_CAP >= 131
-#define EMT_F_128(                                                                                 \
-    out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10, _11,   \
-    _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22, _23, _24, \
-    _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34, _35, _36, _37, \
-    _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _4a, \
-    _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _5a, _5b, _5c, _5d, \
-    _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a, _6b, _6c, _6d, _6e, _6f, _70, \
-    _71, _72, _73, _74, _75, _76, _77, _78, _79, _7a, _7b, type, x, len, tag, _dummy               \
-)                                                                                                  \
-    EMT_F_124(                                                                                     \
-        out_fn, extra_arg, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _a, _b, _c, _d, _e, _f, _10,    \
-        _11, _12, _13, _14, _15, _16, _17, _18, _19, _1a, _1b, _1c, _1d, _1e, _1f, _20, _21, _22,  \
-        _23, _24, _25, _26, _27, _28, _29, _2a, _2b, _2c, _2d, _2e, _2f, _30, _31, _32, _33, _34,  \
-        _35, _36, _37, _38, _39, _3a, _3b, _3c, _3d, _3e, _3f, _40, _41, _42, _43, _44, _45, _46,  \
-        _47, _48, _49, _4a, _4b, _4c, _4d, _4e, _4f, _50, _51, _52, _53, _54, _55, _56, _57, _58,  \
-        _59, _5a, _5b, _5c, _5d, _5e, _5f, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _6a,  \
-        _6b, _6c, _6d, _6e, _6f, _70, _71, _72, _73, _74, _75, _76, _77, _78, _79, _7a, _7b, 0     \
-    )                                                                                              \
-    EMT_F_DISPATCH(type, x, len, out_fn, extra_arg, tag)
-#endif
-
-#define EMT_F(out_fn, extra_arg, x, ...) EMT_F_HELPER(out_fn, extra_arg, x, __VA_ARGS__)
-#define EMT_F_HELPER(out_fn, extra_arg, x, ...) EMT_F_##x(out_fn, extra_arg, __VA_ARGS__)
 // NOLINTEND(modernize-*,bugprone-casting-through-void)
 
 #endif // EMTRACE_EMTRACE_H
