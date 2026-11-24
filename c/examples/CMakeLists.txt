@@ -125,6 +125,7 @@ if(EMTRACE_ENABLE_TESTS)
             test_bool
             test_f32
             test_alignment
+            test_structs
         )
         # 128 bit integers are a compiler extension
         if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
