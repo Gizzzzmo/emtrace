@@ -72,10 +72,15 @@ struct StringLiteral {
 template <emt_size_t N>
 StringLiteral(const char (&str)[N]) -> StringLiteral<N>;
 
-template <typename T, StringLiteral l = "">
+/// A child of a composite type: e.g. the element type of a list, or a field of a struct (whose name
+/// is `l`). `padding_` is the number of bytes that follow each value of the child in the runtime
+/// stream, and are ignored when decoding it: e.g. the gap between a field and the next one (or the
+/// end of the struct) when the memory of a struct is emitted as a whole.
+template <typename T, StringLiteral l = "", emt_size_t padding_ = 0>
 struct Child {
     using Type = T;
     static constexpr StringLiteral lit = l;
+    static constexpr emt_size_t padding = padding_;
 };
 
 template <typename T>
@@ -91,8 +96,8 @@ struct IsChildImpl {
     static constexpr bool value = false;
 };
 
-template <typename T, StringLiteral l>
-struct IsChildImpl<Child<T, l>> {
+template <typename T, StringLiteral l, emt_size_t padding>
+struct IsChildImpl<Child<T, l, padding>> {
     static constexpr bool value = true;
 };
 
@@ -779,23 +784,28 @@ struct AllTypesImpl<T, Args...> {
         typename AllTypesImpl<Args...>::Type>;
 };
 
-template <typename T, StringLiteral l, typename... Args, StringLiteral... ls>
-struct AllTypesImpl<Ts<Child<T, l>, Child<Args, ls>...>> {
+// The children of a type, each followed by its own descendants (i.e. in pre-order).
+template <IsChild C, typename... Cs>
+struct AllTypesImpl<Ts<C, Cs...>> {
     using Type = Concat<
-        Ts<Child<T, l>>,
-        typename AllTypesImpl<typename Trace<T>::Children>::Type,
-        typename AllTypesImpl<Child<Args, ls>...>::Type>;
+        Ts<C>,
+        typename AllTypesImpl<typename Trace<typename C::Type>::Children>::Type,
+        typename AllTypesImpl<Ts<Cs...>>::Type>;
 };
 
 template <typename... Ts>
 using AllTypes = AllTypesImpl<Ts...>::Type;
 
-template <StringLiteral type_id_, typename T, typename Children_ = Ts<>>
+template <
+    StringLiteral type_id_,
+    typename T,
+    typename Children_ = Ts<>,
+    emt_size_t size_ = std::same_as<Children_, Ts<>> ? sizeof(T) : 1>
     requires(IsTsOfChildren<Children_>)
 struct SimpleTrace {
     using Children = Children_;
     static constexpr StringLiteral type_id = type_id_;
-    static constexpr SizeType size_type = StaticSize{sizeof(T)};
+    static constexpr SizeType size_type = StaticSize{size_};
     static constexpr bool simple = true;
     template <typename S>
     static auto serialize(const T& val, S& sink) -> std::optional<typename S::Error> {
@@ -926,6 +936,48 @@ auto emit_value(S& sink_impl, const T& val) -> std::optional<typename S::Error> 
 
 } // namespace internal
 
+/// Emits each of `fields` the way a value of its type appears in the runtime stream, i.e. preceded
+/// by its length, or followed by its terminator if its `Trace` requires that. Meant for the
+/// `serialize` functions of composite types that emit their children one by one, e.g. the fields
+/// of a struct whose memory isn't emitted as a whole. Stops at the first error.
+template <typename S, typename... T>
+    requires(Traceable<T> && ...)
+auto emit_fields(S& sink_impl, const T&... fields) -> std::optional<typename S::Error> {
+    std::optional<typename S::Error> error;
+    (void) ((error = internal::emit_value<T>(sink_impl, fields), !error.has_value()) && ...);
+    return error;
+}
+
+/// The number of bytes that every value of type `T` occupies in the runtime stream (including the
+/// padding of its descendants), or `std::nullopt` if that depends on the value. A simple `Trace`,
+/// which emits the memory of a value as a whole, must describe exactly `sizeof(T)` bytes.
+template <typename T>
+    requires(Traceable<T>)
+constexpr auto fixed_stream_size() -> std::optional<emt_size_t> {
+    if constexpr (!std::holds_alternative<StaticSize>(Trace<T>::size_type)) {
+        return std::nullopt;
+    } else {
+        constexpr emt_size_t count = std::get<StaticSize>(Trace<T>::size_type).size;
+        if constexpr (std::same_as<typename Trace<T>::Children, Ts<>>) {
+            return count;
+        } else {
+            std::optional<emt_size_t> element_size = emt_size_t{0};
+            internal::for_ts<typename Trace<T>::Children>([&]<typename C>() -> void {
+                const std::optional<emt_size_t> child_size = fixed_stream_size<typename C::Type>();
+                if (element_size.has_value() && child_size.has_value()) {
+                    element_size = *element_size + *child_size + C::padding;
+                } else {
+                    element_size = std::nullopt;
+                }
+            });
+            if (!element_size.has_value()) {
+                return std::nullopt;
+            }
+            return count * *element_size;
+        }
+    }
+}
+
 template <typename T>
     requires(Traceable<T>)
 struct Trace<std::vector<T>> {
@@ -995,6 +1047,11 @@ struct Trace<std::array<T, N>> {
 };
 
 static_assert(Traceable<std::array<int, 10>>);
+static_assert(fixed_stream_size<int>() == sizeof(int));
+static_assert(fixed_stream_size<int[10]>() == sizeof(int[10]));
+static_assert(fixed_stream_size<std::array<std::array<short, 3>, 2>>() == 6 * sizeof(short));
+static_assert(!fixed_stream_size<std::vector<int>>().has_value());
+static_assert(!fixed_stream_size<std::array<std::string, 2>>().has_value());
 
 template <typename T>
     requires(Traceable<T>)
@@ -1221,6 +1278,7 @@ constexpr auto get_layout(
         }
         arr[i + 3] = 0;
         if constexpr (IsChild<T>) {
+            arr[i + 3] = T::padding;
             arr[i + 4] = get_num_children<typename T::Type>();
         } else {
             arr[i + 4] = get_num_children<T>();
