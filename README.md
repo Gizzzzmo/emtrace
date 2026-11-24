@@ -188,7 +188,7 @@ information in this dedicated section. The section can be completely removed (or
 made no-load) from the final binary (e.g. with objcopy), and the program will
 still run.
 
-The [parser](./emtrace) takes the data output by the program while running and
+The [parser](./parser) takes the data output by the program while running and
 the data from the special `.emtrace` section, and produces the log.
 
 ## Development
