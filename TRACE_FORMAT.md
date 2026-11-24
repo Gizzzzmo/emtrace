@@ -171,26 +171,57 @@ decoding the runtime stream.
 The type information takes the form of a tree because types can be nested. For
 example to decode a sequence (`list`-type) of values we also need to know what
 the type of the elements *in the sequence* is. This nesting can be arbitrarily
-deep, allowing e.g. lists of lists of numbers .
+deep, allowing e.g. lists of lists of numbers, or lists of structs.
 
 Each type is thus described by:
 
 - its type identifier, an ASCII-string
 - a `size` field together with a *size flag*; what the `size` field holds
   depends on the flag (see below)
-- a description of all its children
+- its *padding*: the number of bytes following the value in the runtime stream,
+  which are discarded
+- a description of all its children, each of which also has a name
+
+Types without children are called *leaves*, types with children *composites*.
+Every runtime *element* of a composite is the concatenation of one value per
+child, in the order of the children. A composite with a single child is thus a
+sequence of values of that child's type (e.g. a list), a composite with several
+children and one element is a record of values (e.g. a struct), and a composite
+with several children and several elements is a sequence of records.
 
 The size flag determines the interpretation of the `size` field and the shape of
 the corresponding runtime data:
 
-- `EMT_FLAG_STATIC`: the runtime stream contains exactly `size` bytes.
-- `EMT_FLAG_NULL_TERMINATED`: the runtime stream consists of the value's bytes
-  followed by the number of consecutive null bytes given by `size`. A single
-  null byte (`size = 1`) terminates a string; other values make null-delimited
-  terminators possible for non-byte-aligned types (e.g. `size = 8` for a
-  sequence of pointers terminated by a null pointer).
-- `EMT_FLAG_LENGTH_PREFIXED`: the runtime stream begins with an element count
-  encoded as an unsigned LEB128 varint (the value of `size` is irrelevant here).
+- `EMT_FLAG_STATIC`: the runtime stream contains exactly `size` bytes (leaves),
+  or exactly `size` elements (composites).
+- `EMT_FLAG_NULL_TERMINATED`: the runtime stream consists of the value's content
+  followed by a terminator made of the number of consecutive null bytes given by
+  `size`. A single null byte (`size = 1`) terminates a string; other values make
+  null-delimited terminators possible for non-byte-aligned types (e.g.
+  `size = 8` for a sequence of pointers terminated by a null pointer). The
+  terminator is only recognized where the next content would start: at the start
+  of an element (composites), or at a multiple of `size` bytes after the start
+  of the content (leaves).
+- `EMT_FLAG_LENGTH_PREFIXED`: the runtime stream begins with a count encoded as
+  an unsigned LEB128 varint (the value of `size` is irrelevant here), followed
+  by that many bytes (leaves) or elements (composites).
+
+How a value is split up in the runtime stream is thus fully determined by the
+type tree: sizes, size flags, padding, and children. The type identifiers carry
+no meaning for this, and this specification doesn't prescribe any; they are
+labels that a parser uses to decide how to *interpret* the bytes of a value,
+once the runtime stream has been split up into the values of the type tree.
+
+Padding follows a value's content (and its terminator, if any). Emitters that
+output the memory of a struct as-is describe it as a composite with one element
+whose children are the struct's members, where every member's padding is the gap
+between its end and the start of the next member, or the end of the struct for
+the last member. The content of a value therefore spans exactly the bytes of its
+in-memory representation (`sizeof` of its type), and its padding is the gap
+after it within its parent. Since C and C++ don't allow padding before the first
+member of a struct, there is no need for padding before a value; should a format
+ever require it, it can be expressed with a zero-size child that only has
+padding.
 
 The `TRCE` record's payload serializes all this information as follows (all
 "pointers" are really offsets relative to the start of the record, *not the
@@ -228,33 +259,31 @@ width and endianness, as described above.
 
 At runtime, each time a trace is emitted it writes:
 
-1. An a little-endian encoded `emt_ptr_t` containing the address of the
-   corresponding `TRCE` record, right-shifted by `EMT_ALIGNMENT_POWER` bits. The
-   parser recovers the section offset by computing
-   `address × 2^EMT_ALIGNMENT_POWER + aslr_offset`, where `aslr_offset` is the
-   difference between the section offset of the `MGIC` record and the runtime
-   address of `MGIC` reported in the initialization step. Pointers in the stream
-   are stored with the `emt_ptr_t` width and endianness of the `MGIC` record.
-   For this to be lossless, every record's runtime address must be smaller than
+1. A little-endian encoded `emt_ptr_t` (with the width given in the `MGIC`
+   record) containing the address of the corresponding `TRCE` record,
+   right-shifted by `EMT_ALIGNMENT_POWER` bits. The parser recovers the section
+   offset by computing `address × 2^EMT_ALIGNMENT_POWER + aslr_offset`, where
+   `aslr_offset` is the difference between the section offset of the `MGIC`
+   record and the runtime address of `MGIC` reported in the initialization step
+   (which is encoded the same way). For this to be lossless, every record's
+   runtime address must be smaller than
    `2^(num_bits(emt_ptr_t) + EMT_ALIGNMENT_POWER)`; records at or above this
    bound lose bits when shifted and can no longer be distinguished from other
    records.
-2. For each argument, the raw bytes of the argument value:
-   - exactly `offset` bytes which are discarded for decoding purposes, followed
-     by:
-   - For `EMT_FLAG_STATIC` arguments without children: exactly `size` bytes.
-   - For `EMT_FLAG_STATIC` with children: the concatenation of the streams of
-     `size` elements, where each element is encoded as described by the type's
-     child (i.e. `size` is an element count, not a byte count).
-   - For `EMT_FLAG_NULL_TERMINATED` arguments: the value's bytes, up to and
-     including the terminator. The terminator is the number of consecutive null
-     bytes given by the type's `size` field (so `size = 1` terminates strings as
-     usual; any other terminator length is possible, see the size flag
-     description above).
-   - For `EMT_FLAG_LENGTH_PREFIXED` arguments: an element count, serialized as
-     an LEB128 varint, followed by the concatenation of the streams of that many
-     elements (for static, fixed-size elements this is `count × child_size`
-     bytes).
+2. For each argument, the bytes of the argument value, as described by its type
+   (see above):
+   - For `EMT_FLAG_STATIC` leaves: exactly `size` bytes.
+   - For `EMT_FLAG_STATIC` composites: the concatenation of `size` elements,
+     where each element is the concatenation of the values of all children (i.e.
+     `size` is an element count, not a byte count).
+   - For `EMT_FLAG_NULL_TERMINATED` values: the content (bytes, or elements),
+     followed by the terminator, which is the number of consecutive null bytes
+     given by the type's `size` field.
+   - For `EMT_FLAG_LENGTH_PREFIXED` values: a count, serialized as an LEB128
+     varint, followed by that many bytes (leaves), or the concatenation of that
+     many elements (composites).
+   - followed by exactly `padding` bytes, which are discarded for decoding
+     purposes.
 
 Argument values in the stream are stored with the endianness of the `TRCE`
 record they belong to.
